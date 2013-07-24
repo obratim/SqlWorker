@@ -77,7 +77,7 @@ namespace SqlWorker
             if (Conn.State != ConnectionState.Open) Conn.Open();
             int result = cmd.ExecuteNonQuery();
             cmd.Dispose();
-            Conn.Close();
+            if (_tran == null) Conn.Close();
             return result;
         }
 
@@ -150,7 +150,7 @@ namespace SqlWorker
             dr.Close();
             dr.Dispose();
             cmd.Dispose();
-            Conn.Close();
+            if (_tran == null) Conn.Close();
 
             return result;
         }
