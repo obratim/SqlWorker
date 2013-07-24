@@ -47,7 +47,7 @@ namespace SqlWorker
                 //_tran.Rollback();
                 //_tran.Dispose();
             }
-            _tran = _conn.BeginTransaction();
+            _tran = Conn.BeginTransaction();
         }
 
         public void TransactionCommit()
@@ -73,6 +73,7 @@ namespace SqlWorker
             SqlCommand cmd = Conn.CreateCommand();
             cmd.CommandText = Command;
             cmd.Parameters.AddRange(param);
+            cmd.Transaction = _tran;
             if (Conn.State != ConnectionState.Open) Conn.Open();
             int result = cmd.ExecuteNonQuery();
             cmd.Dispose();
@@ -142,6 +143,7 @@ namespace SqlWorker
             //cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = Command;
             cmd.Parameters.AddRange(param);
+            cmd.Transaction = _tran;
             if (Conn.State != ConnectionState.Open) Conn.Open();
             SqlDataReader dr = cmd.ExecuteReader();
             T result = todo(dr);
