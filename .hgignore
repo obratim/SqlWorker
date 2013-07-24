@@ -1,0 +1,4 @@
+syntax: glob
+SqlWorker.suo
+*/bin/Debug/*
+*/obj/Debug/*
