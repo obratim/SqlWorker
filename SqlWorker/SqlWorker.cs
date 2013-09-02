@@ -33,6 +33,7 @@ namespace SqlWorker
 
         public bool OpenConnection()
         {
+            if (Conn.State == ConnectionState.Open && _tran != null) return true;
             Conn.Close();
             Conn.Open();
             return Conn.State == ConnectionState.Open;
