@@ -34,9 +34,16 @@ namespace SqlWorker
         protected String QueryWithParams(String Query, SqlParameter[] Params)
         {
             if (Params == null) return Query;
+
             String newq = Query;
+            bool firstParam = true;
+
+            if (newq.IndexOf('@') != -1) firstParam = false;
             foreach (var p in Params)
-                if (newq.IndexOf("@" + p.ParameterName) == -1) newq += " @" + p.ParameterName;
+            {
+                if (newq.IndexOf("@" + p.ParameterName) == -1) newq += (firstParam ? " @" : ", @") + p.ParameterName;
+                firstParam = false;
+            }
             return newq;
         }
 
