@@ -178,6 +178,19 @@ namespace SqlWorker
             });
         }
 
+        public List<T> GetListFromDB<T>(String procname, SqlParameter[] param, List<String> Exceptions) where T : new()
+        {
+            return GetStructFromDB<List<T>>(procname, param, delegate(SqlDataReader dr)
+            {
+                List<T> result = new List<T>();
+                while (dr.Read())
+                {
+                    result.Add(DataReaderToObj<T>(dr, Exceptions));
+                }
+                return result;
+            });
+        }
+
         public T DataReaderToObj<T>(SqlDataReader dr, List<String> Errors) where T : new()
         {
             T result = new T();
