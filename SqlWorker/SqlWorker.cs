@@ -36,7 +36,7 @@ namespace SqlWorker
             if (Params == null) return Query;
             String newq = Query;
             foreach (var p in Params)
-                if (newq.IndexOf("@" + p.ParameterName) == -1) newq += "@" + p.ParameterName;
+                if (newq.IndexOf("@" + p.ParameterName) == -1) newq += " @" + p.ParameterName;
             return newq;
         }
 
