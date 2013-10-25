@@ -31,6 +31,15 @@ namespace SqlWorker
                     select p).ToArray();
         }
 
+        protected String QueryWithParams(String Query, SqlParameter[] Params)
+        {
+            if (Params == null) return Query;
+            String newq = Query;
+            foreach (var p in Params)
+                if (newq.IndexOf("@" + p.ParameterName) == -1) newq += "@" + p.ParameterName;
+            return newq;
+        }
+
         public bool OpenConnection()
         {
             if (Conn.State == ConnectionState.Open && _tran != null) return true;
@@ -72,7 +81,7 @@ namespace SqlWorker
         public int ExecuteNonQuery(String Command, SqlParameter[] param)
         {
             SqlCommand cmd = Conn.CreateCommand();
-            cmd.CommandText = Command;
+            cmd.CommandText = QueryWithParams(Command, param);
             cmd.Parameters.AddRange(param);
             cmd.Transaction = _tran;
             if (Conn.State != ConnectionState.Open) Conn.Open();
@@ -142,7 +151,7 @@ namespace SqlWorker
         {
             SqlCommand cmd = Conn.CreateCommand();
             //cmd.CommandType = CommandType.StoredProcedure;
-            cmd.CommandText = Command;
+            cmd.CommandText = QueryWithParams(Command, param);
             cmd.Parameters.AddRange(param);
             cmd.Transaction = _tran;
             if (Conn.State != ConnectionState.Open) Conn.Open();
@@ -186,8 +195,8 @@ namespace SqlWorker
             T result = new T();
             foreach (System.ComponentModel.PropertyDescriptor i in System.ComponentModel.TypeDescriptor.GetProperties(result))
             {
-                try { i.SetValue(result, dr[i.Name]); }
-                catch (Exception) { }
+                /*try {*/ i.SetValue(result, dr[i.Name]); /*}*/
+                /*catch (Exception) { }*/
             }
 
             return result;
