@@ -82,6 +82,8 @@ namespace SqlWorker
             _tran.Dispose();
             _tran = null;
         }
+
+        public SqlTransaction TransactionState { get { return _tran; } }
         #endregion
 
         public int ExecuteNonQuery(String Command) { return ExecuteNonQuery(Command, new SqlParameter[0]); }
