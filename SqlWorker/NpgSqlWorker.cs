@@ -5,51 +5,44 @@ using System.Text;
 using System.Data;
 using System.Data.SqlClient;
 using System.Data.Common;
+using Npgsql;
 
-namespace SqlWorker
-{
-    public class SqlWorker : ISqlWorker
-    {
+namespace SqlWorker {
+    public class NpgSqlWorker : ISqlWorker {
         private String _connectionStr;
-        private SqlTransaction _tran;
+        private NpgsqlTransaction _tran;
 
-        public SqlWorker(String ConnectionString) { _connectionStr = ConnectionString; }
+        public NpgSqlWorker(String ConnectionString) { _connectionStr = ConnectionString; }
 
-        private SqlConnection _conn;
-        protected SqlConnection Conn
-        {
-            get
-            {
-                if (_conn == null) _conn = new System.Data.SqlClient.SqlConnection(_connectionStr);
+        private NpgsqlConnection _conn;
+        protected NpgsqlConnection Conn {
+            get {
+                if (_conn == null) _conn = new NpgsqlConnection(_connectionStr);
                 return _conn;
             }
         }
 
-        public static DbParameter[] NotNullParams(DbParameter[] param)
-        {
+        public static DbParameter[] NotNullParams(DbParameter[] param) {
             return (from DbParameter p in param
                     where p.Value != null
                     select p).ToArray();
         }
 
-        protected String QueryWithParams(String Query, DbParameter[] Params)
-        {
+        protected String QueryWithParams(String Query, DbParameter[] Params) {
             if (Params == null) return Query;
 
             String newq = Query;
             bool firstParam = true;
 
             if (newq.IndexOf('@') != -1) firstParam = false;
-            foreach (var p in Params)
-            {
+            foreach (var p in Params) {
                 if (newq.IndexOf("@" + p.ParameterName) == -1) newq += (firstParam ? " @" : ", @") + p.ParameterName;
                 firstParam = false;
             }
             return newq;
         }
 
-        public bool OpenConnection()
-        {
+        public bool OpenConnection() {
             if (Conn.State == ConnectionState.Open && _tran != null) return true;
             Conn.Close();
             Conn.Open();
@@ -57,10 +50,8 @@ namespace SqlWorker
         }
 
         #region Transactions
-        public void TransactionBegin()
-        {
-            if (_tran != null)
-            {
+        public void TransactionBegin() {
+            if (_tran != null) {
                 throw new Exception("transaction exists!");
                 //_tran.Rollback();
                 //_tran.Dispose();
@@ -68,29 +59,26 @@ namespace SqlWorker
             _tran = Conn.BeginTransaction();
         }
 
-        public void TransactionCommit()
-        {
+        public void TransactionCommit() {
             if (_tran == null) throw new Exception("transaction dont exists!");
             _tran.Commit();
             _tran.Dispose();
             _tran = null;
         }
 
-        public void TransactionRollback()
-        {
+        public void TransactionRollback() {
             if (_tran == null) throw new Exception("transaction dont exists!");
             _tran.Rollback();
             _tran.Dispose();
             _tran = null;
         }
 
-        public SqlTransaction TransactionState { get { return _tran; } }
+        public NpgsqlTransaction TransactionState { get { return _tran; } }
         #endregion
 
         public int ExecuteNonQuery(String Command) { return ExecuteNonQuery(Command, new DbParameter[0]); }
-        public int ExecuteNonQuery(String Command, DbParameter[] param)
-        {
-            SqlCommand cmd = Conn.CreateCommand();
+        public int ExecuteNonQuery(String Command, DbParameter[] param) {
+            NpgsqlCommand cmd = Conn.CreateCommand();
             cmd.CommandText = QueryWithParams(Command, param);
             cmd.Parameters.AddRange(param);
             cmd.Transaction = _tran;
@@ -101,8 +89,7 @@ namespace SqlWorker
             return result;
         }
 
-        public int InsertValues(String TableName, DbParameter[] param)
-        {
+        public int InsertValues(String TableName, DbParameter[] param) {
             DbParameter[] _param = NotNullParams(param);
 
             String q = "INSERT INTO " + TableName + " (" + _param[0].ParameterName;
@@ -121,8 +108,7 @@ namespace SqlWorker
         }
 
         public int UpdateValues(String TableName, DbParameter[] Values, DbParameter Condition) { return UpdateValues(TableName, Values, new DbParameter[1] { Condition }); }
-        public int UpdateValues(String TableName, DbParameter[] Values, DbParameter[] Condition)
-        {
+        public int UpdateValues(String TableName, DbParameter[] Values, DbParameter[] Condition) {
             DbParameter[] _param = NotNullParams(Values);
 
             String q = "UPDATE " + TableName + " SET " + _param[0].ParameterName + " = @" + _param[0].ParameterName;
@@ -140,8 +126,7 @@ namespace SqlWorker
             param.AddRange(Condition);
             return ExecuteNonQuery(q, param.ToArray());
         }
-        public int UpdateValues(String TableName, DbParameter[] Values, String Condition)
-        {
+        public int UpdateValues(String TableName, DbParameter[] Values, String Condition) {
             DbParameter[] _param = NotNullParams(Values);
 
             String q = "UPDATE " + TableName + " SET " + _param[0].ParameterName + " = @" + _param[0].ParameterName;
@@ -156,9 +141,8 @@ namespace SqlWorker
         }
 
         public T GetStructFromDB<T>(String Command, GetterDelegate<T> todo) { return GetStructFromDB<T>(Command, new DbParameter[0], todo); }
-        public T GetStructFromDB<T>(String Command, DbParameter[] param, GetterDelegate<T> todo)
-        {
-            SqlCommand cmd = Conn.CreateCommand();
+        public T GetStructFromDB<T>(String Command, DbParameter[] param, GetterDelegate<T> todo) {
+            NpgsqlCommand cmd = Conn.CreateCommand();
             //cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = QueryWithParams(Command, param);
             cmd.Parameters.AddRange(param);
@@ -174,37 +158,29 @@ namespace SqlWorker
             return result;
         }
 
-        public List<T> GetListFromDB<T>(String procname, DbParameter[] param) where T : new()
-        {
-            return GetStructFromDB<List<T>>(procname, param, delegate(DbDataReader dr)
-            {
+        public List<T> GetListFromDB<T>(String procname, DbParameter[] param) where T : new() {
+            return GetStructFromDB<List<T>>(procname, param, delegate(DbDataReader dr) {
                 List<T> result = new List<T>();
-                while (dr.Read())
-                {
+                while (dr.Read()) {
                     result.Add(DataReaderToObj<T>(dr));
                 }
                 return result;
             });
         }
 
-        public List<T> GetListFromDB<T>(String procname, DbParameter[] param, List<String> Exceptions) where T : new()
-        {
-            return GetStructFromDB<List<T>>(procname, param, delegate(DbDataReader dr)
-            {
+        public List<T> GetListFromDB<T>(String procname, DbParameter[] param, List<String> Exceptions) where T : new() {
+            return GetStructFromDB<List<T>>(procname, param, delegate(DbDataReader dr) {
                 List<T> result = new List<T>();
-                while (dr.Read())
-                {
+                while (dr.Read()) {
                     result.Add(DataReaderToObj<T>(dr, Exceptions));
                 }
                 return result;
             });
         }
 
-        public T DataReaderToObj<T>(DbDataReader dr, List<String> Errors) where T : new()
-        {
+        public T DataReaderToObj<T>(DbDataReader dr, List<String> Errors) where T : new() {
             T result = new T();
-            foreach (System.ComponentModel.PropertyDescriptor i in System.ComponentModel.TypeDescriptor.GetProperties(result))
-            {
+            foreach (System.ComponentModel.PropertyDescriptor i in System.ComponentModel.TypeDescriptor.GetProperties(result)) {
                 try { i.SetValue(result, dr[i.Name]); }
                 catch (Exception e) { Errors.Add(e.ToString()); }
             }
@@ -212,23 +188,21 @@ namespace SqlWorker
             return result;
         }
 
-        public T DataReaderToObj<T>(DbDataReader dr) where T : new()
-        {
+        public T DataReaderToObj<T>(DbDataReader dr) where T : new() {
             T result = new T();
-            foreach (System.ComponentModel.PropertyDescriptor i in System.ComponentModel.TypeDescriptor.GetProperties(result))
-            {
-                /*try {*/ i.SetValue(result, dr[i.Name]); /*}*/
+            foreach (System.ComponentModel.PropertyDescriptor i in System.ComponentModel.TypeDescriptor.GetProperties(result)) {
+                /*try {*/
+                i.SetValue(result, dr[i.Name]); /*}*/
                 /*catch (Exception) { }*/
             }
 
             return result;
         }
 
-        //public List<T> GetListFromDB<T>(String Command, DbParameter[] param, GetterDelegate<T> todo) {
-        //    // todo
-        //    return null;
-        //}
-
+        public List<T> GetListFromDB<T>(String Command, DbParameter[] param, GetterDelegate<T> todo) {
+            // todo
+            return null;
+        }
 
         public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParameter[] param, GetterDelegate<T> todo) {
             return GetStructFromDB<List<T>>(Command, param, delegate(DbDataReader dr) {
