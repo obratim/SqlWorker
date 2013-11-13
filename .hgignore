@@ -2,3 +2,6 @@ syntax: glob
 SqlWorker.suo
 */bin/Debug/*
 */obj/Debug/*
+Testing/bin/Debug/*
+Testing/bin/Release/*
+Testing/obj/*
