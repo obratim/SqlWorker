@@ -11,6 +11,7 @@ namespace SqlWorker {
     public class NpgSqlWorker : ISqlWorker {
         private String _connectionStr;
         private NpgsqlTransaction _tran;
+        public void CaseSensitive;
 
         public NpgSqlWorker(String ConnectionString) { _connectionStr = ConnectionString; }
 
@@ -78,6 +79,7 @@ namespace SqlWorker {
 
         public int ExecuteNonQuery(String Command) { return ExecuteNonQuery(Command, new DbParameter[0]); }
         public int ExecuteNonQuery(String Command, DbParameter[] param) {
+
             NpgsqlCommand cmd = Conn.CreateCommand();
             cmd.CommandText = QueryWithParams(Command, param);
             cmd.Parameters.AddRange(param);
@@ -92,12 +94,12 @@ namespace SqlWorker {
         public int InsertValues(String TableName, DbParameter[] param) {
             DbParameter[] _param = NotNullParams(param);
 
-            String q = "INSERT INTO " + TableName + " (" + _param[0].ParameterName;
+            String q = "INSERT INTO " + TableName + " (\"" + _param[0].ParameterName;
 
             for (int i = 1; i < _param.Count(); ++i)
-                q += ", " + _param[i].ParameterName;
+                q += "\", \"" + _param[i].ParameterName;
 
-            q += ") VALUES (@" + _param[0].ParameterName;
+            q += "\") VALUES (@" + _param[0].ParameterName;
 
             for (int i = 1; i < _param.Count(); ++i)
                 q += ", @" + _param[i].ParameterName;
@@ -111,7 +113,7 @@ namespace SqlWorker {
         public int UpdateValues(String TableName, DbParameter[] Values, DbParameter[] Condition) {
             DbParameter[] _param = NotNullParams(Values);
 
-            String q = "UPDATE " + TableName + " SET " + _param[0].ParameterName + " = @" + _param[0].ParameterName;
+            String q = "UPDATE " + TableName + " SET \"" + _param[0].ParameterName + "\" = @" + _param[0].ParameterName;
 
             for (int i = 1; i < _param.Count(); ++i)
                 q += ", " + _param[i].ParameterName + " = @" + _param[i].ParameterName;
@@ -129,7 +131,7 @@ namespace SqlWorker {
         public int UpdateValues(String TableName, DbParameter[] Values, String Condition) {
             DbParameter[] _param = NotNullParams(Values);
 
-            String q = "UPDATE " + TableName + " SET " + _param[0].ParameterName + " = @" + _param[0].ParameterName;
+            String q = "UPDATE " + TableName + " SET \"" + _param[0].ParameterName + "\" = @" + _param[0].ParameterName;
 
             for (int i = 1; i < _param.Count(); ++i)
                 q += ", " + _param[i].ParameterName + " = @" + _param[i].ParameterName;
