@@ -25,13 +25,6 @@ namespace SqlWorker
             }
         }
 
-        public static DbParameter[] NotNullParams(DbParameter[] param)
-        {
-            return (from DbParameter p in param
-                    where p.Value != null
-                    select p).ToArray();
-        }
-
         protected String QueryWithParams(String Query, DbParameter[] Params)
         {
             if (Params == null) return Query;
@@ -46,6 +39,12 @@ namespace SqlWorker
                 firstParam = false;
             }
             return newq;
+        }
+
+        protected void SqlParameterNullWorkaround(DbParameter[] param)
+        {
+            foreach (var p in param)
+                if (p.Value == null) p.Value = DBNull.Value;
         }
 
         public bool OpenConnection()
@@ -90,6 +89,7 @@ namespace SqlWorker
         public int ExecuteNonQuery(String Command) { return ExecuteNonQuery(Command, new DbParameter[0]); }
         public int ExecuteNonQuery(String Command, DbParameter[] param)
         {
+            SqlParameterNullWorkaround(param);
             SqlCommand cmd = Conn.CreateCommand();
             cmd.CommandText = QueryWithParams(Command, param);
             cmd.Parameters.AddRange(param);
@@ -103,32 +103,32 @@ namespace SqlWorker
 
         public int InsertValues(String TableName, DbParameter[] param)
         {
-            DbParameter[] _param = NotNullParams(param);
+            SqlParameterNullWorkaround(param);
 
-            String q = "INSERT INTO " + TableName + " (" + _param[0].ParameterName;
+            String q = "INSERT INTO " + TableName + " (" + param[0].ParameterName;
 
-            for (int i = 1; i < _param.Count(); ++i)
-                q += ", " + _param[i].ParameterName;
+            for (int i = 1; i < param.Count(); ++i)
+                q += ", " + param[i].ParameterName;
 
-            q += ") VALUES (@" + _param[0].ParameterName;
+            q += ") VALUES (@" + param[0].ParameterName;
 
-            for (int i = 1; i < _param.Count(); ++i)
-                q += ", @" + _param[i].ParameterName;
+            for (int i = 1; i < param.Count(); ++i)
+                q += ", @" + param[i].ParameterName;
 
             q += ")";
 
-            return ExecuteNonQuery(q, _param);
+            return ExecuteNonQuery(q, param);
         }
 
         public int UpdateValues(String TableName, DbParameter[] Values, DbParameter Condition) { return UpdateValues(TableName, Values, new DbParameter[1] { Condition }); }
         public int UpdateValues(String TableName, DbParameter[] Values, DbParameter[] Condition)
         {
-            DbParameter[] _param = NotNullParams(Values);
+            SqlParameterNullWorkaround(Values);
 
-            String q = "UPDATE " + TableName + " SET " + _param[0].ParameterName + " = @" + _param[0].ParameterName;
+            String q = "UPDATE " + TableName + " SET " + Values[0].ParameterName + " = @" + Values[0].ParameterName;
 
-            for (int i = 1; i < _param.Count(); ++i)
-                q += ", " + _param[i].ParameterName + " = @" + _param[i].ParameterName;
+            for (int i = 1; i < Values.Count(); ++i)
+                q += ", " + Values[i].ParameterName + " = @" + Values[i].ParameterName;
 
             if (Condition.Count() > 0)
                 q += " WHERE " + Condition[0].ParameterName + " = @" + Condition[0].ParameterName;
@@ -136,28 +136,30 @@ namespace SqlWorker
             for (int i = 1; i < Condition.Count(); ++i)
                 q += " AND " + Condition[i].ParameterName + " = @" + Condition[i].ParameterName;
 
-            List<DbParameter> param = new List<DbParameter>(_param);
+            List<DbParameter> param = new List<DbParameter>(Values);
             param.AddRange(Condition);
             return ExecuteNonQuery(q, param.ToArray());
         }
         public int UpdateValues(String TableName, DbParameter[] Values, String Condition)
         {
-            DbParameter[] _param = NotNullParams(Values);
+            SqlParameterNullWorkaround(Values);
 
-            String q = "UPDATE " + TableName + " SET " + _param[0].ParameterName + " = @" + _param[0].ParameterName;
+            String q = "UPDATE " + TableName + " SET " + Values[0].ParameterName + " = @" + Values[0].ParameterName;
 
-            for (int i = 1; i < _param.Count(); ++i)
-                q += ", " + _param[i].ParameterName + " = @" + _param[i].ParameterName;
+            for (int i = 1; i < Values.Count(); ++i)
+                q += ", " + Values[i].ParameterName + " = @" + Values[i].ParameterName;
 
             if (!String.IsNullOrWhiteSpace(Condition))
                 q += " WHERE " + Condition;
 
-            return ExecuteNonQuery(q, _param);
+            return ExecuteNonQuery(q, Values);
         }
 
         public T GetStructFromDB<T>(String Command, GetterDelegate<T> todo) { return GetStructFromDB<T>(Command, new DbParameter[0], todo); }
         public T GetStructFromDB<T>(String Command, DbParameter[] param, GetterDelegate<T> todo)
         {
+            SqlParameterNullWorkaround(param);
+
             SqlCommand cmd = Conn.CreateCommand();
             //cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = QueryWithParams(Command, param);
