@@ -207,7 +207,7 @@ namespace SqlWorker
             T result = new T();
             foreach (System.ComponentModel.PropertyDescriptor i in System.ComponentModel.TypeDescriptor.GetProperties(result))
             {
-                try { i.SetValue(result, dr[i.Name]); }
+                try { if (dr[i.Name] != DBNull.Value) i.SetValue(result, dr[i.Name]); }
                 catch (Exception e) { Errors.Add(e.ToString()); }
             }
 
@@ -219,7 +219,8 @@ namespace SqlWorker
             T result = new T();
             foreach (System.ComponentModel.PropertyDescriptor i in System.ComponentModel.TypeDescriptor.GetProperties(result))
             {
-                /*try {*/ i.SetValue(result, dr[i.Name]); /*}*/
+                /*try {*/
+                if (dr[i.Name] != DBNull.Value) i.SetValue(result, dr[i.Name]); /*}*/
                 /*catch (Exception) { }*/
             }
 
