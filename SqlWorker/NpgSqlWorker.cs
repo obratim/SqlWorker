@@ -56,6 +56,7 @@ namespace SqlWorker {
                 //_tran.Rollback();
                 //_tran.Dispose();
             }
+            if (Conn.State != ConnectionState.Open) Conn.Open();
             _tran = Conn.BeginTransaction();
         }
 
