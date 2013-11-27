@@ -9,7 +9,7 @@ using System.Data.SqlClient;
 namespace Testing {
     class Program {
         static void Main(string[] args) {
-            ISqlWorker worker = (ISqlWorker)new NpgSqlWorker("Server=devel;Port=5432;Database=bibliography;User Id=postgres;Password=mamayanekurulapshu;");
+            ASqlWorker worker = (ASqlWorker)new NpgSqlWorker("Server=devel;Port=5432;Database=bibliography;User Id=postgres;Password=mamayanekurulapshu;");
             worker.OpenConnection();
 
             //List<String> objs = worker.GetListFromDBSingleProcessing("select * from wos.\"Record\"", null, delegate(DbDataReader dr) {
