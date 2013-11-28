@@ -21,6 +21,9 @@ namespace SqlWorker
                 return _conn;
             }
         }
+
+        protected override DbParameter DbParameterConstructor(string paramName, object paramValue) { return new SqlParameter(paramName, paramValue); }
+
         public SqlWorker(String ConnectionString) { _connectionStr = ConnectionString; }
     }
 }

@@ -20,5 +20,7 @@ namespace SqlWorker {
                 return _conn;
             }
         }
+
+        protected override DbParameter DbParameterConstructor(string paramName, object paramValue) { return new NpgsqlParameter(paramName, paramValue); }
     }
 }

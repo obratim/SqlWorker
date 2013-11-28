@@ -8,7 +8,8 @@ using System.Data.SqlClient;
 
 namespace Testing {
     class Program {
-        static void Main(string[] args) {
+        static void Main(string[] args)
+        {
             ASqlWorker worker = (ASqlWorker)new NpgSqlWorker("Server=devel;Port=5432;Database=bibliography;User Id=postgres;Password=mamayanekurulapshu;");
             worker.OpenConnection();
 
@@ -16,7 +17,12 @@ namespace Testing {
             //    String tableName = dr.GetString(0);
             //    return tableName;
             //});
-            
+
+            worker.InsertValues("wos.\"Record\"", new Dictionary<String, Object>{
+                {"ImportDate", DateTime.Now},
+                {"ImportUrl", "http://ru.wikipedia.org/wiki/%D0%A1%D1%83%D0%BF%D0%B5%D1%80%D0%BC%D0%B5%D0%BD"},
+                {"ID", Guid.NewGuid()}
+            });
 
             worker.InsertValues("wos.\"Record\"", new Npgsql.NpgsqlParameter[3]{ 
                 //new Npgsql.NpgsqlParameter("Title", "путин-краб"),
@@ -24,7 +30,7 @@ namespace Testing {
                 new Npgsql.NpgsqlParameter("ImportUrl", "http://ru.wikipedia.org/wiki/%D0%A1%D1%83%D0%BF%D0%B5%D1%80%D0%BC%D0%B5%D0%BD"),
                 new Npgsql.NpgsqlParameter("ID", Guid.NewGuid())
             });
-            
+
         }
     }
 }
