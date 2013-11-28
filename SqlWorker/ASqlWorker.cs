@@ -53,6 +53,18 @@ namespace SqlWorker {
                     select p).ToArray();
         }
 
+        protected static DbParameter[] DictionaryToDbParameters(Dictionary<String, Object> input, Func<String, Object, DbParameter> constructor)
+        {
+            var result = new DbParameter[input.Count];
+            int i = 0;
+            foreach (var kv in input)
+            {
+                result[i] = constructor(kv.Key, kv.Value);
+                ++i;
+            }
+            return result;
+        }
+
         #region Transactions
         virtual public void TransactionBegin()
         {
@@ -84,6 +96,7 @@ namespace SqlWorker {
         public bool TransactionIsOpened { get { return _transactionIsOpened; } }
         #endregion
 
+        virtual public int ExecuteNonQuery(String Command, Dictionary<String, Object> param, Func<String, Object, DbParameter> constructor) { return ExecuteNonQuery(Command, DictionaryToDbParameters(param, constructor)); }
         virtual public int ExecuteNonQuery(String Command) { return ExecuteNonQuery(Command, new DbParameter[0]); }
         virtual public int ExecuteNonQuery(String Command, DbParameter[] param)
         {
@@ -99,6 +112,7 @@ namespace SqlWorker {
             return result;
         }
 
+        virtual public int InsertValues(String TableName, Dictionary<String, Object> param, Func<String, Object, DbParameter> constructor) { return InsertValues(TableName, DictionaryToDbParameters(param, constructor)); }
         virtual public int InsertValues(String TableName, DbParameter[] param)
         {
             SqlParameterNullWorkaround(param);
@@ -118,6 +132,8 @@ namespace SqlWorker {
             return ExecuteNonQuery(q, param);
         }
 
+        virtual public int UpdateValues(String TableName, Dictionary<String, Object> param, Func<String, Object, DbParameter> constructor, DbParameter Condition) { return UpdateValues(TableName, DictionaryToDbParameters(param, constructor), Condition); }
+        virtual public int UpdateValues(String TableName, Dictionary<String, Object> param, Func<String, Object, DbParameter> constructor, DbParameter[] Condition) { return UpdateValues(TableName, DictionaryToDbParameters(param, constructor), Condition); }
         virtual public int UpdateValues(String TableName, DbParameter[] Values, DbParameter Condition) { return UpdateValues(TableName, Values, new DbParameter[1] { Condition }); }
         virtual public int UpdateValues(String TableName, DbParameter[] Values, DbParameter[] Condition)
         {
@@ -138,6 +154,8 @@ namespace SqlWorker {
             param.AddRange(Condition);
             return ExecuteNonQuery(q, param.ToArray());
         }
+        virtual public int UpdateValues(String TableName, Dictionary<String, Object> Values, Func<String, Object, DbParameter> constructor, String Condition)
+        { return UpdateValues(TableName, DictionaryToDbParameters(Values, constructor), Condition); }
         virtual public int UpdateValues(String TableName, DbParameter[] Values, String Condition)
         {
             SqlParameterNullWorkaround(Values);
@@ -153,7 +171,9 @@ namespace SqlWorker {
             return ExecuteNonQuery(q, Values);
         }
 
-        T GetStructFromDB<T>(String Command, GetterDelegate<T> todo) { return GetStructFromDB<T>(Command, new DbParameter[0], todo); }
+        virtual public T GetStructFromDB<T>(String Command, Dictionary<String, Object> param, Func<String, Object, DbParameter> constructor, GetterDelegate<T> todo, String Condition)
+        { return GetStructFromDB<T>(Command, DictionaryToDbParameters(param, constructor), todo); }
+        virtual public T GetStructFromDB<T>(String Command, GetterDelegate<T> todo) { return GetStructFromDB<T>(Command, new DbParameter[0], todo); }
         virtual public T GetStructFromDB<T>(String Command, DbParameter[] param, GetterDelegate<T> todo)
         {
             SqlParameterNullWorkaround(param);
@@ -173,6 +193,8 @@ namespace SqlWorker {
         }
 
         virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, GetterDelegate<T> todo) { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[0], todo); }
+        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, Dictionary<String, Object> param, Func<String, Object, DbParameter> constructor, GetterDelegate<T> todo, String Condition)
+        { return GetListFromDBSingleProcessing<T>(Command, DictionaryToDbParameters(param, constructor), todo); }
         /// <summary>
         /// Делегат должен подготавливать один объект из DataReader'а, полностью его создавать и возвращать
         /// </summary>
@@ -197,6 +219,10 @@ namespace SqlWorker {
 
         virtual public List<T> GetListFromDB<T>(String procname) where T : new() { return GetListFromDB<T>(procname, new DbParameter[0]); }
         virtual public List<T> GetListFromDB<T>(String procname, List<String> Exceptions) where T : new() { return GetListFromDB<T>(procname, new DbParameter[0], Exceptions); }
+        virtual public List<T> GetListFromDB<T>(String procname, Dictionary<String, Object> param, Func<String, Object, DbParameter> constructor) where T : new()
+        { return GetListFromDB<T>(procname, DictionaryToDbParameters(param, constructor)); }
+        virtual public List<T> GetListFromDB<T>(String procname, Dictionary<String, Object> param, Func<String, Object, DbParameter> constructor, List<String> Exceptions) where T : new()
+        { return GetListFromDB<T>(procname, DictionaryToDbParameters(param, constructor), Exceptions); }
 
         virtual public List<T> GetListFromDB<T>(String procname, DbParameter[] param) where T : new()
         {
