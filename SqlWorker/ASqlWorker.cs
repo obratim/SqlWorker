@@ -176,6 +176,7 @@ namespace SqlWorker {
         virtual public T GetStructFromDB<T>(String Command, Dictionary<String, Object> param, GetterDelegate<T> todo, String Condition)
         { return GetStructFromDB<T>(Command, DictionaryToDbParameters(param), todo); }
         virtual public T GetStructFromDB<T>(String Command, GetterDelegate<T> todo) { return GetStructFromDB<T>(Command, new DbParameter[0], todo); }
+        virtual public T GetStructFromDB<T>(String Command, DbParameter param, GetterDelegate<T> todo) { return GetStructFromDB<T>(Command, new DbParameter[1] { param }, todo); }
         virtual public T GetStructFromDB<T>(String Command, DbParameter[] param, GetterDelegate<T> todo)
         {
             SqlParameterNullWorkaround(param);
@@ -197,6 +198,7 @@ namespace SqlWorker {
         virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, GetterDelegate<T> todo) { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[0], todo); }
         virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, Dictionary<String, Object> param, GetterDelegate<T> todo, String Condition)
         { return GetListFromDBSingleProcessing<T>(Command, DictionaryToDbParameters(param), todo); }
+        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParameter param, GetterDelegate<T> todo) { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[1] { param }, todo); }
         /// <summary>
         /// Делегат должен подготавливать один объект из DataReader'а, полностью его создавать и возвращать
         /// </summary>
@@ -226,6 +228,7 @@ namespace SqlWorker {
         virtual public List<T> GetListFromDB<T>(String procname, Dictionary<String, Object> param, List<String> Exceptions) where T : new()
         { return GetListFromDB<T>(procname, DictionaryToDbParameters(param), Exceptions); }
 
+        virtual public List<T> GetListFromDB<T>(String procname, DbParameter param) where T : new() { return GetListFromDB<T>(procname, new DbParameter[1] { param }); }
         virtual public List<T> GetListFromDB<T>(String procname, DbParameter[] param) where T : new()
         {
             return GetStructFromDB<List<T>>(procname, param, delegate(DbDataReader dr)
@@ -239,6 +242,7 @@ namespace SqlWorker {
             });
         }
 
+        virtual public List<T> GetListFromDB<T>(String procname, DbParameter param, List<String> Exceptions) where T : new() { return GetListFromDB<T>(procname, new DbParameter[1] { param }, Exceptions); }
         virtual public List<T> GetListFromDB<T>(String procname, DbParameter[] param, List<String> Exceptions) where T : new()
         {
             return GetStructFromDB<List<T>>(procname, param, delegate(DbDataReader dr)
