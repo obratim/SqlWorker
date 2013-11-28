@@ -100,6 +100,7 @@ namespace SqlWorker {
 
         virtual public int ExecuteNonQuery(String Command, Dictionary<String, Object> param) { return ExecuteNonQuery(Command, DictionaryToDbParameters(param)); }
         virtual public int ExecuteNonQuery(String Command) { return ExecuteNonQuery(Command, new DbParameter[0]); }
+        virtual public int ExecuteNonQuery(String Command, DbParameter param) { return ExecuteNonQuery(Command, new DbParameter[1] { param }); }
         virtual public int ExecuteNonQuery(String Command, DbParameter[] param)
         {
             SqlParameterNullWorkaround(param);
