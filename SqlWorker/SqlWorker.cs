@@ -17,7 +17,7 @@ namespace SqlWorker
         {
             get
             {
-                if (_conn == null) _conn = new SqlConnection();
+                if (_conn == null) _conn = new SqlConnection(_connectionStr);
                 return _conn;
             }
         }
