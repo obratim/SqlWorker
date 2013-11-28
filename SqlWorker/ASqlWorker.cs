@@ -196,7 +196,7 @@ namespace SqlWorker {
         }
 
         virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, GetterDelegate<T> todo) { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[0], todo); }
-        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, Dictionary<String, Object> param, GetterDelegate<T> todo, String Condition)
+        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, Dictionary<String, Object> param, GetterDelegate<T> todo)
         { return GetListFromDBSingleProcessing<T>(Command, DictionaryToDbParameters(param), todo); }
         virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParameter param, GetterDelegate<T> todo) { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[1] { param }, todo); }
         /// <summary>
