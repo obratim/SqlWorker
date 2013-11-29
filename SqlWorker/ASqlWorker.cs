@@ -174,7 +174,7 @@ namespace SqlWorker {
             return ExecuteNonQuery(q, Values);
         }
 
-        virtual public T GetStructFromDB<T>(String Command, Dictionary<String, Object> param, GetterDelegate<T> todo, String Condition)
+        virtual public T GetStructFromDB<T>(String Command, Dictionary<String, Object> param, GetterDelegate<T> todo)
         { return GetStructFromDB<T>(Command, DictionaryToDbParameters(param), todo); }
         virtual public T GetStructFromDB<T>(String Command, GetterDelegate<T> todo) { return GetStructFromDB<T>(Command, new DbParameter[0], todo); }
         virtual public T GetStructFromDB<T>(String Command, DbParameter param, GetterDelegate<T> todo) { return GetStructFromDB<T>(Command, new DbParameter[1] { param }, todo); }
