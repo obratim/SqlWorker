@@ -83,6 +83,7 @@ namespace SqlWorker {
         {
             if (!TransactionIsOpened) throw new Exception("transaction dont exists!");
             _transaction.Commit();
+            Conn.Close();
             _transactionIsOpened = false;
         }
 
@@ -90,6 +91,7 @@ namespace SqlWorker {
         {
             if (!TransactionIsOpened) throw new Exception("transaction dont exists!");
             _transaction.Rollback();
+            Conn.Close();
             _transactionIsOpened = false;
         }
 
