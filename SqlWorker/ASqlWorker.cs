@@ -112,13 +112,13 @@ namespace SqlWorker {
             cmd.Transaction = _transaction;
             if (Conn.State != ConnectionState.Open) Conn.Open();
             int result = cmd.ExecuteNonQuery();
-            cmd.Dispose();
+            if (!TransactionIsOpened) cmd.Dispose();
             if (!TransactionIsOpened) Conn.Close();
             return result;
         }
 
-        virtual public int InsertValues(String TableName, Dictionary<String, Object> param) { return InsertValues(TableName, DictionaryToDbParameters(param)); }
-        virtual public int InsertValues(String TableName, DbParameter[] param)
+        virtual public int InsertValues(String TableName, Dictionary<String, Object> param, bool ReturnIdentity = false) { return InsertValues(TableName, DictionaryToDbParameters(param), ReturnIdentity); }
+        virtual public int InsertValues(String TableName, DbParameter[] param, bool ReturnIdentity = false)
         {
             SqlParameterNullWorkaround(param);
 
@@ -132,9 +132,9 @@ namespace SqlWorker {
             for (int i = 1; i < param.Count(); ++i)
                 q += ", @" + param[i].ParameterName;
 
-            q += ")";
+            q += ");";
 
-            return ExecuteNonQuery(q, param);
+            return !ReturnIdentity ? ExecuteNonQuery(q, param) : Decimal.ToInt32(GetStructFromDB<Decimal>(q + " select SCOPE_IDENTITY()", param, r => { r.Read(); return r.GetDecimal(0); }));
         }
 
         virtual public int UpdateValues(String TableName, Dictionary<String, Object> param, DbParameter Condition) { return UpdateValues(TableName, DictionaryToDbParameters(param), Condition); }
