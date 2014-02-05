@@ -50,12 +50,15 @@ namespace SqlWorker
                         attributes.Add(fileIdFieldName, fileId);
                     }
                     else fileId = (Guid)attributes[fileIdFieldName];
+                    attributes[fileDataFieldName] = new byte[0];
 
                     InsertValues(tableName, attributes);
 
                     //bool procNameFlag = !String.IsNullOrEmpty(procName); //check if procname was set
                     //if (!procNameFlag)
-                    String procName = "SELECT " + fileDataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT as Context from " + tableName + " where " + fileIdFieldName + " = @" + fileIdFieldName;
+                    String procName = "begin tran filestream_internal_transaction set tran isolation level read uncommitted\nSELECT "
+                        + fileDataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + fileIdFieldName + " = @" + fileIdFieldName
+                        + "\ncommit transaction filestream_internal_transaction";
 
                     return GetStructFromDB<SqlFileStream>(procName,
                         new SqlParameter(fileIdFieldName, fileId),
@@ -63,7 +66,9 @@ namespace SqlWorker
                         {
                             SqlDataReader dr = (SqlDataReader)reader;
                             dr.Read();
-                            return new SqlFileStream(dr.GetSqlString(0).Value, dr.GetSqlBinary(1).Value, System.IO.FileAccess.Write);
+                            var pathname = dr.GetSqlString(0);
+                            var token = dr.GetSqlBinary(1);
+                            return new SqlFileStream(pathname.Value, token.Value, System.IO.FileAccess.Write);
                         });
                 },
                 bufLength);
@@ -71,24 +76,33 @@ namespace SqlWorker
 
         public int InsertFileGeneric(System.IO.Stream inputStream, FileStreamService InsertDataAndReturnSQLFileStream, long bufLength = 512*1024)
         {
-            bool toCloseTranFlag = TransactionIsOpened;
-            if (!TransactionIsOpened) TransactionBegin();
-
-            var sfs = InsertDataAndReturnSQLFileStream();
-
-            byte[] buffer = new byte[bufLength];
-            int readen = inputStream.Read(buffer, 0, buffer.Length);
-            int writen = readen;
-            while (readen > 0)
+            try
             {
-                sfs.Write(buffer, 0, readen);
-                readen = inputStream.Read(buffer, 0, buffer.Length);
-                writen += readen;
-            }
-            sfs.Close();
+                bool toCloseTranFlag = TransactionIsOpened;
+                if (!TransactionIsOpened) TransactionBegin();
 
-            if (toCloseTranFlag) TransactionCommit();
-            return writen;
+                var sfs = InsertDataAndReturnSQLFileStream();
+
+                byte[] buffer = new byte[bufLength];
+                int readen = inputStream.Read(buffer, 0, buffer.Length);
+                int writen = readen;
+                while (readen > 0)
+                {
+                    sfs.Write(buffer, 0, readen);
+                    readen = inputStream.Read(buffer, 0, buffer.Length);
+                    writen += readen;
+                }
+                sfs.Close();
+
+                if (toCloseTranFlag) TransactionCommit();
+                return writen;
+            }
+            catch
+            {
+                if (TransactionIsOpened) try { TransactionRollback(); }
+                    catch { }
+                return -1;
+            }
         }
 
         #endregion
