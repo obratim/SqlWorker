@@ -82,6 +82,7 @@ namespace SqlWorker {
         virtual public void TransactionCommit()
         {
             if (!TransactionIsOpened) throw new Exception("transaction dont exists!");
+            foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
             _transaction.Commit();
             Conn.Close();
             _transactionIsOpened = false;
@@ -90,6 +91,7 @@ namespace SqlWorker {
         virtual public void TransactionRollback()
         {
             if (!TransactionIsOpened) throw new Exception("transaction dont exists!");
+            foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
             _transaction.Rollback();
             Conn.Close();
             _transactionIsOpened = false;
@@ -99,6 +101,8 @@ namespace SqlWorker {
         private bool _transactionIsOpened = false;
         public bool TransactionIsOpened { get { return _transactionIsOpened; } }
         #endregion
+
+        protected List<DbDataReader> Readers = new List<DbDataReader>();
 
         virtual public int ExecuteNonQuery(String Command, Dictionary<String, Object> param) { return ExecuteNonQuery(Command, DictionaryToDbParameters(param)); }
         virtual public int ExecuteNonQuery(String Command) { return ExecuteNonQuery(Command, new DbParameter[0]); }
@@ -189,9 +193,16 @@ namespace SqlWorker {
             cmd.Transaction = _transaction;
             if (Conn.State != ConnectionState.Open) Conn.Open();
             DbDataReader dr = cmd.ExecuteReader();
+
+            int drid = Readers.Count;
+            Readers.Add(dr);
+
             T result = todo(dr);
             dr.Close();
             dr.Dispose();
+
+            Readers.RemoveAt(drid);
+
             cmd.Dispose();
             if (!TransactionIsOpened) Conn.Close();
 
