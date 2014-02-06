@@ -29,6 +29,19 @@ namespace SqlWorker
 
         #region send files
 
+        public SqlFileStream GetFileStreamFromDB(String tableName, String dataFieldName, System.IO.FileAccess accessType, Dictionary<String, Object> attributies, String condition = "")
+        {
+            if (condition == null) condition = "";
+            if (string.IsNullOrWhiteSpace(condition))
+                condition = attributies.Aggregate<KeyValuePair<String, Object>, String>("", (str, i) => { return str + (str == "" ? "" : " and ") + i.Key + " = @" + i.Key; });
+            return GetStructFromDB<SqlFileStream>("select " + dataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + condition, attributies,
+                dr =>
+                {
+                    if (!dr.Read()) throw new Exception("No sutch file");
+                    return new SqlFileStream(dr.GetString(0), (byte[])dr[1], accessType);
+                });
+        }
+
         public delegate SqlFileStream FileStreamService();
 
         public int InsertFileNoStoredProcs(
