@@ -78,7 +78,7 @@ namespace SqlWorker
         {
             try
             {
-                bool toCloseTranFlag = TransactionIsOpened;
+                bool toCloseTranFlag = !TransactionIsOpened;
                 if (!TransactionIsOpened) TransactionBegin();
 
                 var sfs = InsertDataAndReturnSQLFileStream();
