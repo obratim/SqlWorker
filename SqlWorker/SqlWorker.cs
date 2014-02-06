@@ -67,22 +67,7 @@ namespace SqlWorker
 
                     InsertValues(tableName, attributes);
 
-                    //bool procNameFlag = !String.IsNullOrEmpty(procName); //check if procname was set
-                    //if (!procNameFlag)
-                    String procName = "begin tran filestream_internal_transaction set tran isolation level read uncommitted\nSELECT "
-                        + fileDataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + fileIdFieldName + " = @" + fileIdFieldName
-                        + "\ncommit transaction filestream_internal_transaction";
-
-                    return GetStructFromDB<SqlFileStream>(procName,
-                        new SqlParameter(fileIdFieldName, fileId),
-                        reader =>
-                        {
-                            SqlDataReader dr = (SqlDataReader)reader;
-                            dr.Read();
-                            var pathname = dr.GetSqlString(0);
-                            var token = dr.GetSqlBinary(1);
-                            return new SqlFileStream(pathname.Value, token.Value, System.IO.FileAccess.Write);
-                        });
+                    return GetFileStreamFromDB(tableName, fileDataFieldName, System.IO.FileAccess.Write, new Dictionary<string, object>() { { fileIdFieldName, attributes[fileIdFieldName] } });
                 },
                 bufLength);
         }
