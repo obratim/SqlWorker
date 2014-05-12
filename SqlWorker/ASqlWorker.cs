@@ -270,6 +270,14 @@ namespace SqlWorker {
             });
         }
 
+        virtual public List<T> GetScalarsListFromDB<T>(String procname) { return GetScalarsListFromDB<T>(procname, new DbParameter[0]); }
+        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter param) { return GetScalarsListFromDB<T>(procname, new DbParameter[1] { param }); }
+        virtual public List<T> GetScalarsListFromDB<T>(String procname, Dictionary<String, Object> param) { return GetScalarsListFromDB<T>(procname, DictionaryToDbParameters(param)); }
+        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter[] param)
+        {
+            return GetListFromDBSingleProcessing<T>(procname, param, (DbDataReader dr) => (T)dr[0]);
+        }
+
         virtual public T DataReaderToObj<T>(DbDataReader dr, List<String> Errors) where T : new()
         {
             T result = new T();
