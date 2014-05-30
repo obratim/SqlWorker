@@ -79,22 +79,29 @@ namespace SqlWorker {
             _transactionIsOpened = true;
         }
 
-        virtual public void TransactionCommit()
+        virtual public void TransactionCommit(bool closeConn = true)
         {
-            if (!TransactionIsOpened) throw new Exception("transaction dont exists!");
+            if (!TransactionIsOpened) throw new Exception("transaction doesnt exist!");
             foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
             _transaction.Commit();
-            Conn.Close();
+            if (closeConn) Conn.Close();
             _transactionIsOpened = false;
         }
 
-        virtual public void TransactionRollback()
+        virtual public void TransactionRollback(bool closeConn = true)
         {
-            if (!TransactionIsOpened) throw new Exception("transaction dont exists!");
+            if (!TransactionIsOpened) throw new Exception("transaction doesnt exist!");
             foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
             _transaction.Rollback();
-            Conn.Close();
+            if (closeConn) Conn.Close();
             _transactionIsOpened = false;
+        }
+
+        public void DoInTransaction(Action todo, bool closeConn = true)
+        {
+            TransactionBegin();
+            todo();
+            TransactionCommit(closeConn);
         }
 
         private DbTransaction _transaction = null;
