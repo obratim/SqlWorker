@@ -25,12 +25,18 @@ namespace SqlWorker
 
         protected override DbParameter DbParameterConstructor(string paramName, object paramValue) { return new SqlParameter(paramName, paramValue); }
 
-        public SqlWorker(String ConnectionString) { _connectionStr = ConnectionString; }
-        public SqlWorker(String Server, String DataBase)
+        public SqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
+            : base(reconnectPause)
+        { _connectionStr = ConnectionString; }
+
+        public SqlWorker(String Server, String DataBase, TimeSpan? reconnectPause = null)
+            : base(reconnectPause)
         {
             _connectionStr = String.Format("Server={0};Database={1};Integrated Security=true", Server, DataBase);
         }
-        public SqlWorker(String Server, String DataBase, String Login, String Password)
+
+        public SqlWorker(String Server, String DataBase, String Login, String Password, TimeSpan? reconnectPause = null)
+            : base(reconnectPause)
         {
             _connectionStr = String.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", Server, DataBase, Login, Password);
         }

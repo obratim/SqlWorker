@@ -14,6 +14,40 @@ namespace SqlWorker
 
         protected abstract DbConnection Conn { get; }
 
+        public TimeSpan ReConnectPause { get; set; }
+        protected TimeSpan DefaultReconnectPause = new TimeSpan(0, 2, 0);
+        protected DateTime? LastDisconnect;
+
+        /// <summary>
+        /// constructor
+        /// </summary>
+        /// <param name="reconnectPause">if null, default will be setted</param>
+        public ASqlWorker(TimeSpan? reconnectPause = null) { ReConnectPause = reconnectPause == null ? DefaultReconnectPause : reconnectPause.Value; }
+
+        virtual public bool OpenConnection(bool ReopenIfNotInTransaction = true)
+        {
+            if (Conn.State != ConnectionState.Open)
+            {
+                if (LastDisconnect == null)
+                {
+                    LastDisconnect = DateTime.Now;
+                    return false;
+                }
+
+                if (DateTime.Now - LastDisconnect < ReConnectPause) return false;
+            }
+            else
+            {
+                if (TransactionIsOpened || !ReopenIfNotInTransaction) return true;
+            }
+
+            LastDisconnect = null;
+            if (Conn.State != ConnectionState.Closed) Conn.Close();
+            Conn.Open();
+            _transactionIsOpened = false;
+            return Conn.State == ConnectionState.Open;
+        }
+
         virtual protected String QueryWithParams(String Query, DbParameter[] Params)
         {
             if (Params == null) return Query;
@@ -32,15 +66,6 @@ namespace SqlWorker
 
         //public ISqlWorker(String connectionString);
         //String QueryWithParams(String Query, DbParameter[] Params);
-
-        virtual public bool OpenConnection()
-        {
-            if (Conn.State == ConnectionState.Open && TransactionIsOpened) return true;
-            if (Conn.State != ConnectionState.Closed) Conn.Close();
-            Conn.Open();
-            _transactionIsOpened = false;
-            return Conn.State == ConnectionState.Open;
-        }
 
         protected static void SqlParameterNullWorkaround(DbParameter[] param)
         {

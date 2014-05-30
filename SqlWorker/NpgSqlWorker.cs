@@ -11,7 +11,9 @@ namespace SqlWorker {
     public class NpgSqlWorker : ASqlWorker {
         private String _connectionStr;
 
-        public NpgSqlWorker(String ConnectionString) { _connectionStr = ConnectionString; }
+        public NpgSqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
+            : base(reconnectPause)
+        { _connectionStr = ConnectionString; }
 
         private NpgsqlConnection _conn;
         protected override DbConnection Conn {
