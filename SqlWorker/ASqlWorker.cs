@@ -277,12 +277,31 @@ namespace SqlWorker {
             });
         }
 
-        virtual public List<T> GetScalarsListFromDB<T>(String procname) { return GetScalarsListFromDB<T>(procname, new DbParameter[0]); }
-        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter param) { return GetScalarsListFromDB<T>(procname, new DbParameter[1] { param }); }
-        virtual public List<T> GetScalarsListFromDB<T>(String procname, Dictionary<String, Object> param) { return GetScalarsListFromDB<T>(procname, DictionaryToDbParameters(param)); }
-        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter[] param)
+
+        virtual public List<T> GetScalarsListFromDB<T>(String procname, bool IncludingNulls = true)
+        { return GetScalarsListFromDB<T>(procname, new DbParameter[0], IncludingNulls); }
+
+        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter param, bool IncludingNulls = true)
+        { return GetScalarsListFromDB<T>(procname, new DbParameter[1] { param }, IncludingNulls); }
+
+        virtual public List<T> GetScalarsListFromDB<T>(String procname, Dictionary<String, Object> param, bool IncludingNulls = true)
+        { return GetScalarsListFromDB<T>(procname, DictionaryToDbParameters(param), IncludingNulls); }
+
+        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter[] param, bool IncludingNulls = true)
         {
-            return GetListFromDBSingleProcessing<T>(procname, param, (DbDataReader dr) => (T)dr[0]);
+            if (IncludingNulls)
+                return GetListFromDBSingleProcessing<T>(
+                    procname,
+                    param,
+                    (DbDataReader dr) => dr[0] == DBNull.Value ? (T)(Object)null : (T)dr[0]
+                    );
+            else return GetStructFromDB<List<T>>(procname, param, (dr) =>
+            {
+                List<T> result = new List<T>();
+                while (dr.Read())
+                    if (dr[0] != DBNull.Value) result.Add((T)dr[0]);
+                return result;
+            });
         }
 
         virtual public T DataReaderToObj<T>(DbDataReader dr, List<String> Errors) where T : new()
