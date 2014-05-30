@@ -5,10 +5,12 @@ using System.Text;
 using System.Data.Common;
 using System.Data;
 
-namespace SqlWorker {
+namespace SqlWorker
+{
     public delegate T GetterDelegate<T>(DbDataReader dr);
 
-    public abstract class ASqlWorker {
+    public abstract class ASqlWorker
+    {
 
         protected abstract DbConnection Conn { get; }
 
@@ -111,9 +113,15 @@ namespace SqlWorker {
 
         protected List<DbDataReader> Readers = new List<DbDataReader>();
 
-        virtual public int ExecuteNonQuery(String Command, Dictionary<String, Object> param) { return ExecuteNonQuery(Command, DictionaryToDbParameters(param)); }
-        virtual public int ExecuteNonQuery(String Command) { return ExecuteNonQuery(Command, new DbParameter[0]); }
-        virtual public int ExecuteNonQuery(String Command, DbParameter param) { return ExecuteNonQuery(Command, new DbParameter[1] { param }); }
+        virtual public int ExecuteNonQuery(String Command, Dictionary<String, Object> param)
+        { return ExecuteNonQuery(Command, DictionaryToDbParameters(param)); }
+
+        virtual public int ExecuteNonQuery(String Command)
+        { return ExecuteNonQuery(Command, new DbParameter[0]); }
+
+        virtual public int ExecuteNonQuery(String Command, DbParameter param)
+        { return ExecuteNonQuery(Command, new DbParameter[1] { param }); }
+
         virtual public int ExecuteNonQuery(String Command, DbParameter[] param)
         {
             SqlParameterNullWorkaround(param);
@@ -128,7 +136,10 @@ namespace SqlWorker {
             return result;
         }
 
-        virtual public int InsertValues(String TableName, Dictionary<String, Object> param, bool ReturnIdentity = false) { return InsertValues(TableName, DictionaryToDbParameters(param), ReturnIdentity); }
+
+        virtual public int InsertValues(String TableName, Dictionary<String, Object> param, bool ReturnIdentity = false)
+        { return InsertValues(TableName, DictionaryToDbParameters(param), ReturnIdentity); }
+
         virtual public int InsertValues(String TableName, DbParameter[] param, bool ReturnIdentity = false)
         {
             SqlParameterNullWorkaround(param);
@@ -145,12 +156,21 @@ namespace SqlWorker {
 
             q += ");";
 
-            return !ReturnIdentity ? ExecuteNonQuery(q, param) : Decimal.ToInt32(GetStructFromDB<Decimal>(q + " select SCOPE_IDENTITY()", param, r => { r.Read(); return r.GetDecimal(0); }));
+            return !ReturnIdentity ?
+                ExecuteNonQuery(q, param) :
+                Decimal.ToInt32(GetStructFromDB<Decimal>(q + " select SCOPE_IDENTITY()", param, r => { r.Read(); return r.GetDecimal(0); }));
         }
 
-        virtual public int UpdateValues(String TableName, Dictionary<String, Object> param, DbParameter Condition) { return UpdateValues(TableName, DictionaryToDbParameters(param), Condition); }
-        virtual public int UpdateValues(String TableName, Dictionary<String, Object> param, DbParameter[] Condition) { return UpdateValues(TableName, DictionaryToDbParameters(param), Condition); }
-        virtual public int UpdateValues(String TableName, DbParameter[] Values, DbParameter Condition) { return UpdateValues(TableName, Values, new DbParameter[1] { Condition }); }
+
+        virtual public int UpdateValues(String TableName, Dictionary<String, Object> param, DbParameter Condition)
+        { return UpdateValues(TableName, DictionaryToDbParameters(param), Condition); }
+
+        virtual public int UpdateValues(String TableName, Dictionary<String, Object> param, DbParameter[] Condition)
+        { return UpdateValues(TableName, DictionaryToDbParameters(param), Condition); }
+
+        virtual public int UpdateValues(String TableName, DbParameter[] Values, DbParameter Condition)
+        { return UpdateValues(TableName, Values, new DbParameter[1] { Condition }); }
+
         virtual public int UpdateValues(String TableName, DbParameter[] Values, DbParameter[] Condition)
         {
             SqlParameterNullWorkaround(Values);
@@ -170,8 +190,10 @@ namespace SqlWorker {
             param.AddRange(Condition);
             return ExecuteNonQuery(q, param.ToArray());
         }
+
         virtual public int UpdateValues(String TableName, Dictionary<String, Object> Values, String Condition)
         { return UpdateValues(TableName, DictionaryToDbParameters(Values), Condition); }
+
         virtual public int UpdateValues(String TableName, DbParameter[] Values, String Condition)
         {
             SqlParameterNullWorkaround(Values);
@@ -187,10 +209,16 @@ namespace SqlWorker {
             return ExecuteNonQuery(q, Values);
         }
 
+
         virtual public T GetStructFromDB<T>(String Command, Dictionary<String, Object> param, GetterDelegate<T> todo)
         { return GetStructFromDB<T>(Command, DictionaryToDbParameters(param), todo); }
-        virtual public T GetStructFromDB<T>(String Command, GetterDelegate<T> todo) { return GetStructFromDB<T>(Command, new DbParameter[0], todo); }
-        virtual public T GetStructFromDB<T>(String Command, DbParameter param, GetterDelegate<T> todo) { return GetStructFromDB<T>(Command, new DbParameter[1] { param }, todo); }
+
+        virtual public T GetStructFromDB<T>(String Command, GetterDelegate<T> todo)
+        { return GetStructFromDB<T>(Command, new DbParameter[0], todo); }
+
+        virtual public T GetStructFromDB<T>(String Command, DbParameter param, GetterDelegate<T> todo)
+        { return GetStructFromDB<T>(Command, new DbParameter[1] { param }, todo); }
+
         virtual public T GetStructFromDB<T>(String Command, DbParameter[] param, GetterDelegate<T> todo)
         {
             SqlParameterNullWorkaround(param);
@@ -216,10 +244,16 @@ namespace SqlWorker {
             return result;
         }
 
-        virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, GetterDelegate<T> todo) { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[0], todo); }
+
+        virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, GetterDelegate<T> todo)
+        { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[0], todo); }
+
         virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, Dictionary<String, Object> param, GetterDelegate<T> todo)
         { return GetListFromDBSingleProcessing<T>(Command, DictionaryToDbParameters(param), todo); }
-        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParameter param, GetterDelegate<T> todo) { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[1] { param }, todo); }
+
+        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParameter param, GetterDelegate<T> todo)
+        { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[1] { param }, todo); }
+
         /// <summary>
         /// Делегат должен подготавливать один объект из DataReader'а, полностью его создавать и возвращать
         /// </summary>
@@ -228,7 +262,6 @@ namespace SqlWorker {
         /// <param name="param"></param>
         /// <param name="todo"></param>
         /// <returns></returns>
-
         virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParameter[] param, GetterDelegate<T> todo)
         {
             return GetStructFromDB<List<T>>(Command, param, delegate(DbDataReader dr)
@@ -242,14 +275,21 @@ namespace SqlWorker {
             });
         }
 
-        virtual public List<T> GetListFromDB<T>(String procname) where T : new() { return GetListFromDB<T>(procname, new DbParameter[0]); }
-        virtual public List<T> GetListFromDB<T>(String procname, List<String> Exceptions) where T : new() { return GetListFromDB<T>(procname, new DbParameter[0], Exceptions); }
+        virtual public List<T> GetListFromDB<T>(String procname) where T : new()
+        { return GetListFromDB<T>(procname, new DbParameter[0]); }
+
+        virtual public List<T> GetListFromDB<T>(String procname, List<String> Exceptions) where T : new()
+        { return GetListFromDB<T>(procname, new DbParameter[0], Exceptions); }
+
         virtual public List<T> GetListFromDB<T>(String procname, Dictionary<String, Object> param) where T : new()
         { return GetListFromDB<T>(procname, DictionaryToDbParameters(param)); }
+
         virtual public List<T> GetListFromDB<T>(String procname, Dictionary<String, Object> param, List<String> Exceptions) where T : new()
         { return GetListFromDB<T>(procname, DictionaryToDbParameters(param), Exceptions); }
 
-        virtual public List<T> GetListFromDB<T>(String procname, DbParameter param) where T : new() { return GetListFromDB<T>(procname, new DbParameter[1] { param }); }
+        virtual public List<T> GetListFromDB<T>(String procname, DbParameter param) where T : new()
+        { return GetListFromDB<T>(procname, new DbParameter[1] { param }); }
+
         virtual public List<T> GetListFromDB<T>(String procname, DbParameter[] param) where T : new()
         {
             return GetStructFromDB<List<T>>(procname, param, delegate(DbDataReader dr)
@@ -263,7 +303,9 @@ namespace SqlWorker {
             });
         }
 
-        virtual public List<T> GetListFromDB<T>(String procname, DbParameter param, List<String> Exceptions) where T : new() { return GetListFromDB<T>(procname, new DbParameter[1] { param }, Exceptions); }
+        virtual public List<T> GetListFromDB<T>(String procname, DbParameter param, List<String> Exceptions) where T : new()
+        { return GetListFromDB<T>(procname, new DbParameter[1] { param }, Exceptions); }
+
         virtual public List<T> GetListFromDB<T>(String procname, DbParameter[] param, List<String> Exceptions) where T : new()
         {
             return GetStructFromDB<List<T>>(procname, param, delegate(DbDataReader dr)
