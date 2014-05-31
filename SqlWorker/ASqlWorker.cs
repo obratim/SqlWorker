@@ -26,7 +26,7 @@ namespace SqlWorker
 
         virtual public bool OpenConnection(bool ReopenIfNotInTransaction = true)
         {
-            if (Conn.State != ConnectionState.Open)
+            if (Conn.State != ConnectionState.Open && ReConnectPause.Ticks > 0)
             {
                 if (LastDisconnect == null)
                 {
