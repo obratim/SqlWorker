@@ -22,7 +22,11 @@ namespace SqlWorker
         /// constructor
         /// </summary>
         /// <param name="reconnectPause">if null, default will be setted</param>
-        public ASqlWorker(TimeSpan? reconnectPause = null) { ReConnectPause = reconnectPause == null ? DefaultReconnectPause : reconnectPause.Value; }
+        public ASqlWorker(TimeSpan? reconnectPause = null)
+        {
+            ReConnectPause = reconnectPause == null ? DefaultReconnectPause : reconnectPause.Value;
+            LastDisconnect = DateTime.Now - reconnectPause;
+        }
 
         virtual public bool OpenConnection(bool ReopenIfNotInTransaction = true)
         {
