@@ -98,6 +98,14 @@ namespace SqlWorker
             return result;
         }
 
+        protected bool IsNullableParams(params Type[] types)
+        {
+            bool result = true;
+            foreach (var i in types)
+                result = result && !i.IsValueType && (Nullable.GetUnderlyingType(i) == null);
+            return result;
+        }
+
         #region Transactions
         virtual public void TransactionBegin()
         {
@@ -349,17 +357,18 @@ namespace SqlWorker
         }
 
 
-        virtual public List<T> GetScalarsListFromDB<T>(String procname, bool IncludingNulls = true)
-        { return GetScalarsListFromDB<T>(procname, new DbParameter[0], IncludingNulls); }
+        virtual public List<T> GetScalarsListFromDB<T>(String procname)
+        { return GetScalarsListFromDB<T>(procname, new DbParameter[0]); }
 
-        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter param, bool IncludingNulls = true)
-        { return GetScalarsListFromDB<T>(procname, new DbParameter[1] { param }, IncludingNulls); }
+        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter param)
+        { return GetScalarsListFromDB<T>(procname, new DbParameter[1] { param }); }
 
-        virtual public List<T> GetScalarsListFromDB<T>(String procname, Dictionary<String, Object> param, bool IncludingNulls = true)
-        { return GetScalarsListFromDB<T>(procname, DictionaryToDbParameters(param), IncludingNulls); }
+        virtual public List<T> GetScalarsListFromDB<T>(String procname, Dictionary<String, Object> param)
+        { return GetScalarsListFromDB<T>(procname, DictionaryToDbParameters(param)); }
 
-        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter[] param, bool IncludingNulls = true)
+        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter[] param)
         {
+            bool IncludingNulls = IsNullableParams(typeof(T));
             if (IncludingNulls)
                 return GetListFromDBSingleProcessing<T>(
                     procname,
@@ -371,6 +380,39 @@ namespace SqlWorker
                 List<T> result = new List<T>();
                 while (dr.Read())
                     if (dr[0] != DBNull.Value) result.Add((T)dr[0]);
+                return result;
+            });
+        }
+
+
+        virtual public List<Tuple<T1, T2>> GetTupleFromDB<T1, T2>(String query)
+        { return GetTupleFromDB<T1, T2>(query, new DbParameter[0]); }
+
+        virtual public List<Tuple<T1, T2>> GetTupleFromDB<T1, T2>(String query, DbParameter param)
+        { return GetTupleFromDB<T1, T2>(query, new DbParameter[1] { param }); }
+
+        virtual public List<Tuple<T1, T2>> GetTupleFromDB<T1, T2>(String query, Dictionary<String, Object> param)
+        { return GetTupleFromDB<T1, T2>(query, DictionaryToDbParameters(param)); }
+
+        virtual public List<Tuple<T1, T2>> GetTupleFromDB<T1, T2>(String query, DbParameter[] param)
+        {
+            bool IncludingNulls = IsNullableParams(typeof(T1), typeof(T2));
+            if (IncludingNulls)
+            return GetListFromDBSingleProcessing<Tuple<T1, T2>>(query, param,
+                (dr) =>
+                {
+                    return new Tuple<T1,T2>((T1)dr[0], (T2)dr[1]);
+                });
+            return GetStructFromDB<List<Tuple<T1, T2>>>(query, (dr) =>
+            {
+                var result = new List<Tuple<T1, T2>>();
+                while (dr.Read())
+                {
+                    var x0 = dr[0];
+                    var x1 = dr[1];
+                    if (x0 != DBNull.Value && x1 != DBNull.Value)
+                        result.Add(new Tuple<T1, T2>((T1)x0, (T2)x1));
+                }
                 return result;
             });
         }
