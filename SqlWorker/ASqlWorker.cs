@@ -403,18 +403,19 @@ namespace SqlWorker
                 {
                     return new Tuple<T1,T2>((T1)dr[0], (T2)dr[1]);
                 });
-            return GetStructFromDB<List<Tuple<T1, T2>>>(query, (dr) =>
-            {
-                var result = new List<Tuple<T1, T2>>();
-                while (dr.Read())
+            return GetStructFromDB<List<Tuple<T1, T2>>>(query, param,
+                (dr) =>
                 {
-                    var x0 = dr[0];
-                    var x1 = dr[1];
-                    if (x0 != DBNull.Value && x1 != DBNull.Value)
-                        result.Add(new Tuple<T1, T2>((T1)x0, (T2)x1));
-                }
-                return result;
-            });
+                    var result = new List<Tuple<T1, T2>>();
+                    while (dr.Read())
+                    {
+                        var x0 = dr[0];
+                        var x1 = dr[1];
+                        if (x0 != DBNull.Value && x1 != DBNull.Value)
+                            result.Add(new Tuple<T1, T2>((T1)x0, (T2)x1));
+                    }
+                    return result;
+                });
         }
 
         virtual public T DataReaderToObj<T>(DbDataReader dr, List<String> Errors) where T : new()
