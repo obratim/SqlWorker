@@ -102,7 +102,7 @@ namespace SqlWorker
         {
             bool result = true;
             foreach (var i in types)
-                result = result && !i.IsValueType && (Nullable.GetUnderlyingType(i) == null);
+                result = result && i.IsGenericType && i.GetGenericTypeDefinition() == typeof(Nullable<>);
             return result;
         }
 
