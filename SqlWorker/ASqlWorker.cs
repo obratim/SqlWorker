@@ -385,34 +385,31 @@ namespace SqlWorker
         }
 
 
-        virtual public List<Tuple<T1, T2>> GetTupleFromDB<T1, T2>(String query)
-        { return GetTupleFromDB<T1, T2>(query, new DbParameter[0]); }
+        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query)
+        { return GetTupleFromDB<T0, T1>(query, new DbParameter[0]); }
 
-        virtual public List<Tuple<T1, T2>> GetTupleFromDB<T1, T2>(String query, DbParameter param)
-        { return GetTupleFromDB<T1, T2>(query, new DbParameter[1] { param }); }
+        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query, DbParameter param)
+        { return GetTupleFromDB<T0, T1>(query, new DbParameter[1] { param }); }
 
-        virtual public List<Tuple<T1, T2>> GetTupleFromDB<T1, T2>(String query, Dictionary<String, Object> param)
-        { return GetTupleFromDB<T1, T2>(query, DictionaryToDbParameters(param)); }
+        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query, Dictionary<String, Object> param)
+        { return GetTupleFromDB<T0, T1>(query, DictionaryToDbParameters(param)); }
 
-        virtual public List<Tuple<T1, T2>> GetTupleFromDB<T1, T2>(String query, DbParameter[] param)
+        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query, DbParameter[] param)
         {
-            bool IncludingNulls = IsNullableParams(typeof(T1), typeof(T2));
-            if (IncludingNulls)
-            return GetListFromDBSingleProcessing<Tuple<T1, T2>>(query, param,
+            bool[] IncludingNulls = new bool[] { IsNullableParams(typeof(T0)), IsNullableParams(typeof(T1)) };
+            return GetStructFromDB<List<Tuple<T0, T1>>>(query, param,
                 (dr) =>
                 {
-                    return new Tuple<T1,T2>((T1)dr[0], (T2)dr[1]);
-                });
-            return GetStructFromDB<List<Tuple<T1, T2>>>(query, param,
-                (dr) =>
-                {
-                    var result = new List<Tuple<T1, T2>>();
+                    var result = new List<Tuple<T0, T1>>();
                     while (dr.Read())
                     {
                         var x0 = dr[0];
                         var x1 = dr[1];
-                        if (x0 != DBNull.Value && x1 != DBNull.Value)
-                            result.Add(new Tuple<T1, T2>((T1)x0, (T2)x1));
+                        if ((IncludingNulls[0] || x0 != DBNull.Value)
+                            &&
+                            (IncludingNulls[1] || x1 != DBNull.Value)
+                           )
+                            result.Add(new Tuple<T0, T1>((T0)(x0 == DBNull.Value ? null : x0), (T1)(x1 == DBNull.Value ? null : x1)));
                     }
                     return result;
                 });
