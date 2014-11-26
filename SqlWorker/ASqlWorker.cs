@@ -139,16 +139,30 @@ namespace SqlWorker
 
         virtual public int ExecuteNonQuery(String Command, DbParametersConstructor vals = null)
         {
-            SqlParameterNullWorkaround(vals);
-            DbCommand cmd = Conn.CreateCommand();
-            cmd.CommandText = QueryWithParams(Command, vals);
-            cmd.Parameters.AddRange(vals);
-            cmd.Transaction = _transaction;
-            if (Conn.State != ConnectionState.Open) Conn.Open();
-            int result = cmd.ExecuteNonQuery();
-            if (!TransactionIsOpened) cmd.Dispose();
-            if (!TransactionIsOpened) Conn.Close();
-            return result;
+            try
+            {
+                SqlParameterNullWorkaround(vals);
+                DbCommand cmd = Conn.CreateCommand();
+                cmd.CommandText = QueryWithParams(Command, vals);
+                cmd.Parameters.AddRange(vals);
+                cmd.Transaction = _transaction;
+                if (Conn.State != ConnectionState.Open) Conn.Open();
+                int result = cmd.ExecuteNonQuery();
+                if (!TransactionIsOpened) cmd.Dispose();
+                if (!TransactionIsOpened) Conn.Close();
+                return result;
+            }
+            catch (Exception e)
+            {
+                if (Conn.State != ConnectionState.Closed)
+                {
+                    try { _transaction.Rollback(); _transactionIsOpened = false; }
+                    catch { }
+                    try { Conn.Close(); _transactionIsOpened = false; }
+                    catch { }
+                }
+                throw e;
+            }
         }
 
         virtual public int InsertValues(String TableName, DbParametersConstructor vals = null, bool ReturnIdentity = false)
@@ -214,27 +228,41 @@ namespace SqlWorker
 
         virtual public T GetStructFromDB<T>(String Command, DbParametersConstructor param, GetterDelegate<T> todo)
         {
-            SqlParameterNullWorkaround(param);
-            DbCommand cmd = Conn.CreateCommand();
-            cmd.CommandText = QueryWithParams(Command, param);
-            cmd.Parameters.AddRange(param);
-            cmd.Transaction = _transaction;
-            if (Conn.State != ConnectionState.Open) Conn.Open();
-            DbDataReader dr = cmd.ExecuteReader();
+            try
+            {
+                SqlParameterNullWorkaround(param);
+                DbCommand cmd = Conn.CreateCommand();
+                cmd.CommandText = QueryWithParams(Command, param);
+                cmd.Parameters.AddRange(param);
+                cmd.Transaction = _transaction;
+                if (Conn.State != ConnectionState.Open) Conn.Open();
+                DbDataReader dr = cmd.ExecuteReader();
 
-            int drid = Readers.Count;
-            Readers.Add(dr);
+                int drid = Readers.Count;
+                Readers.Add(dr);
 
-            T result = todo(dr);
-            dr.Close();
-            dr.Dispose();
+                T result = todo(dr);
+                dr.Close();
+                dr.Dispose();
 
-            Readers.RemoveAt(drid);
+                Readers.RemoveAt(drid);
 
-            cmd.Dispose();
-            if (!TransactionIsOpened) Conn.Close();
+                cmd.Dispose();
+                if (!TransactionIsOpened) Conn.Close();
 
-            return result;
+                return result;
+            }
+            catch (Exception e)
+            {
+                if (Conn.State != ConnectionState.Closed)
+                {
+                    try { _transaction.Rollback(); _transactionIsOpened = false; }
+                    catch { }
+                    try { Conn.Close(); _transactionIsOpened = false; }
+                    catch { }
+                }
+                throw e;
+            }
         }
 
 
