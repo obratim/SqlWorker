@@ -9,7 +9,7 @@ namespace SqlWorker
 {
     public delegate T GetterDelegate<T>(DbDataReader dr);
 
-    public abstract class ASqlWorker
+    public abstract partial class ASqlWorker
     {
 
         protected abstract DbConnection Conn { get; }
@@ -52,6 +52,8 @@ namespace SqlWorker
             return Conn.State == ConnectionState.Open;
         }
 
+
+        //useless?
         virtual protected String QueryWithParams(String Query, DbParameter[] Params)
         {
             if (Params == null) return Query;
@@ -68,9 +70,6 @@ namespace SqlWorker
             return newq;
         }
 
-        //public ISqlWorker(String connectionString);
-        //String QueryWithParams(String Query, DbParameter[] Params);
-
         protected static void SqlParameterNullWorkaround(DbParameter[] param)
         {
             foreach (var p in param)
@@ -84,19 +83,7 @@ namespace SqlWorker
                     select p).ToArray();
         }
 
-        abstract protected DbParameter DbParameterConstructor(String paramName, Object paramValue);
-
-        protected DbParameter[] DictionaryToDbParameters(Dictionary<String, Object> input)
-        {
-            var result = new DbParameter[input.Count];
-            int i = 0;
-            foreach (var kv in input)
-            {
-                result[i] = DbParameterConstructor(kv.Key, kv.Value);
-                ++i;
-            }
-            return result;
-        }
+        protected static DbParameter DbParameterConstructor(String paramName, Object paramValue) { throw new NotImplementedException("DbParameterConstructor must be implemented!"); }
 
         protected bool IsNullableParams(params Type[] types)
         {
@@ -150,21 +137,12 @@ namespace SqlWorker
 
         protected List<DbDataReader> Readers = new List<DbDataReader>();
 
-        virtual public int ExecuteNonQuery(String Command, Dictionary<String, Object> param)
-        { return ExecuteNonQuery(Command, DictionaryToDbParameters(param)); }
-
-        virtual public int ExecuteNonQuery(String Command)
-        { return ExecuteNonQuery(Command, new DbParameter[0]); }
-
-        virtual public int ExecuteNonQuery(String Command, DbParameter param)
-        { return ExecuteNonQuery(Command, new DbParameter[1] { param }); }
-
-        virtual public int ExecuteNonQuery(String Command, DbParameter[] param)
+        virtual public int ExecuteNonQuery(String Command, DbParametersConstructor vals = null)
         {
-            SqlParameterNullWorkaround(param);
+            SqlParameterNullWorkaround(vals);
             DbCommand cmd = Conn.CreateCommand();
-            cmd.CommandText = QueryWithParams(Command, param);
-            cmd.Parameters.AddRange(param);
+            cmd.CommandText = QueryWithParams(Command, vals);
+            cmd.Parameters.AddRange(vals);
             cmd.Transaction = _transaction;
             if (Conn.State != ConnectionState.Open) Conn.Open();
             int result = cmd.ExecuteNonQuery();
@@ -173,44 +151,31 @@ namespace SqlWorker
             return result;
         }
 
-
-        virtual public int InsertValues(String TableName, Dictionary<String, Object> param, bool ReturnIdentity = false)
-        { return InsertValues(TableName, DictionaryToDbParameters(param), ReturnIdentity); }
-
-        virtual public int InsertValues(String TableName, DbParameter[] param, bool ReturnIdentity = false)
+        virtual public int InsertValues(String TableName, DbParametersConstructor vals = null, bool ReturnIdentity = false)
         {
-            SqlParameterNullWorkaround(param);
+            SqlParameterNullWorkaround(vals);
 
-            String q = "INSERT INTO " + TableName + " (" + param[0].ParameterName;
+            String q = "INSERT INTO " + TableName + " (" + vals[0].ParameterName;
 
-            for (int i = 1; i < param.Count(); ++i)
-                q += ", " + param[i].ParameterName;
+            for (int i = 1; i < vals.Count(); ++i)
+                q += ", " + vals[i].ParameterName;
 
-            q += ") VALUES (@" + param[0].ParameterName;
+            q += ") VALUES (@" + vals[0].ParameterName;
 
-            for (int i = 1; i < param.Count(); ++i)
-                q += ", @" + param[i].ParameterName;
+            for (int i = 1; i < vals.Count(); ++i)
+                q += ", @" + vals[i].ParameterName;
 
             q += ");";
 
             return !ReturnIdentity ?
-                ExecuteNonQuery(q, param) :
-                Decimal.ToInt32(GetStructFromDB<Decimal>(q + " select SCOPE_IDENTITY()", param, r => { r.Read(); return r.GetDecimal(0); }));
+                ExecuteNonQuery(q, vals) :
+                Decimal.ToInt32(GetStructFromDB<Decimal>(q + " select SCOPE_IDENTITY()", vals, r => { r.Read(); return r.GetDecimal(0); }));
         }
-
-
-        virtual public int UpdateValues(String TableName, Dictionary<String, Object> param, DbParameter Condition)
-        { return UpdateValues(TableName, DictionaryToDbParameters(param), Condition); }
-
-        virtual public int UpdateValues(String TableName, Dictionary<String, Object> param, DbParameter[] Condition)
-        { return UpdateValues(TableName, DictionaryToDbParameters(param), Condition); }
-
-        virtual public int UpdateValues(String TableName, DbParameter[] Values, DbParameter Condition)
-        { return UpdateValues(TableName, Values, new DbParameter[1] { Condition }); }
-
-        virtual public int UpdateValues(String TableName, DbParameter[] Values, DbParameter[] Condition)
+        
+        virtual public int UpdateValues(String TableName, DbParametersConstructor Values, DbParametersConstructor Condition = null)
         {
             SqlParameterNullWorkaround(Values);
+            Condition = Condition ?? DbParametersConstructor.emptyParams;
 
             String q = "UPDATE " + TableName + " SET " + Values[0].ParameterName + " = @" + Values[0].ParameterName;
 
@@ -223,40 +188,31 @@ namespace SqlWorker
             for (int i = 1; i < Condition.Count(); ++i)
                 q += " AND " + Condition[i].ParameterName + " = @" + Condition[i].ParameterName;
 
-            List<DbParameter> param = new List<DbParameter>(Values);
-            param.AddRange(Condition);
+            List<DbParameter> param = new List<DbParameter>(Values.parameters);
+            param.AddRange(Condition.parameters);
             return ExecuteNonQuery(q, param.ToArray());
         }
 
-        virtual public int UpdateValues(String TableName, Dictionary<String, Object> Values, String Condition)
-        { return UpdateValues(TableName, DictionaryToDbParameters(Values), Condition); }
-
-        virtual public int UpdateValues(String TableName, DbParameter[] Values, String Condition)
+        virtual public int UpdateValues(String TableName, DbParametersConstructor vals, String Condition)
         {
-            SqlParameterNullWorkaround(Values);
+            SqlParameterNullWorkaround(vals);
 
-            String q = "UPDATE " + TableName + " SET " + Values[0].ParameterName + " = @" + Values[0].ParameterName;
+            String q = "UPDATE " + TableName + " SET " + vals[0].ParameterName + " = @" + vals[0].ParameterName;
 
-            for (int i = 1; i < Values.Count(); ++i)
-                q += ", " + Values[i].ParameterName + " = @" + Values[i].ParameterName;
+            for (int i = 1; i < vals.Count(); ++i)
+                q += ", " + vals[i].ParameterName + " = @" + vals[i].ParameterName;
 
             if (!String.IsNullOrWhiteSpace(Condition))
                 q += " WHERE " + Condition;
 
-            return ExecuteNonQuery(q, Values);
+            return ExecuteNonQuery(q, vals);
         }
 
 
-        virtual public T GetStructFromDB<T>(String Command, Dictionary<String, Object> param, GetterDelegate<T> todo)
-        { return GetStructFromDB<T>(Command, DictionaryToDbParameters(param), todo); }
-
         virtual public T GetStructFromDB<T>(String Command, GetterDelegate<T> todo)
-        { return GetStructFromDB<T>(Command, new DbParameter[0], todo); }
+        { return GetStructFromDB<T>(Command, DbParametersConstructor.emptyParams, todo); }
 
-        virtual public T GetStructFromDB<T>(String Command, DbParameter param, GetterDelegate<T> todo)
-        { return GetStructFromDB<T>(Command, new DbParameter[1] { param }, todo); }
-
-        virtual public T GetStructFromDB<T>(String Command, DbParameter[] param, GetterDelegate<T> todo)
+        virtual public T GetStructFromDB<T>(String Command, DbParametersConstructor param, GetterDelegate<T> todo)
         {
             SqlParameterNullWorkaround(param);
             DbCommand cmd = Conn.CreateCommand();
@@ -285,12 +241,6 @@ namespace SqlWorker
         virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, GetterDelegate<T> todo)
         { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[0], todo); }
 
-        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, Dictionary<String, Object> param, GetterDelegate<T> todo)
-        { return GetListFromDBSingleProcessing<T>(Command, DictionaryToDbParameters(param), todo); }
-
-        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParameter param, GetterDelegate<T> todo)
-        { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[1] { param }, todo); }
-
         /// <summary>
         /// Делегат должен подготавливать один объект из DataReader'а, полностью его создавать и возвращать
         /// </summary>
@@ -299,7 +249,7 @@ namespace SqlWorker
         /// <param name="param"></param>
         /// <param name="todo"></param>
         /// <returns></returns>
-        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParameter[] param, GetterDelegate<T> todo)
+        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParametersConstructor param, GetterDelegate<T> todo)
         {
             return GetStructFromDB<List<T>>(Command, param, delegate(DbDataReader dr)
             {
@@ -311,25 +261,19 @@ namespace SqlWorker
                 return output;
             });
         }
-
-        virtual public List<T> GetListFromDB<T>(String procname) where T : new()
-        { return GetListFromDB<T>(procname, new DbParameter[0]); }
-
-        virtual public List<T> GetListFromDB<T>(String procname, List<String> Exceptions) where T : new()
-        { return GetListFromDB<T>(procname, new DbParameter[0], Exceptions); }
-
-        virtual public List<T> GetListFromDB<T>(String procname, Dictionary<String, Object> param) where T : new()
-        { return GetListFromDB<T>(procname, DictionaryToDbParameters(param)); }
-
-        virtual public List<T> GetListFromDB<T>(String procname, Dictionary<String, Object> param, List<String> Exceptions) where T : new()
-        { return GetListFromDB<T>(procname, DictionaryToDbParameters(param), Exceptions); }
-
-        virtual public List<T> GetListFromDB<T>(String procname, DbParameter param) where T : new()
-        { return GetListFromDB<T>(procname, new DbParameter[1] { param }); }
-
-        virtual public List<T> GetListFromDB<T>(String procname, DbParameter[] param) where T : new()
+        
+        virtual public List<T> GetListFromDB<T>(String procname, DbParametersConstructor vals = null, List<String> Exceptions = null) where T : new()
         {
-            return GetStructFromDB<List<T>>(procname, param, delegate(DbDataReader dr)
+            if (Exceptions != null) return GetStructFromDB<List<T>>(procname, vals, delegate(DbDataReader dr)
+            {
+                List<T> result = new List<T>();
+                while (dr.Read())
+                {
+                    result.Add(DataReaderToObj<T>(dr, Exceptions));
+                }
+                return result;
+            });
+            else return GetStructFromDB<List<T>>(procname, vals, delegate(DbDataReader dr)
             {
                 List<T> result = new List<T>();
                 while (dr.Read())
@@ -339,43 +283,34 @@ namespace SqlWorker
                 return result;
             });
         }
-
-        virtual public List<T> GetListFromDB<T>(String procname, DbParameter param, List<String> Exceptions) where T : new()
-        { return GetListFromDB<T>(procname, new DbParameter[1] { param }, Exceptions); }
-
-        virtual public List<T> GetListFromDB<T>(String procname, DbParameter[] param, List<String> Exceptions) where T : new()
+        
+        virtual public List<T> GetScalarsListFromDB<T>(String table, String column, DbParametersConstructor vals = null, String whereCondition = null)
         {
-            return GetStructFromDB<List<T>>(procname, param, delegate(DbDataReader dr)
-            {
-                List<T> result = new List<T>();
-                while (dr.Read())
-                {
-                    result.Add(DataReaderToObj<T>(dr, Exceptions));
-                }
-                return result;
-            });
+            vals = vals ?? DbParametersConstructor.emptyParams;
+
+            if (String.IsNullOrWhiteSpace(whereCondition))
+                whereCondition = vals.Count() == 1
+                    ? ""
+                    : vals.parameters.Aggregate<DbParameter, String, String>(
+                        ""
+                        , (value, i) => value + i.ParameterName + " = @" + i.ParameterName + "    AND\n\t"
+                        , (value) => value.Substring(0, value.Length - 6)
+                    );
+
+            return GetScalarsListFromDB<T>(String.Format("SELECT {0} FROM {1} WHERE {2}", column, table, whereCondition), vals);
         }
 
-
-        virtual public List<T> GetScalarsListFromDB<T>(String procname)
-        { return GetScalarsListFromDB<T>(procname, new DbParameter[0]); }
-
-        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter param)
-        { return GetScalarsListFromDB<T>(procname, new DbParameter[1] { param }); }
-
-        virtual public List<T> GetScalarsListFromDB<T>(String procname, Dictionary<String, Object> param)
-        { return GetScalarsListFromDB<T>(procname, DictionaryToDbParameters(param)); }
-
-        virtual public List<T> GetScalarsListFromDB<T>(String procname, DbParameter[] param)
+        virtual public List<T> GetScalarsListFromDB<T>(String query, DbParametersConstructor vals = null)
         {
             bool IncludingNulls = IsNullableParams(typeof(T));
+
             if (IncludingNulls)
                 return GetListFromDBSingleProcessing<T>(
-                    procname,
-                    param,
+                    query,
+                    vals,
                     (DbDataReader dr) => dr[0] == DBNull.Value ? (T)(Object)null : (T)dr[0]
                     );
-            else return GetStructFromDB<List<T>>(procname, param, (dr) =>
+            else return GetStructFromDB<List<T>>(query, vals, (dr) =>
             {
                 List<T> result = new List<T>();
                 while (dr.Read())
@@ -384,20 +319,10 @@ namespace SqlWorker
             });
         }
 
-
-        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query)
-        { return GetTupleFromDB<T0, T1>(query, new DbParameter[0]); }
-
-        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query, DbParameter param)
-        { return GetTupleFromDB<T0, T1>(query, new DbParameter[1] { param }); }
-
-        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query, Dictionary<String, Object> param)
-        { return GetTupleFromDB<T0, T1>(query, DictionaryToDbParameters(param)); }
-
-        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query, DbParameter[] param)
+        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query, DbParametersConstructor vals = null)
         {
             bool[] IncludingNulls = new bool[] { IsNullableParams(typeof(T0)), IsNullableParams(typeof(T1)) };
-            return GetStructFromDB<List<Tuple<T0, T1>>>(query, param,
+            return GetStructFromDB<List<Tuple<T0, T1>>>(query, vals,
                 (dr) =>
                 {
                     var result = new List<Tuple<T0, T1>>();

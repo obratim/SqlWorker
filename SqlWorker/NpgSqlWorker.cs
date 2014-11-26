@@ -23,6 +23,6 @@ namespace SqlWorker {
             }
         }
 
-        protected override DbParameter DbParameterConstructor(string paramName, object paramValue) { return new NpgsqlParameter(paramName, paramValue); }
+        protected new DbParameter DbParameterConstructor(string paramName, object paramValue) { return new NpgsqlParameter(paramName, paramValue); }
     }
 }

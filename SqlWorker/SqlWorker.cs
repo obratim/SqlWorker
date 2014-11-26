@@ -23,7 +23,7 @@ namespace SqlWorker
             }
         }
 
-        protected override DbParameter DbParameterConstructor(string paramName, object paramValue) { return new SqlParameter(paramName, paramValue); }
+        protected new DbParameter DbParameterConstructor(string paramName, object paramValue) { return new SqlParameter(paramName, paramValue); }
 
         public SqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
