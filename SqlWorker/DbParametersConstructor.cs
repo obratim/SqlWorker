@@ -6,10 +6,12 @@ using System.Data.Common;
 
 namespace SqlWorker
 {
-    partial class ASqlWorker
+    public abstract partial class ASqlWorker<T> where T : AbstractDbParameterConstructors, new()
     {
         public class DbParametersConstructor
         {
+            private static T x = new T();
+
             public static readonly DbParameter[] emptyParams = new DbParameter[0];
 
             public static DbParameter[] DictionaryToDbParameters(Dictionary<String, Object> input)
@@ -18,7 +20,7 @@ namespace SqlWorker
                 int i = 0;
                 foreach (var kv in input)
                 {
-                    result[i] = DbParameterConstructor(kv.Key, kv.Value);
+                    result[i] = x.By2(kv.Key, kv.Value);
                     ++i;
                 }
                 return result;
@@ -50,7 +52,7 @@ namespace SqlWorker
                 int j = 0;
                 foreach (var i in vals)
                 {
-                    result[j] = DbParameterConstructor(i.Item1, i.Item2);
+                    result[j] = x.By2(i.Item1, i.Item2);
                     ++j;
                 }
                 return new DbParametersConstructor(result);
@@ -61,8 +63,7 @@ namespace SqlWorker
                 int j = 0;
                 foreach (var i in vals)
                 {
-                    result[j] = DbParameterConstructor(i.Item1, i.Item2);
-                    result[j].DbType = i.Item3;
+                    result[j] = x.By3(i.Item1, i.Item2, i.Item3);
                     ++j;
                 }
                 return new DbParametersConstructor(result);

@@ -8,7 +8,7 @@ using System.Data.Common;
 using Npgsql;
 
 namespace SqlWorker {
-    public class NpgSqlWorker : ASqlWorker {
+    /*public class NpgSqlWorker : ASqlWorker<NpgSqlWorker> {
         private String _connectionStr;
 
         public NpgSqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
@@ -23,6 +23,7 @@ namespace SqlWorker {
             }
         }
 
-        protected new DbParameter DbParameterConstructor(string paramName, object paramValue) { return new NpgsqlParameter(paramName, paramValue); }
-    }
+        public new static DbParameter DbParameterConstructor(string paramName, object paramValue) { return new NpgsqlParameter(paramName, paramValue); }
+
+    }*/
 }

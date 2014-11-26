@@ -9,36 +9,41 @@ using System.Data.SqlTypes;
 
 namespace SqlWorker
 {
-    public class SqlWorker : ASqlWorker
+    public class MSSQLParameterConstuctors : AbstractDbParameterConstructors
     {
-        private String _connectionStr;
+        public override DbParameter By2(string paramName, object paramValue) { return new SqlParameter(paramName, paramValue); }
+        public override DbParameter By3(string paramName, object paramValue, DbType type) { var x = new SqlParameter(paramName, type); x.Value = paramValue; return x; }
+    }
+
+    public class SqlWorker : ASqlWorker<MSSQLParameterConstuctors>
+    {
         private SqlConnection _conn;
 
-        protected override DbConnection Conn
+        private String connstr;
+
+        public override DbConnection Conn
         {
             get
             {
-                if (_conn == null) _conn = new SqlConnection(_connectionStr);
+                if (_conn == null) _conn = new SqlConnection(connstr);
                 return _conn;
             }
         }
 
-        protected new DbParameter DbParameterConstructor(string paramName, object paramValue) { return new SqlParameter(paramName, paramValue); }
-
         public SqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
-        { _connectionStr = ConnectionString; }
+        { connstr = ConnectionString; }
 
         public SqlWorker(String Server, String DataBase, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
-            _connectionStr = String.Format("Server={0};Database={1};Integrated Security=true", Server, DataBase);
+            connstr = String.Format("Server={0};Database={1};Integrated Security=true", Server, DataBase);
         }
 
         public SqlWorker(String Server, String DataBase, String Login, String Password, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
-            _connectionStr = String.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", Server, DataBase, Login, Password);
+            connstr = String.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", Server, DataBase, Login, Password);
         }
 
         #region send files
@@ -48,7 +53,8 @@ namespace SqlWorker
             if (condition == null) condition = "";
             if (string.IsNullOrWhiteSpace(condition))
                 condition = attributies.Aggregate<KeyValuePair<String, Object>, String>("", (str, i) => { return str + (str == "" ? "" : " and ") + i.Key + " = @" + i.Key; });
-            return GetStructFromDB<SqlFileStream>("select " + dataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + condition, attributies,
+            return GetStructFromDB<SqlFileStream>("select " + dataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + condition
+                , attributies,
                 dr =>
                 {
                     if (!dr.Read()) throw new Exception("No sutch file");

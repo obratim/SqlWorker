@@ -9,10 +9,11 @@ namespace SqlWorker
 {
     public delegate T GetterDelegate<T>(DbDataReader dr);
 
-    public abstract partial class ASqlWorker
+    public abstract partial class ASqlWorker<T> where T : AbstractDbParameterConstructors, new()
     {
+        protected T state = new T();
 
-        protected abstract DbConnection Conn { get; }
+        public abstract DbConnection Conn { get; }
 
         public TimeSpan ReConnectPause { get; set; }
         protected TimeSpan DefaultReconnectPause = new TimeSpan(0, 2, 0);
@@ -24,10 +25,15 @@ namespace SqlWorker
         /// <param name="reconnectPause">if null, default will be setted</param>
         public ASqlWorker(TimeSpan? reconnectPause = null)
         {
-            ReConnectPause = reconnectPause == null ? DefaultReconnectPause : reconnectPause.Value;
+            ReConnectPause = reconnectPause ?? DefaultReconnectPause;
             LastDisconnect = DateTime.Now - reconnectPause;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ReopenOnlyIfNotInTransaction">connection will be reopenned only if ReopenOnlyIfNotInTransaction=true and transaction is not openned</param>
+        /// <returns>true - connection was opened</returns>
         virtual public bool OpenConnection(bool ReopenIfNotInTransaction = true)
         {
             if (Conn.State != ConnectionState.Open && ReConnectPause.Ticks > 0)
@@ -82,8 +88,6 @@ namespace SqlWorker
                     where p.Value != null
                     select p).ToArray();
         }
-
-        protected static DbParameter DbParameterConstructor(String paramName, Object paramValue) { throw new NotImplementedException("DbParameterConstructor must be implemented!"); }
 
         protected bool IsNullableParams(params Type[] types)
         {
