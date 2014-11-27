@@ -7,9 +7,7 @@ using System.Data;
 
 namespace SqlWorker
 {
-    public delegate T_ GetterDelegate<T_>(DbDataReader dr);
-
-    public abstract partial class ASqlWorker<T> where T : AbstractDbParameterConstructors, new()
+    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new()
     {
         protected abstract DbConnection Conn { get; }
 
@@ -226,10 +224,10 @@ namespace SqlWorker
         }
 
 
-        virtual public T GetStructFromDB<T>(String Command, GetterDelegate<T> todo)
+        virtual public T GetStructFromDB<T>(String Command, Func<DbDataReader, T> todo)
         { return GetStructFromDB<T>(Command, DbParametersConstructor.emptyParams, todo); }
 
-        virtual public T GetStructFromDB<T>(String Command, DbParametersConstructor vals, GetterDelegate<T> todo)
+        virtual public T GetStructFromDB<T>(String Command, DbParametersConstructor vals, Func<DbDataReader, T> todo)
         {
             try
             {
@@ -270,7 +268,7 @@ namespace SqlWorker
         }
 
 
-        virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, GetterDelegate<T> todo)
+        virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, Func<DbDataReader, T> todo)
         { return GetListFromDBSingleProcessing<T>(Command, DbParametersConstructor.emptyParams, todo); }
 
         /// <summary>
@@ -281,7 +279,7 @@ namespace SqlWorker
         /// <param name="vals"></param>
         /// <param name="todo"></param>
         /// <returns></returns>
-        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParametersConstructor vals, GetterDelegate<T> todo)
+        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParametersConstructor vals, Func<DbDataReader, T> todo)
         {
             return GetStructFromDB<List<T>>(Command, vals, delegate(DbDataReader dr)
             {

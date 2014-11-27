@@ -6,11 +6,11 @@ using System.Data.Common;
 
 namespace SqlWorker
 {
-    public abstract partial class ASqlWorker<T> where T : AbstractDbParameterConstructors, new()
+    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new()
     {
         public class DbParametersConstructor
         {
-            private static T x = new T();
+            private static TPC x = new TPC();
 
             public static readonly DbParameter[] emptyParams = new DbParameter[0];
 
