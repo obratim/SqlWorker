@@ -21,7 +21,7 @@ namespace SqlWorker
 
         private String connstr;
 
-        public override DbConnection Conn
+        protected override DbConnection Conn
         {
             get
             {

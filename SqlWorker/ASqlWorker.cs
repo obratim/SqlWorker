@@ -7,13 +7,13 @@ using System.Data;
 
 namespace SqlWorker
 {
-    public delegate T GetterDelegate<T>(DbDataReader dr);
+    public delegate T_ GetterDelegate<T_>(DbDataReader dr);
 
     public abstract partial class ASqlWorker<T> where T : AbstractDbParameterConstructors, new()
     {
         protected T state = new T();
 
-        public abstract DbConnection Conn { get; }
+        protected abstract DbConnection Conn { get; }
 
         public TimeSpan ReConnectPause { get; set; }
         protected TimeSpan DefaultReconnectPause = new TimeSpan(0, 2, 0);
