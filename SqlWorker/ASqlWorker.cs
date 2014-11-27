@@ -11,8 +11,6 @@ namespace SqlWorker
 
     public abstract partial class ASqlWorker<T> where T : AbstractDbParameterConstructors, new()
     {
-        protected T state = new T();
-
         protected abstract DbConnection Conn { get; }
 
         public TimeSpan ReConnectPause { get; set; }
@@ -145,6 +143,7 @@ namespace SqlWorker
         {
             try
             {
+                vals = vals ?? DbParametersConstructor.emptyParams;
                 SqlParameterNullWorkaround(vals);
                 DbCommand cmd = Conn.CreateCommand();
                 cmd.CommandText = QueryWithParams(Command, vals);
@@ -230,14 +229,15 @@ namespace SqlWorker
         virtual public T GetStructFromDB<T>(String Command, GetterDelegate<T> todo)
         { return GetStructFromDB<T>(Command, DbParametersConstructor.emptyParams, todo); }
 
-        virtual public T GetStructFromDB<T>(String Command, DbParametersConstructor param, GetterDelegate<T> todo)
+        virtual public T GetStructFromDB<T>(String Command, DbParametersConstructor vals, GetterDelegate<T> todo)
         {
             try
             {
-                SqlParameterNullWorkaround(param);
+                vals = vals ?? DbParametersConstructor.emptyParams;
+                SqlParameterNullWorkaround(vals);
                 DbCommand cmd = Conn.CreateCommand();
-                cmd.CommandText = QueryWithParams(Command, param);
-                cmd.Parameters.AddRange(param);
+                cmd.CommandText = QueryWithParams(Command, vals);
+                cmd.Parameters.AddRange(vals);
                 cmd.Transaction = _transaction;
                 if (Conn.State != ConnectionState.Open) Conn.Open();
                 DbDataReader dr = cmd.ExecuteReader();
@@ -271,19 +271,19 @@ namespace SqlWorker
 
 
         virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, GetterDelegate<T> todo)
-        { return GetListFromDBSingleProcessing<T>(Command, new DbParameter[0], todo); }
+        { return GetListFromDBSingleProcessing<T>(Command, DbParametersConstructor.emptyParams, todo); }
 
         /// <summary>
         /// Делегат должен подготавливать один объект из DataReader'а, полностью его создавать и возвращать
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="Command"></param>
-        /// <param name="param"></param>
+        /// <param name="vals"></param>
         /// <param name="todo"></param>
         /// <returns></returns>
-        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParametersConstructor param, GetterDelegate<T> todo)
+        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParametersConstructor vals, GetterDelegate<T> todo)
         {
-            return GetStructFromDB<List<T>>(Command, param, delegate(DbDataReader dr)
+            return GetStructFromDB<List<T>>(Command, vals, delegate(DbDataReader dr)
             {
                 List<T> output = new List<T>();
                 while (dr.Read())
