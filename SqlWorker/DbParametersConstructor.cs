@@ -10,7 +10,7 @@ namespace SqlWorker
     {
         public class DbParametersConstructor
         {
-            private static TPC x = new TPC();
+            private static TPC generator = new TPC();
 
             public static readonly DbParameter[] emptyParams = new DbParameter[0];
 
@@ -20,7 +20,7 @@ namespace SqlWorker
                 int i = 0;
                 foreach (var kv in input)
                 {
-                    result[i] = x.By2(kv.Key, kv.Value);
+                    result[i] = generator.By2(kv.Key, kv.Value);
                     ++i;
                 }
                 return result;
@@ -52,7 +52,7 @@ namespace SqlWorker
                 int j = 0;
                 foreach (var i in vals)
                 {
-                    result[j] = x.By2(i.Item1, i.Item2);
+                    result[j] = generator.By2(i.Item1, i.Item2);
                     ++j;
                 }
                 return new DbParametersConstructor(result);
@@ -63,7 +63,7 @@ namespace SqlWorker
                 int j = 0;
                 foreach (var i in vals)
                 {
-                    result[j] = x.By3(i.Item1, i.Item2, i.Item3);
+                    result[j] = generator.By3(i.Item1, i.Item2, i.Item3);
                     ++j;
                 }
                 return new DbParametersConstructor(result);
