@@ -30,7 +30,7 @@ namespace SqlWorker
         }
 
         /// <summary>
-        /// 
+        /// serves to reopen connection after <ReConnectPause> time after last disconnect
         /// </summary>
         /// <param name="ReopenOnlyIfNotInTransaction">connection will be reopenned only if ReopenOnlyIfNotInTransaction=true and transaction is not openned</param>
         /// <returns>true - connection was opened</returns>
