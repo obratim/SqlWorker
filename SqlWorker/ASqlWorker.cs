@@ -319,15 +319,14 @@ namespace SqlWorker
             vals = vals ?? DbParametersConstructor.emptyParams;
 
             if (String.IsNullOrWhiteSpace(whereCondition))
-                whereCondition = vals.Count() == 1
-                    ? ""
+                whereCondition = vals.Count() == 0 ? ""
                     : vals.parameters.Aggregate<DbParameter, String, String>(
-                        ""
-                        , (value, i) => value + i.ParameterName + " = @" + i.ParameterName + "    AND\n\t"
-                        , (value) => value.Substring(0, value.Length - 6)
+                        "WHERE "
+                        , (value, i) => value + i.ParameterName + " = @" + i.ParameterName + "    AND\n\t" //aggregate constructions "<paramname> = @<paramname>    AND\n\t"
+                        , (value) => value.Substring(0, value.Length - 6)           // then cut last " AND\n\t"
                     );
 
-            return GetScalarsListFromDB<T>(String.Format("SELECT {0} FROM {1} WHERE {2}", column, table, whereCondition), vals);
+            return GetScalarsListFromDB<T>(String.Format("SELECT {0} FROM {1} {2}", column, table, whereCondition), vals);
         }
 
         virtual public List<T> GetScalarsListFromDB<T>(String query, DbParametersConstructor vals = null)
