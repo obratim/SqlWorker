@@ -50,6 +50,7 @@ namespace SqlWorker
 
         public SqlFileStream GetFileStreamFromDB(String tableName, String dataFieldName, System.IO.FileAccess accessType, Dictionary<String, Object> attributies, String condition = "")
         {
+            if (!TransactionIsOpened) throw new Exception("Must perform file operations in transaction!");
             if (condition == null) condition = "";
             if (string.IsNullOrWhiteSpace(condition))
                 condition = attributies.Aggregate<KeyValuePair<String, Object>, String>("", (str, i) => { return str + (str == "" ? "" : " and ") + i.Key + " = @" + i.Key; });
