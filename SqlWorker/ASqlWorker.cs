@@ -272,12 +272,12 @@ namespace SqlWorker
         { return GetListFromDBSingleProcessing<T>(Command, DbParametersConstructor.emptyParams, todo); }
 
         /// <summary>
-        /// Делегат должен подготавливать один объект из DataReader'а, полностью его создавать и возвращать
+        /// 
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="Command"></param>
         /// <param name="vals"></param>
-        /// <param name="todo"></param>
+        /// <param name="todo">Delegate operates with single DataReader's record and return single T object</param>
         /// <returns></returns>
         virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParametersConstructor vals, Func<DbDataReader, T> todo)
         {
