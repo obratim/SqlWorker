@@ -125,5 +125,12 @@ namespace SqlWorker
         }
 
         #endregion
+
+        public override void Dispose(bool commit)
+        {
+            if (!commit && TransactionIsOpened) TransactionRollback();
+            if (Conn.State != ConnectionState.Closed) _conn.Close();
+            _conn.Dispose();
+        }
     }
 }

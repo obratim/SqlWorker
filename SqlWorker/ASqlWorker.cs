@@ -7,7 +7,7 @@ using System.Data;
 
 namespace SqlWorker
 {
-    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new()
+    public abstract partial class ASqlWorker<TPC> : IDisposable where TPC : AbstractDbParameterConstructors, new()
     {
         protected abstract DbConnection Conn { get; }
 
@@ -391,5 +391,12 @@ namespace SqlWorker
 
             return result;
         }
+
+        #region Члены IDisposable
+
+        public abstract void Dispose(bool commit);
+        public virtual void Dispose() { Dispose(false); }
+
+        #endregion
     }
 }
