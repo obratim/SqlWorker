@@ -247,7 +247,7 @@ namespace SqlWorker
                 dr.Close();
                 dr.Dispose();
 
-                Readers.RemoveAt(drid);
+                Readers.Remove(dr);
 
                 cmd.Dispose();
                 if (!TransactionIsOpened) Conn.Close();
