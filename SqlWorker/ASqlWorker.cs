@@ -137,7 +137,7 @@ namespace SqlWorker
 
         protected List<DbDataReader> Readers = new List<DbDataReader>();
 
-        virtual public int ExecuteNonQuery(String Command, DbParametersConstructor vals = null)
+        virtual public int ExecuteNonQuery(String Command, DbParametersConstructor vals = null, int? timeout = null)
         {
             try
             {
@@ -147,6 +147,7 @@ namespace SqlWorker
                 cmd.CommandText = QueryWithParams(Command, vals);
                 cmd.Parameters.AddRange(vals);
                 cmd.Transaction = _transaction;
+                if (timeout != null) cmd.CommandTimeout = timeout.Value;
                 if (Conn.State != ConnectionState.Open) Conn.Open();
                 int result = cmd.ExecuteNonQuery();
                 if (!TransactionIsOpened) cmd.Dispose();
@@ -166,7 +167,7 @@ namespace SqlWorker
             }
         }
 
-        virtual public int InsertValues(String TableName, DbParametersConstructor vals = null, bool ReturnIdentity = false)
+        virtual public int InsertValues(String TableName, DbParametersConstructor vals = null, bool ReturnIdentity = false, int? timeout = null)
         {
             SqlParameterNullWorkaround(vals);
 
@@ -183,11 +184,11 @@ namespace SqlWorker
             q += ");";
 
             return !ReturnIdentity ?
-                ExecuteNonQuery(q, vals) :
+                ExecuteNonQuery(q, vals, timeout) :
                 Decimal.ToInt32(GetStructFromDB<Decimal>(q + " select SCOPE_IDENTITY()", vals, r => { r.Read(); return r.GetDecimal(0); }));
         }
-        
-        virtual public int UpdateValues(String TableName, DbParametersConstructor Values, DbParametersConstructor Condition = null)
+
+        virtual public int UpdateValues(String TableName, DbParametersConstructor Values, DbParametersConstructor Condition = null, int? timeout = null)
         {
             SqlParameterNullWorkaround(Values);
             Condition = Condition ?? DbParametersConstructor.emptyParams;
@@ -205,10 +206,10 @@ namespace SqlWorker
 
             List<DbParameter> param = new List<DbParameter>(Values.parameters);
             param.AddRange(Condition.parameters);
-            return ExecuteNonQuery(q, param.ToArray());
+            return ExecuteNonQuery(q, param.ToArray(), timeout);
         }
 
-        virtual public int UpdateValues(String TableName, DbParametersConstructor vals, String Condition)
+        virtual public int UpdateValues(String TableName, DbParametersConstructor vals, String Condition, int? timeout = null)
         {
             SqlParameterNullWorkaround(vals);
 
@@ -220,7 +221,7 @@ namespace SqlWorker
             if (!String.IsNullOrWhiteSpace(Condition))
                 q += " WHERE " + Condition;
 
-            return ExecuteNonQuery(q, vals);
+            return ExecuteNonQuery(q, vals, timeout);
         }
 
 
