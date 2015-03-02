@@ -225,16 +225,17 @@ namespace SqlWorker
         }
 
 
-        virtual public T GetStructFromDB<T>(String Command, Func<DbDataReader, T> todo)
-        { return GetStructFromDB<T>(Command, DbParametersConstructor.emptyParams, todo); }
+        virtual public T GetStructFromDB<T>(String Command, Func<DbDataReader, T> todo, int? timeout = null)
+        { return GetStructFromDB<T>(Command, DbParametersConstructor.emptyParams, todo, timeout); }
 
-        virtual public T GetStructFromDB<T>(String Command, DbParametersConstructor vals, Func<DbDataReader, T> todo)
+        virtual public T GetStructFromDB<T>(String Command, DbParametersConstructor vals, Func<DbDataReader, T> todo, int? timeout = null)
         {
             try
             {
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 SqlParameterNullWorkaround(vals);
                 DbCommand cmd = Conn.CreateCommand();
+                if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
                 cmd.CommandText = QueryWithParams(Command, vals);
                 cmd.Parameters.AddRange(vals);
                 cmd.Transaction = _transaction;
@@ -269,8 +270,8 @@ namespace SqlWorker
         }
 
 
-        virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, Func<DbDataReader, T> todo)
-        { return GetListFromDBSingleProcessing<T>(Command, DbParametersConstructor.emptyParams, todo); }
+        virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, Func<DbDataReader, T> todo, int? timeout = null)
+        { return GetListFromDBSingleProcessing<T>(Command, DbParametersConstructor.emptyParams, todo, timeout); }
 
         /// <summary>
         /// 
@@ -280,7 +281,7 @@ namespace SqlWorker
         /// <param name="vals"></param>
         /// <param name="todo">Delegate operates with single DataReader's record and return single T object</param>
         /// <returns></returns>
-        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParametersConstructor vals, Func<DbDataReader, T> todo)
+        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParametersConstructor vals, Func<DbDataReader, T> todo, int? timeout = null)
         {
             return GetStructFromDB<List<T>>(Command, vals, delegate(DbDataReader dr)
             {
@@ -290,10 +291,10 @@ namespace SqlWorker
                     output.Add(todo(dr));
                 }
                 return output;
-            });
+            }, timeout);
         }
-        
-        virtual public List<T> GetListFromDB<T>(String procname, DbParametersConstructor vals = null, List<String> Exceptions = null) where T : new()
+
+        virtual public List<T> GetListFromDB<T>(String procname, DbParametersConstructor vals = null, List<String> Exceptions = null, int? timeout = null) where T : new()
         {
             if (Exceptions != null) return GetStructFromDB<List<T>>(procname, vals, delegate(DbDataReader dr)
             {
@@ -303,7 +304,7 @@ namespace SqlWorker
                     result.Add(DataReaderToObj<T>(dr, Exceptions));
                 }
                 return result;
-            });
+            }, timeout);
             else return GetStructFromDB<List<T>>(procname, vals, delegate(DbDataReader dr)
             {
                 List<T> result = new List<T>();
@@ -312,10 +313,10 @@ namespace SqlWorker
                     result.Add(DataReaderToObj<T>(dr));
                 }
                 return result;
-            });
+            }, timeout);
         }
-        
-        virtual public List<T> GetScalarsListFromDB<T>(String table, String column, DbParametersConstructor vals = null, String whereCondition = null)
+
+        virtual public List<T> GetScalarsListFromDB<T>(String table, String column, DbParametersConstructor vals = null, String whereCondition = null, int? timeout = null)
         {
             vals = vals ?? DbParametersConstructor.emptyParams;
 
@@ -327,10 +328,10 @@ namespace SqlWorker
                         , (value) => value.Substring(0, value.Length - 6)           // then cut last " AND\n\t"
                     );
 
-            return GetScalarsListFromDB<T>(String.Format("SELECT {0} FROM {1} {2}", column, table, whereCondition), vals);
+            return GetScalarsListFromDB<T>(String.Format("SELECT {0} FROM {1} {2}", column, table, whereCondition), vals, timeout);
         }
 
-        virtual public List<T> GetScalarsListFromDB<T>(String query, DbParametersConstructor vals = null)
+        virtual public List<T> GetScalarsListFromDB<T>(String query, DbParametersConstructor vals = null, int? timeout = null)
         {
             bool IncludingNulls = IsNullableParams(typeof(T));
 
@@ -338,7 +339,8 @@ namespace SqlWorker
                 return GetListFromDBSingleProcessing<T>(
                     query,
                     vals,
-                    (DbDataReader dr) => dr[0] == DBNull.Value ? (T)(Object)null : (T)dr[0]
+                    (DbDataReader dr) => dr[0] == DBNull.Value ? (T)(Object)null : (T)dr[0],
+                    timeout
                     );
             else return GetStructFromDB<List<T>>(query, vals, (dr) =>
             {
@@ -346,10 +348,10 @@ namespace SqlWorker
                 while (dr.Read())
                     if (dr[0] != DBNull.Value) result.Add((T)dr[0]);
                 return result;
-            });
+            }, timeout);
         }
 
-        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query, DbParametersConstructor vals = null)
+        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query, DbParametersConstructor vals = null, int? timeout = null)
         {
             bool[] IncludingNulls = new bool[] { IsNullableParams(typeof(T0)), IsNullableParams(typeof(T1)) };
             return GetStructFromDB<List<Tuple<T0, T1>>>(query, vals,
@@ -367,7 +369,7 @@ namespace SqlWorker
                             result.Add(new Tuple<T0, T1>((T0)(x0 == DBNull.Value ? null : x0), (T1)(x1 == DBNull.Value ? null : x1)));
                     }
                     return result;
-                });
+                }, timeout);
         }
 
         virtual public T DataReaderToObj<T>(DbDataReader dr, List<String> Errors) where T : new()
