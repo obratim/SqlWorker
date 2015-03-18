@@ -395,6 +395,17 @@ namespace SqlWorker
             return result;
         }
 
+        virtual public DataTable GetDataTable(String query, DbParametersConstructor vals = null, int? timeout = null)
+        {
+            return GetStructFromDB<DataTable>(query, vals, (dr) =>
+            {
+                var dt = new DataTable();
+                dt.Load(dr);
+                return dt;
+            }
+            , timeout);
+        }
+
         #region Члены IDisposable
 
         public abstract void Dispose(bool commit);
