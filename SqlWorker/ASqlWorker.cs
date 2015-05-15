@@ -137,15 +137,16 @@ namespace SqlWorker
 
         protected List<DbDataReader> Readers = new List<DbDataReader>();
 
-        virtual public int ExecuteNonQuery(String Command, DbParametersConstructor vals = null, int? timeout = null)
+        virtual public int ExecuteNonQuery(String Command, DbParametersConstructor vals = null, int? timeout = null, System.Data.CommandType? cmdtype = null)
         {
             try
             {
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 SqlParameterNullWorkaround(vals);
                 DbCommand cmd = Conn.CreateCommand();
-                cmd.CommandText = QueryWithParams(Command, vals);
+                cmd.CommandText = cmdtype != System.Data.CommandType.StoredProcedure ? QueryWithParams(Command, vals) : Command;
                 cmd.Parameters.AddRange(vals);
+                if (cmdtype.HasValue) cmd.CommandType = cmdtype.Value;
                 cmd.Transaction = _transaction;
                 if (timeout != null) cmd.CommandTimeout = timeout.Value;
                 if (Conn.State != ConnectionState.Open) Conn.Open();
