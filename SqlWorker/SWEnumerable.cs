@@ -16,12 +16,14 @@ namespace SqlWorker
 
             DbCommand cmd; DbDataReader dr; int cmdhash;
             Func<DbDataReader, T> converter;
-            public DbIer(DbCommand cmd, DbDataReader dr, Func<DbDataReader, T> converter)
+            Func<DbDataReader, bool> moveNextModifier;
+            public DbIer(DbCommand cmd, DbDataReader dr, Func<DbDataReader, T> converter, Func<DbDataReader, bool> moveNextModifier = null)
                 : base(dr, true)
             {
                 this.cmd = cmd;
                 this.dr = dr;
                 this.converter = converter;
+                this.moveNextModifier = moveNextModifier == null ? (reader => reader.Read()) : moveNextModifier;
                 cmdhash = cmd.GetHashCode();
             }
 
@@ -40,7 +42,11 @@ namespace SqlWorker
                 }
             }
 
-            new public bool MoveNext() { hascurrent = false; return base.MoveNext(); }
+            new public bool MoveNext()
+            {
+                hascurrent = false;
+                return moveNextModifier(dr);
+            }
 
             #endregion
 
@@ -61,7 +67,7 @@ namespace SqlWorker
         {
             DbIer<T> enumerator;
 
-            public DbIe(ASqlWorker<TPC> this_sw, String Command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null)
+            public DbIe(ASqlWorker<TPC> this_sw, String Command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, Func<DbDataReader, bool> moveNextModifier = null)
             {
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 ASqlWorker<TPC>.SqlParameterNullWorkaround(vals);
@@ -73,7 +79,7 @@ namespace SqlWorker
                 if (this_sw.Conn.State != ConnectionState.Open) this_sw.Conn.Open();
                 DbDataReader dr = cmd.ExecuteReader();
 
-                enumerator = new DbIer<T>(cmd, dr, todo);
+                enumerator = new DbIer<T>(cmd, dr, todo, moveNextModifier);
                 this_sw.cmdHashes.Add(cmd.GetHashCode());
 
                 enumerator.CommandReleased += (sender, e) =>
