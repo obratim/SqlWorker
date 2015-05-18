@@ -1,15 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using SqlWorker;
-using System.Data.Common;
-using System.Data.SqlClient;
+using System.Linq;
 
 namespace Testing {
     class Program {
-        static void Main(string[] args)
-        {
+        static void Main (string[] args)
+		{
+			var SW = new SqlWorker.SqlWorker ("eis.mephi.ru,7099", "EDU");
+			
+			var data = SW.Select("select top 100 wpid from umkd.workprogram where wpgosn = @wpgosn and gosplus = @gosplus",
+			                     dr => new { id = dr.GetGuid(0) },
+									new SWParameters () { { "wpgosn", 3 }, { "gosplus", 1 } });
+			
+			//Console.WriteLine (data.Aggregate ("", (str, i) => string.Format ("{0}{1}\n", str, i)));
+			foreach (var i in data)
+				Console.WriteLine (i);
+			
+			return;
+			
             ASqlWorker<NpgParameterConstructor> worker = (ASqlWorker<NpgParameterConstructor>)new NpgSqlWorker("Server=devel;Port=5432;Database=bibliography;User Id=postgres;Password=mamayanekurulapshu;");
             worker.OpenConnection();
 
