@@ -54,45 +54,6 @@ namespace SqlWorker
             return Conn.State == ConnectionState.Open;
         }
 
-
-        //useless?
-        virtual protected String QueryWithParams(String Query, DbParameter[] Params)
-        {
-            if (Params == null) return Query;
-
-            String newq = Query;
-            bool firstParam = true;
-
-            if (newq.IndexOf('@') != -1) firstParam = false;
-            foreach (var p in Params)
-            {
-                if (newq.IndexOf("@" + p.ParameterName) == -1) newq += (firstParam ? " @" : ", @") + p.ParameterName;
-                firstParam = false;
-            }
-            return newq;
-        }
-
-        protected static void SqlParameterNullWorkaround(DbParameter[] param)
-        {
-            foreach (var p in param)
-                if (p.Value == null) p.Value = DBNull.Value;
-        }
-
-        protected static DbParameter[] NotNullParams(DbParameter[] param)
-        {
-            return (from DbParameter p in param
-                    where p.Value != null
-                    select p).ToArray();
-        }
-
-        protected bool IsNullableParams(params Type[] types)
-        {
-            bool result = true;
-            foreach (var i in types)
-                result = result && i.IsGenericType && i.GetGenericTypeDefinition() == typeof(Nullable<>);
-            return result;
-        }
-
         #region Transactions
         virtual public void TransactionBegin()
         {
@@ -268,6 +229,14 @@ namespace SqlWorker
                 }
                 throw e;
             }
+        }
+
+        SynchronizedCollection<int> cmdHashes = new SynchronizedCollection<int>();
+        
+        virtual public IEnumerable<T> Select<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null)
+        {
+            var ie = new DbIe<T>(this, command, todo, vals, timeout);
+            return ie;
         }
 
 
