@@ -198,21 +198,23 @@ namespace SqlWorker
             {
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 SqlParameterNullWorkaround(vals);
-                DbCommand cmd = Conn.CreateCommand();
-                cmds.Add(cmd);
-                if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
-                cmd.CommandText = QueryWithParams(Command, vals);
-                cmd.Parameters.AddRange(vals);
-                cmd.Transaction = _transaction;
-                if (Conn.State != ConnectionState.Open) Conn.Open();
-                DbDataReader dr = cmd.ExecuteReader();
-
-                T result = todo(dr);
-                dr.Close();
-                dr.Dispose();
-
-                cmds.Remove(cmd);
-                cmd.Dispose();
+				T result;
+                using (DbCommand cmd = Conn.CreateCommand())
+				{
+	                cmds.Add(cmd);
+	                if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
+	                cmd.CommandText = QueryWithParams(Command, vals);
+	                cmd.Parameters.AddRange(vals);
+	                cmd.Transaction = _transaction;
+	                if (Conn.State != ConnectionState.Open) Conn.Open();
+	                using(DbDataReader dr = cmd.ExecuteReader())
+					{
+		                result = todo(dr);
+		                dr.Close();
+					}
+	
+	                cmds.Remove(cmd);
+				}
                 if (!TransactionIsOpened && cmds.Count == 0) Conn.Close();
 
                 return result;
