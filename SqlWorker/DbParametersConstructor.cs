@@ -8,6 +8,48 @@ namespace SqlWorker
 {
     public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new()
     {
+        #region parameters management
+
+        //useless?
+        protected static String QueryWithParams(String Query, DbParameter[] Params)
+        {
+            if (Params == null) return Query;
+
+            String newq = Query;
+            bool firstParam = true;
+
+            if (newq.IndexOf('@') != -1) firstParam = false;
+            foreach (var p in Params)
+            {
+                if (newq.IndexOf("@" + p.ParameterName) == -1) newq += (firstParam ? " @" : ", @") + p.ParameterName;
+                firstParam = false;
+            }
+            return newq;
+        }
+
+        protected static void SqlParameterNullWorkaround(DbParameter[] param)
+        {
+            foreach (var p in param)
+                if (p.Value == null) p.Value = DBNull.Value;
+        }
+
+        protected static DbParameter[] NotNullParams(DbParameter[] param)
+        {
+            return (from DbParameter p in param
+                    where p.Value != null
+                    select p).ToArray();
+        }
+
+        protected bool IsNullableParams(params Type[] types)
+        {
+            bool result = true;
+            foreach (var i in types)
+                result = result && i.IsGenericType && i.GetGenericTypeDefinition() == typeof(Nullable<>);
+            return result;
+        }
+
+        #endregion
+
         public class DbParametersConstructor
         {
             private static TPC generator = new TPC();
@@ -20,7 +62,7 @@ namespace SqlWorker
                 int i = 0;
                 foreach (var kv in input)
                 {
-                    result[i] = generator.By2(kv.Key, kv.Value);
+                    result[i] = generator.Create(kv.Key, kv.Value, null);
                     ++i;
                 }
                 return result;
@@ -52,7 +94,7 @@ namespace SqlWorker
                 int j = 0;
                 foreach (var i in vals)
                 {
-                    result[j] = generator.By2(i.Item1, i.Item2);
+                    result[j] = generator.Create(i.Item1, i.Item2, null);
                     ++j;
                 }
                 return new DbParametersConstructor(result);
@@ -63,7 +105,7 @@ namespace SqlWorker
                 int j = 0;
                 foreach (var i in vals)
                 {
-                    result[j] = generator.By3(i.Item1, i.Item2, i.Item3);
+                    result[j] = generator.Create(i.Item1, i.Item2, i.Item3);
                     ++j;
                 }
                 return new DbParametersConstructor(result);
