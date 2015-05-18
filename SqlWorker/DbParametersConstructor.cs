@@ -88,24 +88,13 @@ namespace SqlWorker
             {
                 return new DbParametersConstructor(DictionaryToDbParameters(vals));
             }
-            public static implicit operator DbParametersConstructor(ValueNameList vals)
+            public static implicit operator DbParametersConstructor(SWParameters vals)
             {
                 var result = new DbParameter[vals.Count];
                 int j = 0;
                 foreach (var i in vals)
                 {
-                    result[j] = generator.Create(i.Item1, i.Item2, null);
-                    ++j;
-                }
-                return new DbParametersConstructor(result);
-            }
-            public static implicit operator DbParametersConstructor(ValueNameTypeList vals)
-            {
-                var result = new DbParameter[vals.Count];
-                int j = 0;
-                foreach (var i in vals)
-                {
-                    result[j] = generator.Create(i.Item1, i.Item2, i.Item3);
+                    result[j] = generator.Create(i.Item1, i.Item2, i.Item3, i.Item4);
                     ++j;
                 }
                 return new DbParametersConstructor(result);

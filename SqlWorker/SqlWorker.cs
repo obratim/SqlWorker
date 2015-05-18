@@ -11,11 +11,12 @@ namespace SqlWorker
 {
     public class MSSQLParameterConstuctors : AbstractDbParameterConstructors
     {
-        public override DbParameter Create(string paramName, object paramValue, DbType? type)
+        public override DbParameter Create(string paramName, object paramValue, DbType? type = null, ParameterDirection? direction = null)
         {
             if (!type.HasValue) return new SqlParameter(paramName, paramValue);
             var x = new SqlParameter(paramName, type.Value);
             x.Value = paramValue;
+            if (direction.HasValue) x.Direction = direction.Value;
             return x;
         }
     }

@@ -10,12 +10,13 @@ using Npgsql;
 namespace SqlWorker {
     public class NpgParameterConstructor : AbstractDbParameterConstructors
     {
-        public override DbParameter Create(string name, object value, DbType? type)
+        public override DbParameter Create(string name, object value, DbType? type = null, ParameterDirection? direction = null)
         {
             if (!type.HasValue) return new NpgsqlParameter(name, value);
 
             var x = new NpgsqlParameter(name, type.Value);
             x.Value = value;
+            if (direction.HasValue) x.Direction = direction.Value;
             return x;
         }
     }

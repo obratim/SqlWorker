@@ -10,7 +10,7 @@ namespace Testing {
     class Program {
         static void Main(string[] args)
         {
-            ASqlWorker worker = (ASqlWorker)new NpgSqlWorker("Server=devel;Port=5432;Database=bibliography;User Id=postgres;Password=mamayanekurulapshu;");
+            ASqlWorker<NpgParameterConstructor> worker = (ASqlWorker<NpgParameterConstructor>)new NpgSqlWorker("Server=devel;Port=5432;Database=bibliography;User Id=postgres;Password=mamayanekurulapshu;");
             worker.OpenConnection();
 
             //List<String> objs = worker.GetListFromDBSingleProcessing("select * from wos.\"Record\"", null, delegate(DbDataReader dr) {

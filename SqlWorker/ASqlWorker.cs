@@ -48,7 +48,7 @@ namespace SqlWorker
             }
 
             LastDisconnect = null;
-            if (Conn.State != ConnectionState.Closed && cmdHashes.Count == 0) Conn.Close();
+            if (Conn.State != ConnectionState.Closed && cmds.Count == 0) Conn.Close();
             Conn.Open();
             _transactionIsOpened = false;
             return Conn.State == ConnectionState.Open;
@@ -70,9 +70,9 @@ namespace SqlWorker
         {
             if (!TransactionIsOpened) throw new Exception("transaction doesnt exist!");
             //foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
-            if (cmdHashes.Count > 0) throw new Exception("Can't commit while commands are executed");
+            if (cmds.Count > 0) throw new Exception("Can't commit while commands are executed");
             _transaction.Commit();
-            if (closeConn && cmdHashes.Count == 0) Conn.Close();
+            if (closeConn && cmds.Count == 0) Conn.Close();
             _transactionIsOpened = false;
         }
 
@@ -80,9 +80,9 @@ namespace SqlWorker
         {
             if (!TransactionIsOpened) throw new Exception("transaction doesnt exist!");
             //foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
-            if (cmdHashes.Count > 0) throw new Exception("Can't commit while commands are executed");
+            if (cmds.Count > 0) throw new Exception("Can't commit while commands are executed");
             _transaction.Rollback();
-            if (closeConn && cmdHashes.Count == 0) Conn.Close();
+            if (closeConn && cmds.Count == 0) Conn.Close();
             _transactionIsOpened = false;
         }
 
@@ -105,8 +105,7 @@ namespace SqlWorker
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 SqlParameterNullWorkaround(vals);
                 DbCommand cmd = Conn.CreateCommand();
-                int hash = cmd.GetHashCode();
-                cmdHashes.Add(hash);
+                cmds.Add(cmd);
                 cmd.CommandText = cmdtype != System.Data.CommandType.StoredProcedure ? QueryWithParams(Command, vals) : Command;
                 cmd.Parameters.AddRange(vals);
                 if (cmdtype.HasValue) cmd.CommandType = cmdtype.Value;
@@ -115,8 +114,8 @@ namespace SqlWorker
                 if (Conn.State != ConnectionState.Open) Conn.Open();
                 int result = cmd.ExecuteNonQuery();
                 cmd.Dispose();
-                cmdHashes.Remove(hash);
-                if (!TransactionIsOpened && cmdHashes.Count == 0) Conn.Close();
+                cmds.Remove(cmd);
+                if (!TransactionIsOpened && cmds.Count == 0) Conn.Close();
                 return result;
             }
             catch (Exception e)
@@ -200,8 +199,7 @@ namespace SqlWorker
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 SqlParameterNullWorkaround(vals);
                 DbCommand cmd = Conn.CreateCommand();
-                int hash = cmd.GetHashCode();
-                cmdHashes.Add(hash);
+                cmds.Add(cmd);
                 if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
                 cmd.CommandText = QueryWithParams(Command, vals);
                 cmd.Parameters.AddRange(vals);
@@ -213,9 +211,9 @@ namespace SqlWorker
                 dr.Close();
                 dr.Dispose();
 
+                cmds.Remove(cmd);
                 cmd.Dispose();
-                cmdHashes.Remove(hash);
-                if (!TransactionIsOpened && cmdHashes.Count == 0) Conn.Close();
+                if (!TransactionIsOpened && cmds.Count == 0) Conn.Close();
 
                 return result;
             }
@@ -232,7 +230,7 @@ namespace SqlWorker
             }
         }
 
-        SynchronizedCollection<int> cmdHashes = new SynchronizedCollection<int>();
+        SynchronizedCollection<DbCommand> cmds = new SynchronizedCollection<DbCommand>();
 
         virtual public IEnumerable<T> Select<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, Func<DbDataReader, bool> moveNextModifier = null)
         {

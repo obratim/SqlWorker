@@ -11,10 +11,10 @@ namespace SqlWorker
     {
         protected class DbIer<T> : DbEnumerator, IEnumerator<T>
         {
-            public class CommandReleasedEventArgs : EventArgs { public int cmdhash { get; set; } }
+            public class CommandReleasedEventArgs : EventArgs { public DbCommand cmd { get; set; } }
             public event Action<object, CommandReleasedEventArgs> CommandReleased;
 
-            DbCommand cmd; DbDataReader dr; int cmdhash;
+            DbCommand cmd; DbDataReader dr;
             Func<DbDataReader, T> converter;
             Func<DbDataReader, bool> moveNextModifier;
             public DbIer(DbCommand cmd, DbDataReader dr, Func<DbDataReader, T> converter, Func<DbDataReader, bool> moveNextModifier = null)
@@ -24,7 +24,6 @@ namespace SqlWorker
                 this.dr = dr;
                 this.converter = converter;
                 this.moveNextModifier = moveNextModifier == null ? (reader => reader.Read()) : moveNextModifier;
-                cmdhash = cmd.GetHashCode();
             }
 
             bool hascurrent = false;
@@ -57,7 +56,7 @@ namespace SqlWorker
                 dr.Close();
                 dr.Dispose();
                 cmd.Dispose();
-                if (CommandReleased != null) CommandReleased(this, new CommandReleasedEventArgs() { cmdhash = this.cmdhash });
+                if (CommandReleased != null) CommandReleased(this, new CommandReleasedEventArgs() { cmd = this.cmd });
             }
 
             #endregion
@@ -80,12 +79,12 @@ namespace SqlWorker
                 DbDataReader dr = cmd.ExecuteReader();
 
                 enumerator = new DbIer<T>(cmd, dr, todo, moveNextModifier);
-                this_sw.cmdHashes.Add(cmd.GetHashCode());
+                this_sw.cmds.Add(cmd);
 
                 enumerator.CommandReleased += (sender, e) =>
                 {
-                    this_sw.cmdHashes.Remove(e.cmdhash);
-                    if (this_sw.cmdHashes.Count == 0 && !this_sw.TransactionIsOpened)
+                    this_sw.cmds.Remove(e.cmd);
+                    if (this_sw.cmds.Count == 0 && !this_sw.TransactionIsOpened)
                         this_sw.Conn.Close();
                 };
             }
