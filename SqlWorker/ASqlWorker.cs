@@ -118,7 +118,7 @@ namespace SqlWorker
                 if (!TransactionIsOpened && cmds.Count == 0) Conn.Close();
                 return result;
             }
-            catch (Exception e)
+            catch
             {
                 if (Conn.State != ConnectionState.Closed)
                 {
@@ -127,7 +127,7 @@ namespace SqlWorker
                     try { Conn.Close(); _transactionIsOpened = false; }
                     catch { }
                 }
-                throw e;
+                throw;
             }
         }
 
@@ -210,7 +210,6 @@ namespace SqlWorker
 	                using(DbDataReader dr = cmd.ExecuteReader())
 					{
 		                result = todo(dr);
-		                dr.Close();
 					}
 	
 	                cmds.Remove(cmd);
@@ -219,7 +218,7 @@ namespace SqlWorker
 
                 return result;
             }
-            catch (Exception e)
+            catch
             {
                 if (Conn.State != ConnectionState.Closed)
                 {
@@ -228,7 +227,7 @@ namespace SqlWorker
                     try { Conn.Close(); _transactionIsOpened = false; }
                     catch { }
                 }
-                throw e;
+                throw;
             }
         }
 
@@ -333,8 +332,13 @@ namespace SqlWorker
         }
 
         #region Члены IDisposable
-
-        public abstract void Dispose(bool commit);
+        public virtual void Dispose(bool commit)
+        {
+            if (!commit && TransactionIsOpened) TransactionRollback();
+            if (Conn.State != ConnectionState.Closed) Conn.Close();
+            Conn.Dispose();
+            GC.SuppressFinalize(this);
+        }
         public virtual void Dispose() { Dispose(false); }
 
         #endregion

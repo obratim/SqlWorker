@@ -57,6 +57,7 @@ namespace SqlWorker
                 dr.Dispose();
                 cmd.Dispose();
                 if (CommandReleased != null) CommandReleased(this, new CommandReleasedEventArgs() { cmd = this.cmd });
+                GC.SuppressFinalize(this);
             }
 
             #endregion

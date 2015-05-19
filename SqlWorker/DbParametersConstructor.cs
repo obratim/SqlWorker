@@ -54,7 +54,8 @@ namespace SqlWorker
         {
             private static TPC generator = new TPC();
 
-            public static readonly DbParameter[] emptyParams = new DbParameter[0];
+            static readonly DbParameter[] _emptyParams = new DbParameter[0];
+            public static DbParameter[] emptyParams { get { return _emptyParams; } }
 
             public static DbParameter[] DictionaryToDbParameters(Dictionary<String, Object> input)
             {

@@ -59,14 +59,13 @@ namespace SqlWorker
             if (!TransactionIsOpened) throw new Exception("Must perform file operations in transaction!");
             if (condition == null) condition = "";
             if (string.IsNullOrWhiteSpace(condition))
-                condition = attributies.Aggregate<KeyValuePair<String, Object>, String>("", (str, i) => { return str + (str == "" ? "" : " and ") + i.Key + " = @" + i.Key; });
-            return GetStructFromDB<SqlFileStream>("select " + dataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + condition
-                , attributies,
+                condition = attributies.Aggregate<KeyValuePair<String, Object>, String>("", (str, i) => { return str + (String.IsNullOrEmpty(str) ? "" : " and ") + i.Key + " = @" + i.Key; });
+            return ManualProcessing("select " + dataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + condition,
                 dr =>
                 {
                     if (!dr.Read()) throw new Exception("No sutch file");
                     return new SqlFileStream(dr.GetString(0), (byte[])dr[1], accessType);
-                });
+                }, attributies);
         }
 
         public delegate SqlFileStream FileStreamService();
@@ -131,12 +130,5 @@ namespace SqlWorker
         }
 
         #endregion
-
-        public override void Dispose(bool commit)
-        {
-            if (!commit && TransactionIsOpened) TransactionRollback();
-            if (Conn.State != ConnectionState.Closed) _conn.Close();
-            _conn.Dispose();
-        }
     }
 }
