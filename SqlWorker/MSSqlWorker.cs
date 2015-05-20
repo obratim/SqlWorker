@@ -21,7 +21,7 @@ namespace SqlWorker
         }
     }
 
-    public class SqlWorker : ASqlWorker<MSSQLParameterConstuctors>
+    public class MSSqlWorker : ASqlWorker<MSSQLParameterConstuctors>
     {
         private SqlConnection _conn;
 
@@ -36,17 +36,17 @@ namespace SqlWorker
             }
         }
 
-        public SqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
+        public MSSqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         { connstr = ConnectionString; }
 
-        public SqlWorker(String Server, String DataBase, TimeSpan? reconnectPause = null)
+        public MSSqlWorker(String Server, String DataBase, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
             connstr = String.Format("Server={0};Database={1};Integrated Security=true", Server, DataBase);
         }
 
-        public SqlWorker(String Server, String DataBase, String Login, String Password, TimeSpan? reconnectPause = null)
+        public MSSqlWorker(String Server, String DataBase, String Login, String Password, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
             connstr = String.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", Server, DataBase, Login, Password);
