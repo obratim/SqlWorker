@@ -55,6 +55,8 @@
     </Compile>
     <Compile Include="MSSqlWorker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <None Include="Properties\VersionInfo.base.cs" />
+    <Compile Include="Properties\VersionInfo.cs" />
     <Compile Include="SWEnumerable.cs" />
     <Compile Include="SWParameters.cs" />
     <Compile Include="DbParametersConstructor.cs" />
@@ -62,9 +64,11 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
+  -->
+  <UsingTask TaskName="HgVersionFile" AssemblyFile="lib\MSBuildVersioning.dll" />
   <Target Name="BeforeBuild">
+    <HgVersionFile TemplateFile="Properties\VersionInfo.base.cs" DestinationFile="Properties\VersionInfo.cs" />
   </Target>
   <Target Name="AfterBuild">
   </Target>
-  -->
 </Project>

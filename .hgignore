@@ -5,3 +5,4 @@ SqlWorker.suo
 Testing/bin/Debug/*
 Testing/bin/Release/*
 Testing/obj/*
+SqlWorker/Properties/VersionInfo.cs
