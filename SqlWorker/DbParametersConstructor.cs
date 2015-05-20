@@ -93,9 +93,9 @@ namespace SqlWorker
             {
                 var result = new DbParameter[vals.Count];
                 int j = 0;
-                foreach (var i in vals)
+                for (int i = 0; i < vals.Count; ++i)
                 {
-                    result[j] = generator.Create(i.Item1, i.Item2, i.Item3, i.Item4);
+                    result[j] = generator.Create(vals[i].Item1, vals[i].Item2, vals[i].Item3, vals[i].Item4);
                     ++j;
                 }
                 return new DbParametersConstructor(result);
