@@ -7,10 +7,9 @@ using System.Runtime.InteropServices;
 // связанные со сборкой.
 [assembly: AssemblyTitle("SqlWorker")]
 [assembly: AssemblyDescription("Library for rapid execution SQL queries")]
-[assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("SqlWorker")]
-[assembly: AssemblyCopyright("Copyright ©  2014")]
+[assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
