@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using SqlWorker;
 using System.Linq;
+using System.Data;
 
 namespace Testing {
     class Program {
         static void Main (string[] args)
 		{
-			var SW = new SqlWorker.SqlWorker ("eis.mephi.ru,7099", "EDU");
+			var SW = new SqlWorker.MSSqlWorker ("G202-comp1", "EDU");
 			
 			var data = SW.Select("select top 100 wpid from umkd.workprogram where wpgosn = @wpgosn and gosplus = @gosplus",
 			                     dr => new { id = dr.GetGuid(0) },
-									new SWParameters () { { "wpgosn", 3 }, { "gosplus", 1 } });
+									new SWParameters () { { "wpgosn", 3 }, { "gosplus", 1, DbType.Int32 } });
 			
 			//Console.WriteLine (data.Aggregate ("", (str, i) => string.Format ("{0}{1}\n", str, i)));
 			foreach (var i in data)
