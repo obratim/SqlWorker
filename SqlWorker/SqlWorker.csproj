@@ -24,7 +24,7 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="parse_VersionInfo.base.cs.sh " />
+        <Command type="BeforeBuild" command="parse_VersionInfo.base.cs.sh " workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -35,6 +35,11 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="BeforeBuild" command="parse_VersionInfo.base.cs.sh " workingdir="${ProjectDir}" />
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Mono.Security">
