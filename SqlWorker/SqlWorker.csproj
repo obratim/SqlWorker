@@ -54,6 +54,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MSSqlWorker.cs" />
+    <Compile Include="OledbSqlWorker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="Properties\VersionInfo.base.cs" />
     <Compile Include="Properties\VersionInfo.cs" />

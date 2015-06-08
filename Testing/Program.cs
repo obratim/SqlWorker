@@ -8,7 +8,18 @@ namespace Testing {
     class Program {
         static void Main (string[] args)
 		{
-			var SW = new SqlWorker.MSSqlWorker ("G202-comp1", "EDU");
+            /*
+            var connection = new OleDbConnection("Provider=VFPOLEDB.1;Data Source=D:\\temp\\arhob\\;Codepage=1251");
+
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT * FROM tmpk.dbf";
+            connection.Open();
+
+            var sw = new OledbSqlWorker(@"Provider=vfpoledb;Data Source=D:\docs\Hostel\extern_db;Codepage=1251");
+            var datax = sw.GetDataTable("Select * from tmpk.dbf");
+            */
+
+            var SW = new SqlWorker.MSSqlWorker ("G202-comp1", "EDU");
 			
 			var data = SW.Select("select top 100 wpid from umkd.workprogram where wpgosn = @wpgosn and gosplus = @gosplus",
 			                     dr => new { id = dr.GetGuid(0) },
