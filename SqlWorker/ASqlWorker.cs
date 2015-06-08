@@ -30,7 +30,7 @@ namespace SqlWorker
         /// </summary>
         /// <param name="ReopenOnlyIfNotInTransaction">connection will be reopenned only if ReopenOnlyIfNotInTransaction=true and transaction is not openned</param>
         /// <returns>true - connection was opened</returns>
-        virtual public bool OpenConnection(bool ReopenIfNotInTransaction = true)
+        virtual public bool ReOpenConnection(bool reopenIfNotInTransaction = true)
         {
             if (Conn.State != ConnectionState.Open && ReConnectPause.Ticks > 0)
             {
@@ -44,53 +44,14 @@ namespace SqlWorker
             }
             else
             {
-                if (TransactionIsOpened || !ReopenIfNotInTransaction) return true;
+                if (TransactionIsOpened || !reopenIfNotInTransaction) return true;
             }
 
             LastDisconnect = null;
-            if (Conn.State != ConnectionState.Closed) Conn.Close();
+            if (Conn.State != ConnectionState.Closed && cmds.Count == 0) Conn.Close();
             Conn.Open();
             _transactionIsOpened = false;
             return Conn.State == ConnectionState.Open;
-        }
-
-
-        //useless?
-        virtual protected String QueryWithParams(String Query, DbParameter[] Params)
-        {
-            if (Params == null) return Query;
-
-            String newq = Query;
-            bool firstParam = true;
-
-            if (newq.IndexOf('@') != -1) firstParam = false;
-            foreach (var p in Params)
-            {
-                if (newq.IndexOf("@" + p.ParameterName) == -1) newq += (firstParam ? " @" : ", @") + p.ParameterName;
-                firstParam = false;
-            }
-            return newq;
-        }
-
-        protected static void SqlParameterNullWorkaround(DbParameter[] param)
-        {
-            foreach (var p in param)
-                if (p.Value == null) p.Value = DBNull.Value;
-        }
-
-        protected static DbParameter[] NotNullParams(DbParameter[] param)
-        {
-            return (from DbParameter p in param
-                    where p.Value != null
-                    select p).ToArray();
-        }
-
-        protected bool IsNullableParams(params Type[] types)
-        {
-            bool result = true;
-            foreach (var i in types)
-                result = result && i.IsGenericType && i.GetGenericTypeDefinition() == typeof(Nullable<>);
-            return result;
         }
 
         #region Transactions
@@ -108,18 +69,20 @@ namespace SqlWorker
         virtual public void TransactionCommit(bool closeConn = true)
         {
             if (!TransactionIsOpened) throw new Exception("transaction doesnt exist!");
-            foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
+            //foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
+            if (cmds.Count > 0) throw new Exception("Can't commit while commands are executed");
             _transaction.Commit();
-            if (closeConn) Conn.Close();
+            if (closeConn && cmds.Count == 0) Conn.Close();
             _transactionIsOpened = false;
         }
 
         virtual public void TransactionRollback(bool closeConn = true)
         {
             if (!TransactionIsOpened) throw new Exception("transaction doesnt exist!");
-            foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
+            //foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
+            if (cmds.Count > 0) throw new Exception("Can't commit while commands are executed");
             _transaction.Rollback();
-            if (closeConn) Conn.Close();
+            if (closeConn && cmds.Count == 0) Conn.Close();
             _transactionIsOpened = false;
         }
 
@@ -135,27 +98,27 @@ namespace SqlWorker
         public bool TransactionIsOpened { get { return _transactionIsOpened; } }
         #endregion
 
-        protected List<DbDataReader> Readers = new List<DbDataReader>();
-
-        virtual public int ExecuteNonQuery(String Command, DbParametersConstructor vals = null, int? timeout = null, System.Data.CommandType? cmdtype = null)
+        virtual public int ExecuteNonQuery(String command, DbParametersConstructor vals = null, int? timeout = null, System.Data.CommandType? cmdtype = null)
         {
             try
             {
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 SqlParameterNullWorkaround(vals);
                 DbCommand cmd = Conn.CreateCommand();
-                cmd.CommandText = cmdtype != System.Data.CommandType.StoredProcedure ? QueryWithParams(Command, vals) : Command;
+                cmds.Add(cmd);
+                cmd.CommandText = cmdtype != System.Data.CommandType.StoredProcedure ? QueryWithParams(command, vals) : command;
                 cmd.Parameters.AddRange(vals);
                 if (cmdtype.HasValue) cmd.CommandType = cmdtype.Value;
                 cmd.Transaction = _transaction;
                 if (timeout != null) cmd.CommandTimeout = timeout.Value;
                 if (Conn.State != ConnectionState.Open) Conn.Open();
                 int result = cmd.ExecuteNonQuery();
-                if (!TransactionIsOpened) cmd.Dispose();
-                if (!TransactionIsOpened) Conn.Close();
+                cmd.Dispose();
+                cmds.Remove(cmd);
+                if (!TransactionIsOpened && cmds.Count == 0) Conn.Close();
                 return result;
             }
-            catch (Exception e)
+            catch
             {
                 if (Conn.State != ConnectionState.Closed)
                 {
@@ -164,100 +127,98 @@ namespace SqlWorker
                     try { Conn.Close(); _transactionIsOpened = false; }
                     catch { }
                 }
-                throw e;
+                throw;
             }
         }
 
-        virtual public int InsertValues(String TableName, DbParametersConstructor vals = null, bool ReturnIdentity = false, int? timeout = null)
-        {
-            SqlParameterNullWorkaround(vals);
+        virtual public int InsertValues (String tableName, DbParametersConstructor vals = null, bool returnIdentity = false, int? timeout = null)
+		{
+			SqlParameterNullWorkaround (vals);
 
-            String q = "INSERT INTO " + TableName + " (" + vals[0].ParameterName;
+			String q = "INSERT INTO " + tableName + " (" + vals [0].ParameterName;
 
-            for (int i = 1; i < vals.Count(); ++i)
-                q += ", " + vals[i].ParameterName;
+			for (int i = 1; i < vals.Count(); ++i)
+				q += ", " + vals [i].ParameterName;
 
-            q += ") VALUES (@" + vals[0].ParameterName;
+			q += ") VALUES (@" + vals [0].ParameterName;
 
-            for (int i = 1; i < vals.Count(); ++i)
-                q += ", @" + vals[i].ParameterName;
+			for (int i = 1; i < vals.Count(); ++i)
+				q += ", @" + vals [i].ParameterName;
 
-            q += ");";
+			q += ");";
 
-            return !ReturnIdentity ?
-                ExecuteNonQuery(q, vals, timeout) :
-                Decimal.ToInt32(GetStructFromDB<Decimal>(q + " select SCOPE_IDENTITY()", vals, r => { r.Read(); return r.GetDecimal(0); }));
+			return !returnIdentity ?
+                ExecuteNonQuery (q, vals, timeout) :
+                Decimal.ToInt32 (ManualProcessing (
+				q + " select SCOPE_IDENTITY()",
+				r => { r.Read(); return r.GetDecimal(0); },
+				vals));
         }
 
-        virtual public int UpdateValues(String TableName, DbParametersConstructor Values, DbParametersConstructor Condition = null, int? timeout = null)
+        virtual public int UpdateValues(String tableName, DbParametersConstructor values, DbParametersConstructor condition = null, int? timeout = null)
         {
-            SqlParameterNullWorkaround(Values);
-            Condition = Condition ?? DbParametersConstructor.emptyParams;
+            SqlParameterNullWorkaround(values);
+            condition = condition ?? DbParametersConstructor.emptyParams;
 
-            String q = "UPDATE " + TableName + " SET " + Values[0].ParameterName + " = @" + Values[0].ParameterName;
+            String q = "UPDATE " + tableName + " SET " + values[0].ParameterName + " = @" + values[0].ParameterName;
 
-            for (int i = 1; i < Values.Count(); ++i)
-                q += ", " + Values[i].ParameterName + " = @" + Values[i].ParameterName;
+            for (int i = 1; i < values.Count(); ++i)
+                q += ", " + values[i].ParameterName + " = @" + values[i].ParameterName;
 
-            if (Condition.Count() > 0)
-                q += " WHERE " + Condition[0].ParameterName + " = @" + Condition[0].ParameterName;
+            if (condition.Count() > 0)
+                q += " WHERE " + condition[0].ParameterName + " = @" + condition[0].ParameterName;
 
-            for (int i = 1; i < Condition.Count(); ++i)
-                q += " AND " + Condition[i].ParameterName + " = @" + Condition[i].ParameterName;
+            for (int i = 1; i < condition.Count(); ++i)
+                q += " AND " + condition[i].ParameterName + " = @" + condition[i].ParameterName;
 
-            List<DbParameter> param = new List<DbParameter>(Values.parameters);
-            param.AddRange(Condition.parameters);
+            List<DbParameter> param = new List<DbParameter>(values.parameters);
+            param.AddRange(condition.parameters);
             return ExecuteNonQuery(q, param.ToArray(), timeout);
         }
 
-        virtual public int UpdateValues(String TableName, DbParametersConstructor vals, String Condition, int? timeout = null)
+        virtual public int UpdateValues(String tableName, DbParametersConstructor vals, String condition, int? timeout = null)
         {
             SqlParameterNullWorkaround(vals);
 
-            String q = "UPDATE " + TableName + " SET " + vals[0].ParameterName + " = @" + vals[0].ParameterName;
+            String q = "UPDATE " + tableName + " SET " + vals[0].ParameterName + " = @" + vals[0].ParameterName;
 
             for (int i = 1; i < vals.Count(); ++i)
                 q += ", " + vals[i].ParameterName + " = @" + vals[i].ParameterName;
 
-            if (!String.IsNullOrWhiteSpace(Condition))
-                q += " WHERE " + Condition;
+            if (!String.IsNullOrWhiteSpace(condition))
+                q += " WHERE " + condition;
 
             return ExecuteNonQuery(q, vals, timeout);
         }
 
 
-        virtual public T GetStructFromDB<T>(String Command, Func<DbDataReader, T> todo, int? timeout = null)
-        { return GetStructFromDB<T>(Command, DbParametersConstructor.emptyParams, todo, timeout); }
-
-        virtual public T GetStructFromDB<T>(String Command, DbParametersConstructor vals, Func<DbDataReader, T> todo, int? timeout = null)
+        virtual public T ManualProcessing<T> (String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null)
         {
             try
             {
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 SqlParameterNullWorkaround(vals);
-                DbCommand cmd = Conn.CreateCommand();
-                if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
-                cmd.CommandText = QueryWithParams(Command, vals);
-                cmd.Parameters.AddRange(vals);
-                cmd.Transaction = _transaction;
-                if (Conn.State != ConnectionState.Open) Conn.Open();
-                DbDataReader dr = cmd.ExecuteReader();
-
-                int drid = Readers.Count;
-                Readers.Add(dr);
-
-                T result = todo(dr);
-                dr.Close();
-                dr.Dispose();
-
-                Readers.Remove(dr);
-
-                cmd.Dispose();
-                if (!TransactionIsOpened) Conn.Close();
+				T result;
+                using (DbCommand cmd = Conn.CreateCommand())
+				{
+	                cmds.Add(cmd);
+	                if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
+	                cmd.CommandText = QueryWithParams(command, vals);
+	                cmd.Parameters.AddRange(vals);
+	                cmd.Transaction = _transaction;
+	                if (Conn.State != ConnectionState.Open) Conn.Open();
+	                using(DbDataReader dr = cmd.ExecuteReader())
+					{
+		                result = todo(dr);
+					}
+	
+	                cmds.Remove(cmd);
+				}
+                if (!TransactionIsOpened && cmds.Count == 0) Conn.Close();
 
                 return result;
             }
-            catch (Exception e)
+            catch
             {
                 if (Conn.State != ConnectionState.Closed)
                 {
@@ -266,58 +227,25 @@ namespace SqlWorker
                     try { Conn.Close(); _transactionIsOpened = false; }
                     catch { }
                 }
-                throw e;
+                throw;
             }
         }
 
+        SynchronizedCollection<DbCommand> cmds = new SynchronizedCollection<DbCommand>();
 
-        virtual public List<T> GetListFromDBSingleProcessing<T>(String Command, Func<DbDataReader, T> todo, int? timeout = null)
-        { return GetListFromDBSingleProcessing<T>(Command, DbParametersConstructor.emptyParams, todo, timeout); }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="Command"></param>
-        /// <param name="vals"></param>
-        /// <param name="todo">Delegate operates with single DataReader's record and return single T object</param>
-        /// <returns></returns>
-        virtual public List<T> GetListFromDBSingleProcessing<T>(string Command, DbParametersConstructor vals, Func<DbDataReader, T> todo, int? timeout = null)
+        virtual public IEnumerable<T> Select<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, Func<DbDataReader, bool> moveNextModifier = null)
         {
-            return GetStructFromDB<List<T>>(Command, vals, delegate(DbDataReader dr)
-            {
-                List<T> output = new List<T>();
-                while (dr.Read())
-                {
-                    output.Add(todo(dr));
-                }
-                return output;
-            }, timeout);
+            var ie = new DbIe<T>(this, command, todo, vals, timeout, moveNextModifier);
+            return ie;
+        }
+        
+        virtual public IEnumerable<T> SelectWithReflection<T>(String command, DbParametersConstructor vals = null, List<String> exceptions = null, int? timeout = null) where T : new()
+        {
+            if (exceptions != null) return Select(command, dr => DataReaderToObj<T>(dr, exceptions), vals, timeout);
+            else return Select(command, dr => DataReaderToObj<T>(dr), vals, timeout);
         }
 
-        virtual public List<T> GetListFromDB<T>(String procname, DbParametersConstructor vals = null, List<String> Exceptions = null, int? timeout = null) where T : new()
-        {
-            if (Exceptions != null) return GetStructFromDB<List<T>>(procname, vals, delegate(DbDataReader dr)
-            {
-                List<T> result = new List<T>();
-                while (dr.Read())
-                {
-                    result.Add(DataReaderToObj<T>(dr, Exceptions));
-                }
-                return result;
-            }, timeout);
-            else return GetStructFromDB<List<T>>(procname, vals, delegate(DbDataReader dr)
-            {
-                List<T> result = new List<T>();
-                while (dr.Read())
-                {
-                    result.Add(DataReaderToObj<T>(dr));
-                }
-                return result;
-            }, timeout);
-        }
-
-        virtual public List<T> GetScalarsListFromDB<T>(String table, String column, DbParametersConstructor vals = null, String whereCondition = null, int? timeout = null)
+        virtual public IEnumerable<T> SelectScalar<T>(String table, String column, DbParametersConstructor vals = null, String whereCondition = null, bool includingNulls = false, int? timeout = null)
         {
             vals = vals ?? DbParametersConstructor.emptyParams;
 
@@ -329,57 +257,53 @@ namespace SqlWorker
                         , (value) => value.Substring(0, value.Length - 6)           // then cut last " AND\n\t"
                     );
 
-            return GetScalarsListFromDB<T>(String.Format("SELECT {0} FROM {1} {2}", column, table, whereCondition), vals, timeout);
+            return SelectScalar<T>(String.Format("SELECT {0} FROM {1} {2}", column, table, whereCondition), vals, includingNulls, timeout);
         }
 
-        virtual public List<T> GetScalarsListFromDB<T>(String query, DbParametersConstructor vals = null, int? timeout = null)
+        virtual public IEnumerable<T> SelectScalar<T>(String query, DbParametersConstructor vals = null, bool includingNulls = false, int? timeout = null)
         {
-            bool IncludingNulls = IsNullableParams(typeof(T));
+            bool includingNulls_checked = includingNulls && IsNullableParams(typeof(T));
 
-            if (IncludingNulls)
-                return GetListFromDBSingleProcessing<T>(
-                    query,
-                    vals,
-                    (DbDataReader dr) => dr[0] == DBNull.Value ? (T)(Object)null : (T)dr[0],
-                    timeout
-                    );
-            else return GetStructFromDB<List<T>>(query, vals, (dr) =>
-            {
-                List<T> result = new List<T>();
-                while (dr.Read())
-                    if (dr[0] != DBNull.Value) result.Add((T)dr[0]);
-                return result;
-            }, timeout);
-        }
-
-        virtual public List<Tuple<T0, T1>> GetTupleFromDB<T0, T1>(String query, DbParametersConstructor vals = null, int? timeout = null)
-        {
-            bool[] IncludingNulls = new bool[] { IsNullableParams(typeof(T0)), IsNullableParams(typeof(T1)) };
-            return GetStructFromDB<List<Tuple<T0, T1>>>(query, vals,
-                (dr) =>
+            if (includingNulls_checked)
+                return Select(query, dr => dr[0] == DBNull.Value ? (T)(Object)null : (T)dr[0], vals, timeout);
+            else
+                return Select(query, dr => (T)dr[0], vals, timeout, dr =>
                 {
-                    var result = new List<Tuple<T0, T1>>();
-                    while (dr.Read())
+                    do
                     {
-                        var x0 = dr[0];
-                        var x1 = dr[1];
-                        if ((IncludingNulls[0] || x0 != DBNull.Value)
-                            &&
-                            (IncludingNulls[1] || x1 != DBNull.Value)
-                           )
-                            result.Add(new Tuple<T0, T1>((T0)(x0 == DBNull.Value ? null : x0), (T1)(x1 == DBNull.Value ? null : x1)));
+                        if (!dr.Read()) return false;
                     }
-                    return result;
-                }, timeout);
+                    while (dr[0] == DBNull.Value);
+                    return true;
+                });
         }
 
-        virtual public T DataReaderToObj<T>(DbDataReader dr, List<String> Errors) where T : new()
+        virtual public IEnumerable<Tuple<TX, TY>> SelectTuple<TX, TY>(String query, DbParametersConstructor vals = null, int? timeout = null)
+        {
+            bool[] IncludingNulls = new bool[] { IsNullableParams(typeof(TX)), IsNullableParams(typeof(TY)) };
+            return Select(query,
+                dr => new Tuple<TX, TY>((TX)(dr[0] == DBNull.Value ? null : dr[0]), (TY)(dr[1] == DBNull.Value ? null : dr[1])),
+                vals, timeout,
+                dr =>
+                {
+                    do
+                    {
+                        if (!dr.Read()) return false;
+                    }
+                    while ((!IncludingNulls[0] && dr[0] == DBNull.Value)
+                         ||
+                         (!IncludingNulls[1] && dr[1] == DBNull.Value));
+                    return true;
+                });
+        }
+
+        virtual public T DataReaderToObj<T>(DbDataReader dr, List<String> errors) where T : new()
         {
             T result = new T();
             foreach (System.ComponentModel.PropertyDescriptor i in System.ComponentModel.TypeDescriptor.GetProperties(result))
             {
                 try { if (dr[i.Name] != DBNull.Value) i.SetValue(result, dr[i.Name]); }
-                catch (Exception e) { Errors.Add(e.ToString()); }
+                catch (Exception e) { errors.Add(e.ToString()); }
             }
 
             return result;
@@ -396,20 +320,25 @@ namespace SqlWorker
             return result;
         }
 
-        virtual public DataTable GetDataTable(String query, DbParametersConstructor vals = null, int? timeout = null)
-        {
-            return GetStructFromDB<DataTable>(query, vals, (dr) =>
-            {
-                var dt = new DataTable();
-                dt.Load(dr);
-                return dt;
-            }
-            , timeout);
+        virtual public DataTable GetDataTable (String query, DbParametersConstructor vals = null, int? timeout = null)
+		{
+			return ManualProcessing (query, (dr) =>
+			{
+				var dt = new DataTable ();
+				dt.Load (dr);
+				return dt;
+			},
+			vals, timeout);
         }
 
         #region Члены IDisposable
-
-        public abstract void Dispose(bool commit);
+        public virtual void Dispose(bool commit)
+        {
+            if (!commit && TransactionIsOpened) TransactionRollback();
+            if (Conn.State != ConnectionState.Closed) Conn.Close();
+            Conn.Dispose();
+            GC.SuppressFinalize(this);
+        }
         public virtual void Dispose() { Dispose(false); }
 
         #endregion

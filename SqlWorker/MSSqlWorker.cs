@@ -11,11 +11,17 @@ namespace SqlWorker
 {
     public class MSSQLParameterConstuctors : AbstractDbParameterConstructors
     {
-        public override DbParameter By2(string paramName, object paramValue) { return new SqlParameter(paramName, paramValue); }
-        public override DbParameter By3(string paramName, object paramValue, DbType type) { var x = new SqlParameter(paramName, type); x.Value = paramValue; return x; }
+        public override DbParameter Create(string paramName, object paramValue, DbType? type = null, ParameterDirection? direction = null)
+        {
+            if (!type.HasValue) return new SqlParameter(paramName, paramValue);
+            var x = new SqlParameter(paramName, type.Value);
+            x.Value = paramValue;
+            if (direction.HasValue) x.Direction = direction.Value;
+            return x;
+        }
     }
 
-    public class SqlWorker : ASqlWorker<MSSQLParameterConstuctors>
+    public class MSSqlWorker : ASqlWorker<MSSQLParameterConstuctors>
     {
         private SqlConnection _conn;
 
@@ -30,17 +36,17 @@ namespace SqlWorker
             }
         }
 
-        public SqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
+        public MSSqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         { connstr = ConnectionString; }
 
-        public SqlWorker(String Server, String DataBase, TimeSpan? reconnectPause = null)
+        public MSSqlWorker(String Server, String DataBase, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
             connstr = String.Format("Server={0};Database={1};Integrated Security=true", Server, DataBase);
         }
 
-        public SqlWorker(String Server, String DataBase, String Login, String Password, TimeSpan? reconnectPause = null)
+        public MSSqlWorker(String Server, String DataBase, String Login, String Password, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
             connstr = String.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", Server, DataBase, Login, Password);
@@ -53,14 +59,13 @@ namespace SqlWorker
             if (!TransactionIsOpened) throw new Exception("Must perform file operations in transaction!");
             if (condition == null) condition = "";
             if (string.IsNullOrWhiteSpace(condition))
-                condition = attributies.Aggregate<KeyValuePair<String, Object>, String>("", (str, i) => { return str + (str == "" ? "" : " and ") + i.Key + " = @" + i.Key; });
-            return GetStructFromDB<SqlFileStream>("select " + dataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + condition
-                , attributies,
+                condition = attributies.Aggregate<KeyValuePair<String, Object>, String>("", (str, i) => { return str + (String.IsNullOrEmpty(str) ? "" : " and ") + i.Key + " = @" + i.Key; });
+            return ManualProcessing("select " + dataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + condition,
                 dr =>
                 {
                     if (!dr.Read()) throw new Exception("No sutch file");
                     return new SqlFileStream(dr.GetString(0), (byte[])dr[1], accessType);
-                });
+                }, attributies);
         }
 
         public delegate SqlFileStream FileStreamService();
@@ -125,12 +130,5 @@ namespace SqlWorker
         }
 
         #endregion
-
-        public override void Dispose(bool commit)
-        {
-            if (!commit && TransactionIsOpened) TransactionRollback();
-            if (Conn.State != ConnectionState.Closed) _conn.Close();
-            _conn.Dispose();
-        }
     }
 }

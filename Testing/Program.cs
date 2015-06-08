@@ -1,17 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using SqlWorker;
-using System.Data.Common;
-using System.Data.SqlClient;
+using System.Linq;
+using System.Data;
 
 namespace Testing {
     class Program {
-        static void Main(string[] args)
-        {
-            ASqlWorker worker = (ASqlWorker)new NpgSqlWorker("Server=devel;Port=5432;Database=bibliography;User Id=postgres;Password=mamayanekurulapshu;");
-            worker.OpenConnection();
+        static void Main (string[] args)
+		{
+            /*
+            var connection = new OleDbConnection("Provider=VFPOLEDB.1;Data Source=D:\\temp\\arhob\\;Codepage=1251");
+
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT * FROM tmpk.dbf";
+            connection.Open();
+
+            var sw = new OledbSqlWorker(@"Provider=vfpoledb;Data Source=D:\docs\Hostel\extern_db;Codepage=1251");
+            var datax = sw.GetDataTable("Select * from tmpk.dbf");
+            */
+
+            var SW = new SqlWorker.MSSqlWorker ("G202-comp1", "EDU");
+			
+			var data = SW.Select("select top 100 wpid from umkd.workprogram where wpgosn = @wpgosn and gosplus = @gosplus",
+			                     dr => new { id = dr.GetGuid(0) },
+									new SWParameters () { { "wpgosn", 3 }, { "gosplus", 1, DbType.Int32 } });
+			
+			//Console.WriteLine (data.Aggregate ("", (str, i) => string.Format ("{0}{1}\n", str, i)));
+			foreach (var i in data)
+				Console.WriteLine (i);
+			
+			return;
+			
+            ASqlWorker<NpgParameterConstructor> worker = (ASqlWorker<NpgParameterConstructor>)new NpgSqlWorker("Server=devel;Port=5432;Database=bibliography;User Id=postgres;Password=mamayanekurulapshu;");
+            worker.ReOpenConnection();
 
             //List<String> objs = worker.GetListFromDBSingleProcessing("select * from wos.\"Record\"", null, delegate(DbDataReader dr) {
             //    String tableName = dr.GetString(0);

@@ -8,7 +8,6 @@ namespace SqlWorker
 {
     public abstract class AbstractDbParameterConstructors
     {
-        public abstract DbParameter By2(String name, Object value);
-        public abstract DbParameter By3(String name, Object value, System.Data.DbType type);
+        public abstract DbParameter Create(String name, Object value, System.Data.DbType? type = null, System.Data.ParameterDirection? direction = null);
     }
 }
