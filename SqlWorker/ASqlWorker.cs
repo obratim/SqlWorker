@@ -9,9 +9,9 @@ namespace SqlWorker
 {
     public static class DbDataReaderHelper
     {
-        static int? GetNullableInt32(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (int?)Convert.ToInt32(dr[ordinal]) : null; }
-        static String GetNullableString(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? dr.GetString(ordinal) : null; }
-        static byte? GetNullableByte(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (byte?)Convert.ToByte(dr[ordinal]) : null; }
+        public static int? GetNullableInt32(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (int?)Convert.ToInt32(dr[ordinal]) : null; }
+        public static String GetNullableString(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? dr.GetString(ordinal) : null; }
+        public static byte? GetNullableByte(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (byte?)Convert.ToByte(dr[ordinal]) : null; }
     }
 
     public abstract partial class ASqlWorker<TPC> : IDisposable where TPC : AbstractDbParameterConstructors, new()
