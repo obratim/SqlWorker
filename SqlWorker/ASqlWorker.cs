@@ -7,6 +7,13 @@ using System.Data;
 
 namespace SqlWorker
 {
+    public static class DbDataReaderHelper
+    {
+        static int? GetNullableInt32(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (int?)Convert.ToInt32(dr[ordinal]) : null; }
+        static String GetNullableString(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? dr.GetString(ordinal) : null; }
+        static byte? GetNullableByte(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (byte?)Convert.ToByte(dr[ordinal]) : null; }
+    }
+
     public abstract partial class ASqlWorker<TPC> : IDisposable where TPC : AbstractDbParameterConstructors, new()
     {
         protected abstract DbConnection Conn { get; }
@@ -191,7 +198,7 @@ namespace SqlWorker
             return ExecuteNonQuery(q, vals, timeout);
         }
 
-
+        
         virtual public T ManualProcessing<T> (String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null)
         {
             try
