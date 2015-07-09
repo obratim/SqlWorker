@@ -9,9 +9,13 @@ namespace SqlWorker
 {
     public static class DbDataReaderHelper
     {
-        public static int? GetNullableInt32(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (int?)Convert.ToInt32(dr[ordinal]) : null; }
-        public static String GetNullableString(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? dr.GetString(ordinal) : null; }
-        public static byte? GetNullableByte(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (byte?)Convert.ToByte(dr[ordinal]) : null; }
+        public static bool? GetNullableBool(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (bool?)dr[ordinal] : null; }
+        public static byte? GetNullableByte(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (byte?)dr[ordinal] : null; }
+        public static short? GetNullableInt16(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (short?)dr[ordinal] : null; }
+        public static int? GetNullableInt32(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (int?)(dr[ordinal]) : null; }
+        public static long? GetNullableInt64(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (long?)dr[ordinal] : null; }
+        public static DateTime? GetNullableDateTime(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (DateTime?)dr[ordinal] : null; }
+        public static String GetNullableString(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? dr[ordinal].ToString() : null; }
     }
 
     public abstract partial class ASqlWorker<TPC> : IDisposable where TPC : AbstractDbParameterConstructors, new()
