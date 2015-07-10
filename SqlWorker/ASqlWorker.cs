@@ -14,6 +14,7 @@ namespace SqlWorker
         public static short? GetNullableInt16(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (short?)dr[ordinal] : null; }
         public static int? GetNullableInt32(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (int?)(dr[ordinal]) : null; }
         public static long? GetNullableInt64(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (long?)dr[ordinal] : null; }
+        public static Guid? GetNullableGuid(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (Guid?)dr[ordinal] : null; }
         public static DateTime? GetNullableDateTime(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (DateTime?)dr[ordinal] : null; }
         public static String GetNullableString(this DbDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? dr[ordinal].ToString() : null; }
     }
