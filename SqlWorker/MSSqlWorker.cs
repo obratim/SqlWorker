@@ -130,5 +130,63 @@ namespace SqlWorker
         }
 
         #endregion
+
+        virtual public bool CreateTableByDataTable(DataTable source, bool recreate = false)
+        {
+            if (recreate)
+            {
+                ExecuteNonQuery("IF OBJECT_ID(@tname, 'U') IS NOT NULL DROP TABLE " + source.TableName, new SWParameters { { "tname", source.TableName } });
+            }
+
+            var columns = new List<DataColumn> { };
+            foreach (DataColumn c in source.Columns)
+                columns.Add(c);
+
+            ExecuteNonQuery(String.Format(@"
+CREATE TABLE {0} (
+    {1}
+)
+", source.TableName, String.Join(",\n    ", columns.Select(c => String.Format("{0} {1} {2} {3}",
+         c.ColumnName, typeMap_TSQL[c.DataType].ToString(),
+         c.AllowDBNull ? "NULL" : "NOT NULL",
+         c.AutoIncrement ? String.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : ""))
+     )),
+                new SWParameters { });
+
+            /***************************************
+            ExecuteNonQuery(String.Format(@"
+            if exists (select * from sysobjects where name='{0}' and xtype='U')
+            begin
+                drop table {0}
+            end
+            go
+            CREATE TABLE {0} (
+            {1}
+            );
+            ", source.TableName, String.Join(",\n\t", (from c in source.Columns.Cast<DataColumn>() select c.ColumnName + " " + typeMap[c.DataType].ToString() + (c.AllowDBNull ? " NULL" : " NOT NULL")))));
+
+            ***************************************/
+            return true;
+        }
+
+        #region Bulk copy
+        virtual public bool BulkCopy(DataTable source, SqlBulkCopyColumnMappingCollection mappings = null, int timeout = 0)
+        {
+            if (Conn.State != ConnectionState.Open) Conn.Open();
+
+            using (SqlBulkCopy sbc = new SqlBulkCopy(_conn))
+            {
+                sbc.DestinationTableName = source.TableName;
+                if (mappings == null)
+                    foreach (var column in source.Columns)
+                        sbc.ColumnMappings.Add(column.ToString(), column.ToString());
+                sbc.BulkCopyTimeout = timeout;
+                sbc.WriteToServer(source);
+    }
+
+            return true;
+}
+
+        #endregion
     }
 }
