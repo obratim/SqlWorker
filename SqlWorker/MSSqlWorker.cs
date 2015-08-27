@@ -146,12 +146,12 @@ namespace SqlWorker
 CREATE TABLE {0} (
     {1}
 )
-", source.TableName, String.Join(",\n    ", columns.Select(c => String.Format("{0} {1} {2} {3}",
+", source.TableName, String.Join(",\n    ", columns.Select(c => String.Format("{0} {1}{4} {2} {3}",
          c.ColumnName, typeMap_TSQL[c.DataType].ToString(),
          c.AllowDBNull ? "NULL" : "NOT NULL",
-         c.AutoIncrement ? String.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : ""))
-     )),
-                new SWParameters { });
+         c.AutoIncrement ? String.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : "",
+         c.MaxLength > 0 ? String.Format("({0})", c.MaxLength) : ""))
+     )));
 
             /***************************************
             ExecuteNonQuery(String.Format(@"
