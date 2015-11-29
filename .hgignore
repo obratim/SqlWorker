@@ -7,3 +7,4 @@ Testing/bin/Release/*
 Testing/obj/*
 SqlWorker/Properties/VersionInfo.cs
 SqlWorker/SqlWorker.csproj.user
+SqlWorker.userprefs

@@ -22,6 +22,11 @@
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>ExtendedCorrectnessRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="BeforeBuild" command="parse_VersionInfo.base.cs.sh &quot; workingdir=&quot;${ProjectDir}" workingdir="${ProjectDir}" />
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -68,10 +73,4 @@
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   -->
-  <UsingTask TaskName="HgVersionFile" AssemblyFile="lib\MSBuildVersioning.dll" />
-  <Target Name="BeforeBuild">
-    <HgVersionFile TemplateFile="Properties\VersionInfo.base.cs" DestinationFile="Properties\VersionInfo.cs" />
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
 </Project>

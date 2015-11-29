@@ -51,7 +51,7 @@ namespace SqlWorker
         {
             connstr = String.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", Server, DataBase, Login, Password);
         }
-
+		/*
         #region send files
 
         public SqlFileStream GetFileStreamFromDB(String tableName, String dataFieldName, System.IO.FileAccess accessType, Dictionary<String, Object> attributies, String condition = "")
@@ -130,7 +130,7 @@ namespace SqlWorker
         }
 
         #endregion
-
+		*/
         virtual public bool CreateTableByDataTable(DataTable source, bool recreate = false)
         {
             if (recreate)
