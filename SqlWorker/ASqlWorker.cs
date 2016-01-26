@@ -67,6 +67,9 @@ namespace SqlWorker
         }
 
         #region Transactions
+        /// <summary>
+        /// Only single one transaction is supported!
+        /// </summary>
         virtual public void TransactionBegin()
         {
             if (TransactionIsOpened)
@@ -245,18 +248,48 @@ namespace SqlWorker
 
         SynchronizedCollection<DbCommand> cmds = new SynchronizedCollection<DbCommand>();
 
+        /// <summary>
+        /// Return IEnumerable with results
+        /// </summary>
+        /// <typeparam name="T">Generic resulting type</typeparam>
+        /// <param name="command">SQL command</param>
+        /// <param name="todo">delegate to recive T from DataReader</param>
+        /// <param name="vals">values of parameters (if necessary)</param>
+        /// <param name="timeout">timeout</param>
+        /// <param name="moveNextModifier">rules for obtaining next row</param>
+        /// <returns>consequentially readed data</returns>
         virtual public IEnumerable<T> Select<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, Func<DbDataReader, bool> moveNextModifier = null)
         {
             var ie = new DbIe<T>(this, command, todo, vals, timeout, moveNextModifier);
             return ie;
         }
         
+        /// <summary>
+        /// Obtain objects from DataReader using reflection
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="command"></param>
+        /// <param name="vals"></param>
+        /// <param name="exceptions"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         virtual public IEnumerable<T> SelectWithReflection<T>(String command, DbParametersConstructor vals = null, List<String> exceptions = null, int? timeout = null) where T : new()
         {
             if (exceptions != null) return Select(command, dr => DataReaderToObj<T>(dr, exceptions), vals, timeout);
             else return Select(command, dr => DataReaderToObj<T>(dr), vals, timeout);
         }
 
+        /// <summary>
+        /// Select values from single column
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <param name="vals"></param>
+        /// <param name="whereCondition"></param>
+        /// <param name="includingNulls"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         virtual public IEnumerable<T> SelectScalar<T>(String table, String column, DbParametersConstructor vals = null, String whereCondition = null, bool includingNulls = false, int? timeout = null)
         {
             vals = vals ?? DbParametersConstructor.emptyParams;
@@ -309,6 +342,13 @@ namespace SqlWorker
                 });
         }
 
+        /// <summary>
+        /// Converts DataRow to T with reflection, writing exceptions in list
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="dr"></param>
+        /// <param name="errors"></param>
+        /// <returns></returns>
         virtual public T DataReaderToObj<T>(DbDataReader dr, List<String> errors) where T : new()
         {
             T result = new T();
@@ -321,6 +361,12 @@ namespace SqlWorker
             return result;
         }
 
+        /// <summary>
+        /// Converts DataRow to T with reflection, throws!
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="dr"></param>
+        /// <returns></returns>
         virtual public T DataReaderToObj<T>(DbDataReader dr) where T : new()
         {
             T result = new T();
