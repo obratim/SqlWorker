@@ -1,58 +1,53 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Data.Common;
 using System.Data;
+using System.Data.Common;
+using System.Linq;
 
-namespace SqlWorker
-{
-    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new()
-    {
-        protected class DbIer<T> : DbEnumerator, IEnumerator<T>
-        {
+namespace SqlWorker {
+
+    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new() {
+
+        protected class DbIer<T> : DbEnumerator, IEnumerator<T> {
+
             public class CommandReleasedEventArgs : EventArgs { public DbCommand cmd { get; set; } }
+
             public event Action<object, CommandReleasedEventArgs> CommandReleased;
 
-            DbCommand cmd; DbDataReader dr;
-            Func<DbDataReader, T> converter;
-            Func<DbDataReader, bool> moveNextModifier;
+            private DbCommand cmd; private DbDataReader dr;
+            private Func<DbDataReader, T> converter;
+            private Func<DbDataReader, bool> moveNextModifier;
+
             public DbIer(DbCommand cmd, DbDataReader dr, Func<DbDataReader, T> converter, Func<DbDataReader, bool> moveNextModifier = null)
-                : base(dr, true)
-            {
+                : base(dr, true) {
                 this.cmd = cmd;
                 this.dr = dr;
                 this.converter = converter;
                 this.moveNextModifier = moveNextModifier == null ? (reader => reader.Read()) : moveNextModifier;
             }
 
-            bool hascurrent = false;
-            T current;
+            private bool hascurrent = false;
+            private T current;
 
             #region Члены IEnumerator<T>
 
-            public new T Current
-            {
-                get
-                {
-                    if (!hascurrent)
-                    { current = converter(dr); }
+            public new T Current {
+                get {
+                    if (!hascurrent) { current = converter(dr); }
                     return current;
                 }
             }
 
-            new public bool MoveNext()
-            {
+            new public bool MoveNext() {
                 hascurrent = false;
                 return moveNextModifier(dr);
             }
 
-            #endregion
+            #endregion Члены IEnumerator<T>
 
             #region Члены IDisposable
 
-            public void Dispose()
-            {
+            public void Dispose() {
                 dr.Close();
                 dr.Dispose();
                 cmd.Dispose();
@@ -60,15 +55,13 @@ namespace SqlWorker
                 GC.SuppressFinalize(this);
             }
 
-            #endregion
+            #endregion Члены IDisposable
         }
 
-        protected class DbIe<T> : IEnumerable<T>
-        {
-            DbIer<T> enumerator;
+        protected class DbIe<T> : IEnumerable<T> {
+            private DbIer<T> enumerator;
 
-            public DbIe(ASqlWorker<TPC> this_sw, String Command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, Func<DbDataReader, bool> moveNextModifier = null)
-            {
+            public DbIe(ASqlWorker<TPC> this_sw, String Command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, Func<DbDataReader, bool> moveNextModifier = null) {
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 ASqlWorker<TPC>.SqlParameterNullWorkaround(vals);
                 DbCommand cmd = this_sw.Conn.CreateCommand();
@@ -82,21 +75,20 @@ namespace SqlWorker
                 enumerator = new DbIer<T>(cmd, dr, todo, moveNextModifier);
                 this_sw.cmds.Add(cmd);
 
-                enumerator.CommandReleased += (sender, e) =>
-                {
+                enumerator.CommandReleased += (sender, e) => {
                     this_sw.cmds.Remove(e.cmd);
                     if (this_sw.cmds.Count == 0 && !this_sw.TransactionIsOpened)
                         this_sw.Conn.Close();
                 };
             }
 
-            public System.Collections.Generic.IEnumerator<T> GetEnumerator()
-            { return enumerator; }
+            public System.Collections.Generic.IEnumerator<T> GetEnumerator() {
+                return enumerator;
+            }
 
-            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-            { return enumerator; }
-
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
+                return enumerator;
+            }
         }
-
     }
 }

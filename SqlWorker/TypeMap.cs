@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Data;
+using System.Linq;
 
-namespace SqlWorker
-{
-    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new()
-    {
+namespace SqlWorker {
+
+    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new() {
+
         protected static readonly Dictionary<Type, DbType> typeMap = new Dictionary<Type, DbType>() {
 	        { typeof(byte) , DbType.Byte },
 	        { typeof(sbyte) , DbType.SByte },
@@ -44,6 +43,5 @@ namespace SqlWorker
 	        { typeof(DateTime?) , DbType.DateTime },
 	        { typeof(DateTimeOffset?) , DbType.DateTimeOffset }
         };
-
     }
 }

@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Data;
-using System.Data.SqlClient;
 using System.Data.Common;
+using System.Linq;
 using Npgsql;
 
 namespace SqlWorker {
-    public class NpgParameterConstructor : AbstractDbParameterConstructors
-    {
-        public override DbParameter Create(string name, object value, DbType? type = null, ParameterDirection? direction = null)
-        {
+
+    public class NpgParameterConstructor : AbstractDbParameterConstructors {
+
+        public override DbParameter Create(string name, object value, DbType? type = null, ParameterDirection? direction = null) {
             if (!type.HasValue) return new NpgsqlParameter(name, value);
 
             var x = new NpgsqlParameter(name, type.Value);
@@ -25,10 +23,10 @@ namespace SqlWorker {
         private String _connectionStr;
 
         public NpgSqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
-            : base(reconnectPause)
-        { _connectionStr = ConnectionString; }
+            : base(reconnectPause) { _connectionStr = ConnectionString; }
 
         private NpgsqlConnection _conn;
+
         protected override DbConnection Conn {
             get {
                 if (_conn == null) _conn = new NpgsqlConnection(_connectionStr);
