@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace SqlWorker {
 
-    public class OledbParameterConstructor : AbstractDbParameterConstructors {
+    public class ParameterConstructor_OLEDB : AbstractDbParameterConstructors {
 
         public override System.Data.Common.DbParameter Create(string name, object value, System.Data.DbType? type = null, System.Data.ParameterDirection? direction = null) {
             var result = new OleDbParameter(name, value);
@@ -16,7 +16,7 @@ namespace SqlWorker {
         }
     }
 
-    public class OledbSqlWorker : ASqlWorker<OledbParameterConstructor> {
+    public class OledbSqlWorker : ASqlWorker<ParameterConstructor_OLEDB> {
         private OleDbConnection _conn { get; set; }
 
         public OledbSqlWorker(String connectionString, TimeSpan? reconnectPause = null)

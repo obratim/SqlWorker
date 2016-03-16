@@ -23,7 +23,7 @@ namespace Testing {
 
             return;
 
-            ASqlWorker<NpgParameterConstructor> worker = (ASqlWorker<NpgParameterConstructor>)new NpgSqlWorker("Server=devel;Port=5432;Database=bibliography;User Id=postgres;Password=mamayanekurulapshu;");
+            ASqlWorker<ParameterConstructor_NPG> worker = (ASqlWorker<ParameterConstructor_NPG>)new NpgSqlWorker("Server=devel;Port=5432;Database=bibliography;User Id=postgres;Password=mamayanekurulapshu;");
             worker.ReOpenConnection();
 
             //List<String> objs = worker.GetListFromDBSingleProcessing("select * from wos.\"Record\"", null, delegate(DbDataReader dr) {

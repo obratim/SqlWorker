@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace SqlWorker {
 
-    public class MSSQLParameterConstuctors : AbstractDbParameterConstructors {
+    public class ParameterConstuctors_MSSQL : AbstractDbParameterConstructors {
 
         public override DbParameter Create(string paramName, object paramValue, DbType? type = null, ParameterDirection? direction = null) {
             if (!type.HasValue) return new SqlParameter(paramName, paramValue);
@@ -19,7 +19,7 @@ namespace SqlWorker {
         }
     }
 
-    public class MSSqlWorker : ASqlWorker<MSSQLParameterConstuctors> {
+    public class MSSqlWorker : ASqlWorker<ParameterConstuctors_MSSQL> {
         private SqlConnection _conn;
 
         private String connstr;

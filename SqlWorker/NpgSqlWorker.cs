@@ -7,7 +7,7 @@ using Npgsql;
 
 namespace SqlWorker {
 
-    public class NpgParameterConstructor : AbstractDbParameterConstructors {
+    public class ParameterConstructor_NPG : AbstractDbParameterConstructors {
 
         public override DbParameter Create(string name, object value, DbType? type = null, ParameterDirection? direction = null) {
             if (!type.HasValue) return new NpgsqlParameter(name, value);
@@ -19,7 +19,7 @@ namespace SqlWorker {
         }
     }
 
-    public class NpgSqlWorker : ASqlWorker<NpgParameterConstructor> {
+    public class NpgSqlWorker : ASqlWorker<ParameterConstructor_NPG> {
         private String _connectionStr;
 
         public NpgSqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
