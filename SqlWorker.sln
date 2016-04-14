@@ -5,6 +5,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlWorker", "SqlWorker\SqlW
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testing", "Testing\Testing.csproj", "{9BC82B25-DFDA-4C9C-8B8F-64E988D3321F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{94B827E5-A98F-414B-8ED9-31284E3FE85C}"
+	ProjectSection(SolutionItems) = preProject
+		Rebracer.xml = Rebracer.xml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
