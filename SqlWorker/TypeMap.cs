@@ -4,10 +4,10 @@ using System.Data;
 
 using System.Linq;
 
-namespace SqlWorker {
-
-    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new() {
-
+namespace SqlWorker
+{
+    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new()
+    {
         protected static readonly Dictionary<Type, DbType> typeMap = new Dictionary<Type, DbType>() {
 	        { typeof(byte) , DbType.Byte },
 	        { typeof(sbyte) , DbType.SByte },

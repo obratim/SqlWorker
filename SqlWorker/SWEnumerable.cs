@@ -5,12 +5,12 @@ using System.Data.Common;
 
 using System.Linq;
 
-namespace SqlWorker {
-
-    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new() {
-
-        protected class DbIer<T> : DbEnumerator, IEnumerator<T> {
-
+namespace SqlWorker
+{
+    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new()
+    {
+        protected class DbIer<T> : DbEnumerator, IEnumerator<T>
+        {
             public class CommandReleasedEventArgs : EventArgs { public DbCommand cmd { get; set; } }
 
             public event Action<object, CommandReleasedEventArgs> CommandReleased;
@@ -20,7 +20,8 @@ namespace SqlWorker {
             private Func<DbDataReader, bool> moveNextModifier;
 
             public DbIer(DbCommand cmd, DbDataReader dr, Func<DbDataReader, T> converter, Func<DbDataReader, bool> moveNextModifier = null)
-                : base(dr, true) {
+                : base(dr, true)
+            {
                 this.cmd = cmd;
                 this.dr = dr;
                 this.converter = converter;
@@ -32,14 +33,17 @@ namespace SqlWorker {
 
             #region Члены IEnumerator<T>
 
-            public new T Current {
-                get {
+            public new T Current
+            {
+                get
+                {
                     if (!hascurrent) { current = converter(dr); }
                     return current;
                 }
             }
 
-            new public bool MoveNext() {
+            new public bool MoveNext()
+            {
                 hascurrent = false;
                 return moveNextModifier(dr);
             }
@@ -48,7 +52,8 @@ namespace SqlWorker {
 
             #region Члены IDisposable
 
-            public void Dispose() {
+            public void Dispose()
+            {
                 dr.Close();
                 dr.Dispose();
                 cmd.Dispose();
@@ -59,10 +64,12 @@ namespace SqlWorker {
             #endregion Члены IDisposable
         }
 
-        protected class DbIe<T> : IEnumerable<T> {
+        protected class DbIe<T> : IEnumerable<T>
+        {
             private DbIer<T> enumerator;
 
-            public DbIe(ASqlWorker<TPC> this_sw, String Command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, Func<DbDataReader, bool> moveNextModifier = null) {
+            public DbIe(ASqlWorker<TPC> this_sw, String Command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, Func<DbDataReader, bool> moveNextModifier = null)
+            {
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 ASqlWorker<TPC>.SqlParameterNullWorkaround(vals);
                 DbCommand cmd = this_sw.Conn.CreateCommand();
@@ -76,18 +83,21 @@ namespace SqlWorker {
                 enumerator = new DbIer<T>(cmd, dr, todo, moveNextModifier);
                 this_sw.cmds.Add(cmd);
 
-                enumerator.CommandReleased += (sender, e) => {
+                enumerator.CommandReleased += (sender, e) =>
+                {
                     this_sw.cmds.Remove(e.cmd);
                     if (this_sw.cmds.Count == 0 && !this_sw.TransactionIsOpened)
                         this_sw.Conn.Close();
                 };
             }
 
-            public System.Collections.Generic.IEnumerator<T> GetEnumerator() {
+            public System.Collections.Generic.IEnumerator<T> GetEnumerator()
+            {
                 return enumerator;
             }
 
-            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+            {
                 return enumerator;
             }
         }

@@ -6,11 +6,12 @@ using System.Data.SqlClient;
 using System.Data.SqlTypes;
 using System.Linq;
 
-namespace SqlWorker {
-
-    public class ParameterConstuctors_MSSQL : AbstractDbParameterConstructors {
-
-        public override DbParameter Create(string paramName, object paramValue, DbType? type = null, ParameterDirection? direction = null) {
+namespace SqlWorker
+{
+    public class ParameterConstuctors_MSSQL : AbstractDbParameterConstructors
+    {
+        public override DbParameter Create(string paramName, object paramValue, DbType? type = null, ParameterDirection? direction = null)
+        {
             if (!type.HasValue) return new SqlParameter(paramName, paramValue);
             var x = new SqlParameter(paramName, type.Value);
             x.Value = paramValue;
@@ -19,13 +20,16 @@ namespace SqlWorker {
         }
     }
 
-    public class MSSqlWorker : ASqlWorker<ParameterConstuctors_MSSQL> {
+    public class MSSqlWorker : ASqlWorker<ParameterConstuctors_MSSQL>
+    {
         private SqlConnection _conn;
 
         private String connstr;
 
-        protected override DbConnection Conn {
-            get {
+        protected override DbConnection Conn
+        {
+            get
+            {
                 if (_conn == null) _conn = new SqlConnection(connstr);
                 return _conn;
             }
@@ -35,24 +39,28 @@ namespace SqlWorker {
             : base(reconnectPause) { connstr = ConnectionString; }
 
         public MSSqlWorker(String Server, String DataBase, TimeSpan? reconnectPause = null)
-            : base(reconnectPause) {
+            : base(reconnectPause)
+        {
             connstr = String.Format("Server={0};Database={1};Integrated Security=true", Server, DataBase);
         }
 
         public MSSqlWorker(String Server, String DataBase, String Login, String Password, TimeSpan? reconnectPause = null)
-            : base(reconnectPause) {
+            : base(reconnectPause)
+        {
             connstr = String.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", Server, DataBase, Login, Password);
         }
 
         #region send files
 
-        public SqlFileStream GetFileStreamFromDB(String tableName, String dataFieldName, System.IO.FileAccess accessType, Dictionary<String, Object> attributies, String condition = "") {
+        public SqlFileStream GetFileStreamFromDB(String tableName, String dataFieldName, System.IO.FileAccess accessType, Dictionary<String, Object> attributies, String condition = "")
+        {
             if (!TransactionIsOpened) throw new Exception("Must perform file operations in transaction!");
             if (condition == null) condition = "";
             if (string.IsNullOrWhiteSpace(condition))
                 condition = attributies.Aggregate<KeyValuePair<String, Object>, String>("", (str, i) => { return str + (String.IsNullOrEmpty(str) ? "" : " and ") + i.Key + " = @" + i.Key; });
             return ManualProcessing("select " + dataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + condition,
-                dr => {
+                dr =>
+                {
                     if (!dr.Read()) throw new Exception("No sutch file");
                     return new SqlFileStream(dr.GetString(0), (byte[])dr[1], accessType);
                 }, attributies);
@@ -67,14 +75,18 @@ namespace SqlWorker {
             System.IO.Stream inputStream,
             long bufLength = 512*1024
             //, String procName = null, int procFilePathIndex = 0, int procFileTokenIndex = 1
-        ) {
+        )
+        {
             return InsertFileGeneric(inputStream,
-                () => {
+                () =>
+                {
                     Guid fileId;
-                    if (!attributes.ContainsKey(fileIdFieldName)) {
+                    if (!attributes.ContainsKey(fileIdFieldName))
+                    {
                         fileId = Guid.NewGuid();
                         attributes.Add(fileIdFieldName, fileId);
-                    } else fileId = (Guid)attributes[fileIdFieldName];
+                    }
+                    else fileId = (Guid)attributes[fileIdFieldName];
                     attributes[fileDataFieldName] = new byte[0];
 
                     InsertValues(tableName, attributes);
@@ -84,8 +96,10 @@ namespace SqlWorker {
                 bufLength);
         }
 
-        public int InsertFileGeneric(System.IO.Stream inputStream, FileStreamService InsertDataAndReturnSQLFileStream, long bufLength = 512*1024) {
-            try {
+        public int InsertFileGeneric(System.IO.Stream inputStream, FileStreamService InsertDataAndReturnSQLFileStream, long bufLength = 512*1024)
+        {
+            try
+            {
                 bool toCloseTranFlag = !TransactionIsOpened;
                 if (!TransactionIsOpened) TransactionBegin();
 
@@ -94,7 +108,8 @@ namespace SqlWorker {
                 byte[] buffer = new byte[bufLength];
                 int readen = inputStream.Read(buffer, 0, buffer.Length);
                 int writen = readen;
-                while (readen > 0) {
+                while (readen > 0)
+                {
                     sfs.Write(buffer, 0, readen);
                     readen = inputStream.Read(buffer, 0, buffer.Length);
                     writen += readen;
@@ -103,16 +118,21 @@ namespace SqlWorker {
 
                 if (toCloseTranFlag) TransactionCommit();
                 return writen;
-            } catch {
-                if (TransactionIsOpened) try { TransactionRollback(); } catch { }
+            }
+            catch
+            {
+                if (TransactionIsOpened) try { TransactionRollback(); }
+                    catch { }
                 return -1;
             }
         }
 
         #endregion send files
 
-        virtual public bool CreateTableByDataTable(DataTable source, bool recreate = false) {
-            if (recreate) {
+        virtual public bool CreateTableByDataTable(DataTable source, bool recreate = false)
+        {
+            if (recreate)
+            {
                 ExecuteNonQuery("IF OBJECT_ID(@tname, 'U') IS NOT NULL DROP TABLE " + source.TableName, new SWParameters { { "tname", source.TableName } });
             }
 
@@ -149,10 +169,12 @@ CREATE TABLE {0} (
 
         #region Bulk copy
 
-        virtual public bool BulkCopy(DataTable source, SqlBulkCopyColumnMappingCollection mappings = null, int timeout = 0) {
+        virtual public bool BulkCopy(DataTable source, SqlBulkCopyColumnMappingCollection mappings = null, int timeout = 0)
+        {
             if (Conn.State != ConnectionState.Open) Conn.Open();
 
-            using (SqlBulkCopy sbc = new SqlBulkCopy(_conn)) {
+            using (SqlBulkCopy sbc = new SqlBulkCopy(_conn))
+            {
                 sbc.DestinationTableName = source.TableName;
                 if (mappings == null)
                     foreach (var column in source.Columns)
