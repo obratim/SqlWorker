@@ -153,7 +153,7 @@ namespace SqlWorker
                 SqlParameterNullWorkaround(vals);
                 DbCommand cmd = Conn.CreateCommand();
                 cmds.Add(cmd);
-                cmd.CommandText = cmdtype != System.Data.CommandType.StoredProcedure ? QueryWithParams(command, vals) : command;
+                cmd.CommandText = command;
                 cmd.Parameters.AddRange(vals);
                 if (cmdtype.HasValue) cmd.CommandType = cmdtype.Value;
                 cmd.Transaction = _transaction;
@@ -249,7 +249,7 @@ namespace SqlWorker
                 {
                     cmds.Add(cmd);
                     if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
-                    cmd.CommandText = QueryWithParams(command, vals);
+                    cmd.CommandText = command;
                     cmd.Parameters.AddRange(vals);
                     cmd.Transaction = _transaction;
                     if (Conn.State != ConnectionState.Open) Conn.Open();

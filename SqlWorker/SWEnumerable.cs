@@ -74,7 +74,7 @@ namespace SqlWorker
                 ASqlWorker<TPC>.SqlParameterNullWorkaround(vals);
                 DbCommand cmd = this_sw.Conn.CreateCommand();
                 if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
-                cmd.CommandText = QueryWithParams(Command, vals);
+                cmd.CommandText = Command;
                 cmd.Parameters.AddRange(vals);
                 cmd.Transaction = this_sw._transaction;
                 if (this_sw.Conn.State != ConnectionState.Open) this_sw.Conn.Open();

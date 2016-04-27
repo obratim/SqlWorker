@@ -9,23 +9,6 @@ namespace SqlWorker
     {
         #region parameters management
 
-        //useless?
-        protected static String QueryWithParams(String Query, DbParameter[] Params)
-        {
-            if (Params == null) return Query;
-
-            String newq = Query;
-            bool firstParam = true;
-
-            if (newq.IndexOf('@') != -1) firstParam = false;
-            foreach (var p in Params)
-            {
-                if (newq.IndexOf("@" + p.ParameterName) == -1) newq += (firstParam ? " @" : ", @") + p.ParameterName;
-                firstParam = false;
-            }
-            return newq;
-        }
-
         protected static void SqlParameterNullWorkaround(DbParameter[] param)
         {
             foreach (var p in param)
