@@ -310,7 +310,7 @@ namespace SqlWorker
         /// <param name="exceptions"></param>
         /// <param name="timeout"></param>
         /// <returns></returns>
-        virtual public IEnumerable<T> SelectWithReflection<T>(String command, DbParametersConstructor vals = null, List<String> exceptions = null, CommandType commandType = CommandType.Text, int? timeout = null) where T : new()
+        virtual public IEnumerable<T> SelectWithReflection<T>(String command, DbParametersConstructor vals = null, List<String> exceptions = null, int? timeout = null, CommandType commandType = CommandType.Text) where T : new()
         {
             if (exceptions != null) return Select(command, dr => DataReaderToObj<T>(dr, exceptions), vals, timeout, commandType);
             else return Select(command, dr => DataReaderToObj<T>(dr), vals, timeout);
