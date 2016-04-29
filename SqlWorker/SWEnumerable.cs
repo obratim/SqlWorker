@@ -68,13 +68,14 @@ namespace SqlWorker
         {
             private DbIer<T> enumerator;
 
-            public DbIe(ASqlWorker<TPC> this_sw, String Command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, Func<DbDataReader, bool> moveNextModifier = null)
+            public DbIe(ASqlWorker<TPC> this_sw, String Command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, Func<DbDataReader, bool> moveNextModifier = null)
             {
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 ASqlWorker<TPC>.SqlParameterNullWorkaround(vals);
                 DbCommand cmd = this_sw.Conn.CreateCommand();
                 if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
                 cmd.CommandText = Command;
+                cmd.CommandType = commandType;
                 cmd.Parameters.AddRange(vals);
                 cmd.Transaction = this_sw._transaction;
                 if (this_sw.Conn.State != ConnectionState.Open) this_sw.Conn.Open();
