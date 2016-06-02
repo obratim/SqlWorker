@@ -101,14 +101,14 @@ namespace SqlWorker
         /// <summary>
         /// Only single one transaction is supported!
         /// </summary>
-        virtual public void TransactionBegin()
+        virtual public void TransactionBegin(IsolationLevel SpecificIsolationLevel = IsolationLevel.ReadCommitted)
         {
             if (TransactionIsOpened)
             {
                 throw new Exception("transaction exists!");
             }
             if (Conn.State != ConnectionState.Open) Conn.Open();
-            _transaction = Conn.BeginTransaction();
+            _transaction = Conn.BeginTransaction(SpecificIsolationLevel);
             _transactionIsOpened = true;
         }
 
