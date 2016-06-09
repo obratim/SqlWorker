@@ -118,6 +118,7 @@ namespace SqlWorker
             //foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
             if (cmds.Count > 0) throw new Exception("Can't commit while commands are executed");
             _transaction.Commit();
+            _transaction.Dispose();
             if (closeConn && cmds.Count == 0) Conn.Close();
             _transactionIsOpened = false;
         }
@@ -128,6 +129,7 @@ namespace SqlWorker
             //foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
             if (cmds.Count > 0) throw new Exception("Can't commit while commands are executed");
             _transaction.Rollback();
+            _transaction.Dispose();
             if (closeConn && cmds.Count == 0) Conn.Close();
             _transactionIsOpened = false;
         }
@@ -154,19 +156,22 @@ namespace SqlWorker
         {
             try
             {
+                int result;
                 vals = vals ?? DbParametersConstructor.emptyParams;
                 SqlParameterNullWorkaround(vals);
-                DbCommand cmd = Conn.CreateCommand();
-                cmds.Add(cmd);
-                cmd.CommandText = command;
-                cmd.Parameters.AddRange(vals);
-                cmd.CommandType = commandType;
-                cmd.Transaction = _transaction;
-                if (timeout != null) cmd.CommandTimeout = timeout.Value;
-                if (Conn.State != ConnectionState.Open) Conn.Open();
-                int result = cmd.ExecuteNonQuery();
-                cmd.Dispose();
-                cmds.Remove(cmd);
+                using (DbCommand cmd = Conn.CreateCommand())
+                {
+                    cmds.Add(cmd);
+                    cmd.CommandText = command;
+                    cmd.Parameters.AddRange(vals);
+                    cmd.CommandType = commandType;
+                    cmd.Transaction = _transaction;
+                    if (timeout != null) cmd.CommandTimeout = timeout.Value;
+                    if (Conn.State != ConnectionState.Open) Conn.Open();
+                    result = cmd.ExecuteNonQuery();
+                    cmd.Dispose();
+                    cmds.Remove(cmd);
+                }
                 if (!TransactionIsOpened && cmds.Count == 0) Conn.Close();
                 return result;
             }
