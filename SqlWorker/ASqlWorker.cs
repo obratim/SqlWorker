@@ -33,6 +33,16 @@ namespace SqlWorker
             return dr[ordinal] != DBNull.Value ? (long?)dr[ordinal] : null;
         }
 
+		public static float? GetNullableFloat(this DbDataReader dr, int ordinal)
+		{
+			return dr[ordinal] != DBNull.Value ? (float?)dr[ordinal] : null;
+		}
+
+		public static double? GetNullableDouble(this DbDataReader dr, int ordinal)
+		{
+			return dr[ordinal] != DBNull.Value ? (double?)dr[ordinal] : null;
+		}
+
         public static Guid? GetNullableGuid(this DbDataReader dr, int ordinal)
         {
             return dr[ordinal] != DBNull.Value ? (Guid?)dr[ordinal] : null;
