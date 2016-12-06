@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="ASqlWorker.cs" />
     <Compile Include="AbstractDbParameterConstructors.cs" />
+    <Compile Include="Helpers.cs" />
     <Compile Include="NpgSqlWorker.cs">
       <SubType>Code</SubType>
     </Compile>
