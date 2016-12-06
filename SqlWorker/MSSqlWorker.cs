@@ -169,7 +169,7 @@ CREATE TABLE {0} (
 
         #region Bulk copy
 
-        virtual public bool BulkCopy(DataTable source, SqlBulkCopyColumnMappingCollection mappings = null, int timeout = 0)
+        virtual public bool BulkCopy(DataTable source, SqlBulkCopyColumnMappingCollection mappings = null, int timeout = 1800)
         {
             if (Conn.State != ConnectionState.Open) Conn.Open();
 
@@ -185,6 +185,12 @@ CREATE TABLE {0} (
 
             return true;
         }
+		virtual public bool BulkCopy<T>(IEnumerable<T> source, String targetTableName, SqlBulkCopyColumnMappingCollection mappings = null, int timeout = 1800)
+		{
+			var dt = source.AsDataTable();
+			dt.TableName = targetTableName;
+			return BulkCopy(dt, mappings, timeout);
+		}
 
         #endregion Bulk copy
     }
