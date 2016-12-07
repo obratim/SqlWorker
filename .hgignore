@@ -10,3 +10,4 @@ SqlWorker/SqlWorker.csproj.user
 SqlWorker/bin/**
 SqlWorker/obj/**
 SqlWorker/Properties/SqlWorker.nuspec
+SqlWorker.*.nupkg
