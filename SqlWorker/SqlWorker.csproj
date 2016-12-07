@@ -59,6 +59,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TypeMap.cs" />
     <Compile Include="TypeMap-T-Sql.cs" />
+    <None Include="Properties\SqlWorker.nuspec">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Properties\SqlWorker.nuspec.base">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\VersionInfo.base.cs" />
     <Compile Include="Properties\VersionInfo.cs" />
     <Compile Include="SWEnumerable.cs" />
@@ -72,6 +78,7 @@
   <UsingTask TaskName="HgVersionFile" AssemblyFile="lib\MSBuildVersioning.dll" />
   <Target Name="BeforeBuild">
     <HgVersionFile TemplateFile="Properties\VersionInfo.base.cs" DestinationFile="Properties\VersionInfo.cs" />
+	<HgVersionFile TemplateFile="Properties\SqlWorker.nuspec.base" DestinationFile="Properties\SqlWorker.nuspec" />
   </Target>
   <Target Name="AfterBuild">
   </Target>
