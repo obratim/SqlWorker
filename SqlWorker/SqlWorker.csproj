@@ -59,7 +59,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TypeMap.cs" />
     <Compile Include="TypeMap-T-Sql.cs" />
-    <None Include="Properties\SqlWorker.nuspec">
+    <None Include="SqlWorker.nuspec">
       <SubType>Designer</SubType>
     </None>
     <None Include="Properties\SqlWorker.nuspec.base">
@@ -71,6 +71,9 @@
     <Compile Include="SWParameters.cs" />
     <Compile Include="DbParametersConstructor.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="creating nuget package readme.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -78,7 +81,7 @@
   <UsingTask TaskName="HgVersionFile" AssemblyFile="lib\MSBuildVersioning.dll" />
   <Target Name="BeforeBuild">
     <HgVersionFile TemplateFile="Properties\VersionInfo.base.cs" DestinationFile="Properties\VersionInfo.cs" />
-	<HgVersionFile TemplateFile="Properties\SqlWorker.nuspec.base" DestinationFile="Properties\SqlWorker.nuspec" />
+    <HgVersionFile TemplateFile="Properties\SqlWorker.nuspec.base" DestinationFile="SqlWorker.nuspec" />
   </Target>
   <Target Name="AfterBuild">
   </Target>

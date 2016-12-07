@@ -7,6 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testing", "Testing\Testing.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{94B827E5-A98F-414B-8ED9-31284E3FE85C}"
 	ProjectSection(SolutionItems) = preProject
+		SqlWorker\creating nuget package readme.txt = SqlWorker\creating nuget package readme.txt
 		Rebracer.xml = Rebracer.xml
 	EndProjectSection
 EndProject
