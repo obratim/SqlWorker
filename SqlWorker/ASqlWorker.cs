@@ -398,7 +398,7 @@ namespace SqlWorker
             vals, timeout, commandType);
         }
 
-        #region Члены IDisposable
+        #region IDisposable members
 
         public virtual void Dispose(bool commit)
         {
@@ -413,6 +413,6 @@ namespace SqlWorker
             Dispose(false);
         }
 
-        #endregion Члены IDisposable
+        #endregion IDisposable members
     }
 }
