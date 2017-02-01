@@ -29,7 +29,7 @@ namespace SqlWorker
         /// </summary>
         /// <param name="ReopenOnlyIfNotInTransaction">connection will be reopenned only if ReopenOnlyIfNotInTransaction=true and transaction is not openned</param>
         /// <returns>true - connection was opened</returns>
-        virtual public bool ReOpenConnection(bool reopenIfNotInTransaction = true)
+        virtual public bool ReOpenConnection(bool dontCloseTransaction = true)
         {
             if (Conn.State != ConnectionState.Open && ReConnectPause.Ticks > 0)
             {
@@ -43,7 +43,7 @@ namespace SqlWorker
             }
             else
             {
-                if (TransactionIsOpened || !reopenIfNotInTransaction) return true;
+                if (TransactionIsOpened || !dontCloseTransaction) return true;
             }
 
             LastDisconnect = null;
