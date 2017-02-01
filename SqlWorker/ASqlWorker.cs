@@ -47,9 +47,13 @@ namespace SqlWorker
             }
 
             LastDisconnect = null;
-            if (Conn.State != ConnectionState.Closed && cmds.Count == 0) Conn.Close();
+            if (TransactionIsOpened) TransactionRollback();
+            if (Conn.State != ConnectionState.Closed)
+            {
+                Conn.Close();
+            }
             Conn.Open();
-            _transactionIsOpened = false;
+            
             return Conn.State == ConnectionState.Open;
         }
 
@@ -72,22 +76,18 @@ namespace SqlWorker
         virtual public void TransactionCommit(bool closeConn = true)
         {
             if (!TransactionIsOpened) throw new Exception("transaction doesnt exist!");
-            //foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
-            if (cmds.Count > 0) throw new Exception("Can't commit while commands are executed");
             _transaction.Commit();
             _transaction.Dispose();
-            if (closeConn && cmds.Count == 0) Conn.Close();
+            if (closeConn) Conn.Close();
             _transactionIsOpened = false;
         }
 
         virtual public void TransactionRollback(bool closeConn = true)
         {
             if (!TransactionIsOpened) throw new Exception("transaction doesnt exist!");
-            //foreach (var i in Readers) if (i != null) { if (!i.IsClosed) { i.Close(); } i.Dispose(); }
-            if (cmds.Count > 0) throw new Exception("Can't commit while commands are executed");
             _transaction.Rollback();
             _transaction.Dispose();
-            if (closeConn && cmds.Count == 0) Conn.Close();
+            if (closeConn) Conn.Close();
             _transactionIsOpened = false;
         }
 
@@ -118,7 +118,6 @@ namespace SqlWorker
                 SqlParameterNullWorkaround(vals);
                 using (DbCommand cmd = Conn.CreateCommand())
                 {
-                    cmds.Add(cmd);
                     cmd.CommandText = command;
                     cmd.Parameters.AddRange(vals);
                     cmd.CommandType = commandType;
@@ -126,10 +125,8 @@ namespace SqlWorker
                     if (timeout != null) cmd.CommandTimeout = timeout.Value;
                     if (Conn.State != ConnectionState.Open) Conn.Open();
                     result = cmd.ExecuteNonQuery();
-                    cmd.Dispose();
-                    cmds.Remove(cmd);
                 }
-                if (!TransactionIsOpened && cmds.Count == 0) Conn.Close();
+                if (!TransactionIsOpened) Conn.Close();
                 return result;
             }
             catch
@@ -215,7 +212,6 @@ namespace SqlWorker
                 using (DbCommand cmd = Conn.CreateCommand())
                 {
                     cmd.CommandType = commandType;
-                    cmds.Add(cmd);
                     if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
                     cmd.CommandText = command;
                     cmd.Parameters.AddRange(vals);
@@ -225,10 +221,8 @@ namespace SqlWorker
                     {
                         result = todo(dr);
                     }
-
-                    cmds.Remove(cmd);
                 }
-                if (!TransactionIsOpened && cmds.Count == 0) Conn.Close();
+                if (!TransactionIsOpened) Conn.Close();
 
                 return result;
             }
@@ -244,9 +238,7 @@ namespace SqlWorker
                 throw;
             }
         }
-
-        private SynchronizedCollection<DbCommand> cmds = new SynchronizedCollection<DbCommand>();
-
+        
         private bool defaultMoveNext(DbDataReader dr) { return dr.Read(); }
         /// <summary>
         /// Return IEnumerable with results
