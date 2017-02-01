@@ -124,7 +124,6 @@ namespace SqlWorker
                 if (Conn.State != ConnectionState.Open) Conn.Open();
                 result = cmd.ExecuteNonQuery();
             }
-            if (!TransactionIsOpened) Conn.Close();
             return result;
         }
 
@@ -206,8 +205,6 @@ namespace SqlWorker
                     result = todo(dr);
                 }
             }
-            if (!TransactionIsOpened) Conn.Close();
-
             return result;
         }
         
