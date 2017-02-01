@@ -247,6 +247,7 @@ namespace SqlWorker
 
         private SynchronizedCollection<DbCommand> cmds = new SynchronizedCollection<DbCommand>();
 
+        private bool defaultMoveNext(DbDataReader dr) { return dr.Read(); }
         /// <summary>
         /// Return IEnumerable with results
         /// </summary>
@@ -259,8 +260,25 @@ namespace SqlWorker
         /// <returns>consequentially readed data</returns>
         virtual public IEnumerable<T> Select<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, Func<DbDataReader, bool> moveNextModifier = null)
         {
-            var ie = new DbIe<T>(this, command, todo, vals, timeout, commandType, moveNextModifier);
-            return ie;
+            vals = vals ?? DbParametersConstructor.emptyParams;
+            ASqlWorker<TPC>.SqlParameterNullWorkaround(vals);
+            using (var cmd = Conn.CreateCommand())
+            {
+                if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
+                cmd.CommandText = command;
+                cmd.CommandType = commandType;
+                cmd.Parameters.AddRange(vals);
+                cmd.Transaction = this._transaction;
+                if (this.Conn.State != ConnectionState.Open) this.Conn.Open();
+                moveNextModifier = moveNextModifier ?? defaultMoveNext;
+                using (var dr = cmd.ExecuteReader())
+                {
+                    while (moveNextModifier(dr))
+                    {
+                        yield return todo(dr);
+                    }
+                }
+            }
         }
 
         /// <summary>

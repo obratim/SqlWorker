@@ -67,7 +67,6 @@
     </None>
     <None Include="Properties\VersionInfo.base.cs" />
     <Compile Include="Properties\VersionInfo.cs" />
-    <Compile Include="SWEnumerable.cs" />
     <Compile Include="SWParameters.cs" />
     <Compile Include="DbParametersConstructor.cs" />
   </ItemGroup>
