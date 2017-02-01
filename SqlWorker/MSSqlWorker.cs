@@ -101,19 +101,20 @@ namespace SqlWorker
             bool toCloseTranFlag = !TransactionIsOpened;
             if (!TransactionIsOpened) TransactionBegin();
 
-            var sfs = InsertDataAndReturnSQLFileStream();
-
-            byte[] buffer = new byte[bufLength];
-            int readen = inputStream.Read(buffer, 0, buffer.Length);
-            int writen = readen;
-            while (readen > 0)
+            int writen = 0;
+            using (var sfs = InsertDataAndReturnSQLFileStream())
             {
-                sfs.Write(buffer, 0, readen);
-                readen = inputStream.Read(buffer, 0, buffer.Length);
-                writen += readen;
-            }
-            sfs.Close();
 
+                byte[] buffer = new byte[bufLength];
+                int readen = inputStream.Read(buffer, 0, buffer.Length);
+                writen = readen;
+                while (readen > 0)
+                {
+                    sfs.Write(buffer, 0, readen);
+                    readen = inputStream.Read(buffer, 0, buffer.Length);
+                    writen += readen;
+                }
+            }
             if (toCloseTranFlag) TransactionCommit();
             return writen;
         }
