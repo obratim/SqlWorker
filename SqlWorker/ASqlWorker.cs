@@ -111,35 +111,21 @@ namespace SqlWorker
 
         virtual public int ExecuteNonQuery(String command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text)
         {
-            try
+            int result;
+            vals = vals ?? DbParametersConstructor.emptyParams;
+            SqlParameterNullWorkaround(vals);
+            using (DbCommand cmd = Conn.CreateCommand())
             {
-                int result;
-                vals = vals ?? DbParametersConstructor.emptyParams;
-                SqlParameterNullWorkaround(vals);
-                using (DbCommand cmd = Conn.CreateCommand())
-                {
-                    cmd.CommandText = command;
-                    cmd.Parameters.AddRange(vals);
-                    cmd.CommandType = commandType;
-                    cmd.Transaction = _transaction;
-                    if (timeout != null) cmd.CommandTimeout = timeout.Value;
-                    if (Conn.State != ConnectionState.Open) Conn.Open();
-                    result = cmd.ExecuteNonQuery();
-                }
-                if (!TransactionIsOpened) Conn.Close();
-                return result;
+                cmd.CommandText = command;
+                cmd.Parameters.AddRange(vals);
+                cmd.CommandType = commandType;
+                cmd.Transaction = _transaction;
+                if (timeout != null) cmd.CommandTimeout = timeout.Value;
+                if (Conn.State != ConnectionState.Open) Conn.Open();
+                result = cmd.ExecuteNonQuery();
             }
-            catch
-            {
-                if (Conn.State != ConnectionState.Closed)
-                {
-                    try { _transaction.Rollback(); _transactionIsOpened = false; }
-                    catch { }
-                    try { Conn.Close(); _transactionIsOpened = false; }
-                    catch { }
-                }
-                throw;
-            }
+            if (!TransactionIsOpened) Conn.Close();
+            return result;
         }
 
         virtual public int InsertValues(String tableName, DbParametersConstructor vals = null, bool returnIdentity = false, int? timeout = null)
@@ -204,39 +190,25 @@ namespace SqlWorker
 
         virtual public T ManualProcessing<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text)
         {
-            try
+            vals = vals ?? DbParametersConstructor.emptyParams;
+            SqlParameterNullWorkaround(vals);
+            T result;
+            using (DbCommand cmd = Conn.CreateCommand())
             {
-                vals = vals ?? DbParametersConstructor.emptyParams;
-                SqlParameterNullWorkaround(vals);
-                T result;
-                using (DbCommand cmd = Conn.CreateCommand())
+                cmd.CommandType = commandType;
+                if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
+                cmd.CommandText = command;
+                cmd.Parameters.AddRange(vals);
+                cmd.Transaction = _transaction;
+                if (Conn.State != ConnectionState.Open) Conn.Open();
+                using (DbDataReader dr = cmd.ExecuteReader())
                 {
-                    cmd.CommandType = commandType;
-                    if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
-                    cmd.CommandText = command;
-                    cmd.Parameters.AddRange(vals);
-                    cmd.Transaction = _transaction;
-                    if (Conn.State != ConnectionState.Open) Conn.Open();
-                    using (DbDataReader dr = cmd.ExecuteReader())
-                    {
-                        result = todo(dr);
-                    }
+                    result = todo(dr);
                 }
-                if (!TransactionIsOpened) Conn.Close();
+            }
+            if (!TransactionIsOpened) Conn.Close();
 
-                return result;
-            }
-            catch
-            {
-                if (Conn.State != ConnectionState.Closed)
-                {
-                    try { _transaction.Rollback(); _transactionIsOpened = false; }
-                    catch { }
-                    try { Conn.Close(); _transactionIsOpened = false; }
-                    catch { }
-                }
-                throw;
-            }
+            return result;
         }
         
         private bool defaultMoveNext(DbDataReader dr) { return dr.Read(); }

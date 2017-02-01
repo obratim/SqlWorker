@@ -96,35 +96,26 @@ namespace SqlWorker
                 bufLength);
         }
 
-        public int InsertFileGeneric(System.IO.Stream inputStream, FileStreamService InsertDataAndReturnSQLFileStream, long bufLength = 512*1024)
+        public int InsertFileGeneric(System.IO.Stream inputStream, FileStreamService InsertDataAndReturnSQLFileStream, long bufLength = 512 * 1024)
         {
-            try
+            bool toCloseTranFlag = !TransactionIsOpened;
+            if (!TransactionIsOpened) TransactionBegin();
+
+            var sfs = InsertDataAndReturnSQLFileStream();
+
+            byte[] buffer = new byte[bufLength];
+            int readen = inputStream.Read(buffer, 0, buffer.Length);
+            int writen = readen;
+            while (readen > 0)
             {
-                bool toCloseTranFlag = !TransactionIsOpened;
-                if (!TransactionIsOpened) TransactionBegin();
-
-                var sfs = InsertDataAndReturnSQLFileStream();
-
-                byte[] buffer = new byte[bufLength];
-                int readen = inputStream.Read(buffer, 0, buffer.Length);
-                int writen = readen;
-                while (readen > 0)
-                {
-                    sfs.Write(buffer, 0, readen);
-                    readen = inputStream.Read(buffer, 0, buffer.Length);
-                    writen += readen;
-                }
-                sfs.Close();
-
-                if (toCloseTranFlag) TransactionCommit();
-                return writen;
+                sfs.Write(buffer, 0, readen);
+                readen = inputStream.Read(buffer, 0, buffer.Length);
+                writen += readen;
             }
-            catch
-            {
-                if (TransactionIsOpened) try { TransactionRollback(); }
-                    catch { }
-                return -1;
-            }
+            sfs.Close();
+
+            if (toCloseTranFlag) TransactionCommit();
+            return writen;
         }
 
         #endregion send files
