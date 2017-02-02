@@ -192,15 +192,15 @@ namespace SqlWorker
             vals = vals ?? DbParametersConstructor.emptyParams;
             SqlParameterNullWorkaround(vals);
             T result;
-            using (DbCommand cmd = Conn.CreateCommand())
+            using (var cmd = Conn.CreateCommand())
             {
-                cmd.CommandType = commandType;
                 if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
+                cmd.CommandType = commandType;
                 cmd.CommandText = command;
                 cmd.Parameters.AddRange(vals);
                 cmd.Transaction = _transaction;
                 if (Conn.State != ConnectionState.Open) Conn.Open();
-                using (DbDataReader dr = cmd.ExecuteReader())
+                using (var dr = cmd.ExecuteReader())
                 {
                     result = todo(dr);
                 }
@@ -219,22 +219,21 @@ namespace SqlWorker
         /// <param name="timeout">timeout</param>
         /// <param name="moveNextModifier">rules for obtaining next row</param>
         /// <returns>consequentially readed data</returns>
-        virtual public IEnumerable<T> Select<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, Func<DbDataReader, bool> moveNextModifier = null)
+        virtual public IEnumerable<T> Select<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text)
         {
             vals = vals ?? DbParametersConstructor.emptyParams;
-            ASqlWorker<TPC>.SqlParameterNullWorkaround(vals);
+            SqlParameterNullWorkaround(vals);
             using (var cmd = Conn.CreateCommand())
             {
                 if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
-                cmd.CommandText = command;
                 cmd.CommandType = commandType;
+                cmd.CommandText = command;
                 cmd.Parameters.AddRange(vals);
                 cmd.Transaction = this._transaction;
-                if (this.Conn.State != ConnectionState.Open) this.Conn.Open();
-                moveNextModifier = moveNextModifier ?? defaultMoveNext;
+                if (this.Conn.State != ConnectionState.Open) Conn.Open();
                 using (var dr = cmd.ExecuteReader())
                 {
-                    while (moveNextModifier(dr))
+                    while (dr.Read())
                     {
                         yield return todo(dr);
                     }
@@ -255,69 +254,6 @@ namespace SqlWorker
         {
             if (exceptions != null) return Select(command, dr => DataReaderToObj<T>(dr, exceptions), vals, timeout, commandType);
             else return Select(command, dr => DataReaderToObj<T>(dr), vals, timeout);
-        }
-
-        /// <summary>
-        /// Select values from single column
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <param name="vals"></param>
-        /// <param name="whereCondition"></param>
-        /// <param name="includingNulls"></param>
-        /// <param name="timeout"></param>
-        /// <returns></returns>
-        virtual public IEnumerable<T> SelectScalar<T>(String table, String column, DbParametersConstructor vals = null, String whereCondition = null, bool includingNulls = false, int? timeout = null, CommandType commandType = CommandType.Text)
-        {
-            vals = vals ?? DbParametersConstructor.emptyParams;
-
-            if (String.IsNullOrWhiteSpace(whereCondition))
-                whereCondition = vals.Count() == 0 ? ""
-                    : vals.parameters.Aggregate<DbParameter, String, String>(
-                        " WHERE "
-                        , (value, i) => value + i.ParameterName + " = @" + i.ParameterName + "    AND\n\t" //aggregate constructions "<paramname> = @<paramname>    AND\n\t"
-                        , (value) => value.Substring(0, value.Length - 6)           // then cut last " AND\n\t"
-                    );
-
-            return SelectScalar<T>(String.Format("SELECT {0} FROM {1} {2}", column, table, whereCondition), vals, includingNulls, timeout, commandType);
-        }
-
-        virtual public IEnumerable<T> SelectScalar<T>(String query, DbParametersConstructor vals = null, bool includingNulls = false, int? timeout = null, CommandType commandType = CommandType.Text)
-        {
-            bool includingNulls_checked = includingNulls && IsNullableParams(typeof(T));
-
-            if (includingNulls_checked)
-                return Select(query, dr => dr[0] == DBNull.Value ? (T)(Object)null : (T)dr[0], vals, timeout, commandType);
-            else
-                return Select(query, dr => (T)dr[0], vals, timeout, commandType, dr =>
-                {
-                    do
-                    {
-                        if (!dr.Read()) return false;
-                    }
-                    while (dr[0] == DBNull.Value);
-                    return true;
-                });
-        }
-
-        virtual public IEnumerable<Tuple<TX, TY>> SelectTuple<TX, TY>(String query, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text)
-        {
-            bool[] IncludingNulls = new bool[] { IsNullableParams(typeof(TX)), IsNullableParams(typeof(TY)) };
-            return Select(query,
-                dr => new Tuple<TX, TY>((TX)(dr[0] == DBNull.Value ? null : dr[0]), (TY)(dr[1] == DBNull.Value ? null : dr[1])),
-                vals, timeout, commandType,
-                dr =>
-                {
-                    do
-                    {
-                        if (!dr.Read()) return false;
-                    }
-                    while ((!IncludingNulls[0] && dr[0] == DBNull.Value)
-                         ||
-                         (!IncludingNulls[1] && dr[1] == DBNull.Value));
-                    return true;
-                });
         }
 
         /// <summary>
