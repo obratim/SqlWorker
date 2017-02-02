@@ -208,7 +208,6 @@ namespace SqlWorker
             return result;
         }
         
-        private bool defaultMoveNext(DbDataReader dr) { return dr.Read(); }
         /// <summary>
         /// Return IEnumerable with results
         /// </summary>
