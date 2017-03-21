@@ -27,9 +27,8 @@ namespace SqlWorker
         }
 
         /// <summary>
-        /// serves to reopen connection after <ReConnectPause> time after last disconnect
+        /// serves to reopen connection after 'ReConnectPause' time after last disconnect
         /// </summary>
-        /// <param name="ReopenOnlyIfNotInTransaction">connection will be reopenned only if ReopenOnlyIfNotInTransaction=true and transaction is not openned</param>
         /// <returns>true - connection was opened</returns>
         public virtual bool ReOpenConnection()
         {
@@ -88,7 +87,7 @@ namespace SqlWorker
             return result;
         }
 
-        virtual public int InsertValues(String tableName, DbParametersConstructor vals = null, bool returnIdentity = false, int? timeout = null, DbTransaction transaction = null)
+        virtual public int InsertValues(String tableName, DbParametersConstructor vals, bool returnIdentity = false, int? timeout = null, DbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(vals);
 
@@ -221,6 +220,7 @@ namespace SqlWorker
 
         /// <summary>
         /// Converts DataRow to T with reflection, writing exceptions in list
+        /// </summary>
         virtual public T DataReaderToObj<T>(DbDataReader dr, List<String> errors) where T : new()
         {
             T result = new T();
@@ -235,6 +235,7 @@ namespace SqlWorker
 
         /// <summary>
         /// Converts DataRow to T with reflection, throws!
+        /// </summary>
         virtual public T DataReaderToObj<T>(DbDataReader dr) where T : new()
         {
             T result = new T();
