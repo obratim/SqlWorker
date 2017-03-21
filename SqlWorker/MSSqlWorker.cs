@@ -35,26 +35,25 @@ namespace SqlWorker
             }
         }
 
-        public MSSqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
-            : base(reconnectPause) { connstr = ConnectionString; }
+        public MSSqlWorker(String ñonnectionString, TimeSpan? reconnectPause = null)
+            : base(reconnectPause) { connstr = ñonnectionString; }
 
-        public MSSqlWorker(String Server, String DataBase, TimeSpan? reconnectPause = null)
+        public MSSqlWorker(String server, String dataBase, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
-            connstr = String.Format("Server={0};Database={1};Integrated Security=true", Server, DataBase);
+            connstr = String.Format("Server={0};Database={1};Integrated Security=true", server, dataBase);
         }
 
-        public MSSqlWorker(String Server, String DataBase, String Login, String Password, TimeSpan? reconnectPause = null)
+        public MSSqlWorker(String server, String dataBase, String login, String password, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
-            connstr = String.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", Server, DataBase, Login, Password);
+            connstr = String.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", server, dataBase, login, password);
         }
 
         #region send files
 
-        public SqlFileStream GetFileStreamFromDB(String tableName, String dataFieldName, System.IO.FileAccess accessType, Dictionary<String, Object> attributies, String condition = "")
+        public SqlFileStream GetFileStreamFromDB(String tableName, String dataFieldName, System.IO.FileAccess accessType, SqlTransaction transaction, Dictionary<String, Object> attributies, String condition = "", int? timeout = null)
         {
-            if (!TransactionIsOpened) throw new Exception("Must perform file operations in transaction!");
             if (condition == null) condition = "";
             if (string.IsNullOrWhiteSpace(condition))
                 condition = attributies.Aggregate<KeyValuePair<String, Object>, String>("", (str, i) => { return str + (String.IsNullOrEmpty(str) ? "" : " and ") + i.Key + " = @" + i.Key; });
@@ -63,7 +62,7 @@ namespace SqlWorker
                 {
                     if (!dr.Read()) throw new Exception("No sutch file");
                     return new SqlFileStream(dr.GetString(0), (byte[])dr[1], accessType);
-                }, attributies);
+                }, attributies, timeout, transaction: transaction);
         }
 
         public delegate SqlFileStream FileStreamService();
@@ -71,9 +70,11 @@ namespace SqlWorker
         public int InsertFileNoStoredProcs(
             String tableName,
             String fileIdFieldName, String fileDataFieldName,
+            SqlTransaction transaction,
             Dictionary<String, Object> attributes,
             System.IO.Stream inputStream,
-            long bufLength = 512*1024
+            long bufLength = 512*1024,
+            int? timeout = null
             //, String procName = null, int procFilePathIndex = 0, int procFileTokenIndex = 1
         )
         {
@@ -91,18 +92,15 @@ namespace SqlWorker
 
                     InsertValues(tableName, attributes);
 
-                    return GetFileStreamFromDB(tableName, fileDataFieldName, System.IO.FileAccess.Write, new Dictionary<string, object>() { { fileIdFieldName, attributes[fileIdFieldName] } });
+                    return GetFileStreamFromDB(tableName, fileDataFieldName, System.IO.FileAccess.Write, transaction, new Dictionary<string, object>() { { fileIdFieldName, attributes[fileIdFieldName] } }, timeout: timeout);
                 },
                 bufLength);
         }
 
-        public int InsertFileGeneric(System.IO.Stream inputStream, FileStreamService InsertDataAndReturnSQLFileStream, long bufLength = 512 * 1024)
+        public int InsertFileGeneric(System.IO.Stream inputStream, FileStreamService insertDataAndReturnSqlFileStream, long bufLength = 512 * 1024)
         {
-            bool toCloseTranFlag = !TransactionIsOpened;
-            if (!TransactionIsOpened) TransactionBegin();
-
             int writen = 0;
-            using (var sfs = InsertDataAndReturnSQLFileStream())
+            using (var sfs = insertDataAndReturnSqlFileStream())
             {
 
                 byte[] buffer = new byte[bufLength];
@@ -115,7 +113,6 @@ namespace SqlWorker
                     writen += readen;
                 }
             }
-            if (toCloseTranFlag) TransactionCommit();
             return writen;
         }
 
@@ -161,27 +158,51 @@ CREATE TABLE {0} (
 
         #region Bulk copy
 
-        virtual public bool BulkCopy(DataTable source, SqlBulkCopyColumnMappingCollection mappings = null, int timeout = 1800)
+        virtual public void BulkCopy(
+            DataTable source,
+            SqlTransaction transaction,
+            SqlBulkCopyColumnMappingCollection mappings = null,
+            SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
+            int? timeout = null
+            )
         {
             if (Conn.State != ConnectionState.Open) Conn.Open();
 
-            using (SqlBulkCopy sbc = new SqlBulkCopy(_conn))
+            using (SqlBulkCopy sbc = new SqlBulkCopy(_conn, options, transaction))
             {
                 sbc.DestinationTableName = source.TableName;
                 if (mappings == null)
                     foreach (var column in source.Columns)
                         sbc.ColumnMappings.Add(column.ToString(), column.ToString());
-                sbc.BulkCopyTimeout = timeout;
+                sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
                 sbc.WriteToServer(source);
             }
-
-            return true;
         }
-		virtual public bool BulkCopy<T>(IEnumerable<T> source, String targetTableName, SqlBulkCopyColumnMappingCollection mappings = null, int timeout = 1800)
+		virtual public void BulkCopy<T>(
+            IEnumerable<T> source,
+            String targetTableName,
+            SqlTransaction transaction,
+            SqlBulkCopyColumnMappingCollection mappings = null,
+            SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
+            int chunkSize = 0,
+            int? timeout = null
+            )
 		{
-			var dt = source.AsDataTable();
-			dt.TableName = targetTableName;
-			return BulkCopy(dt, mappings, timeout);
+		    if (chunkSize == 0)
+		    {
+		        var dt = source.AsDataTable();
+		        dt.TableName = targetTableName;
+		        BulkCopy(dt, transaction, mappings, options, timeout);
+		    }
+		    else
+		    {
+		        foreach (var chunk in source.Batch(chunkSize))
+		        {
+		            var dt = chunk.AsDataTable();
+		            dt.TableName = targetTableName;
+		            BulkCopy(dt, transaction, mappings, options, timeout);
+		        }
+		    }
 		}
 
         #endregion Bulk copy

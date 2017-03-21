@@ -14,6 +14,8 @@ namespace SqlWorker
         protected TimeSpan DefaultReconnectPause = new TimeSpan(0, 2, 0);
         protected DateTime? LastDisconnect;
 
+        public int DefaultExecutionTimeout = 30;
+
         /// <summary>
         /// constructor
         /// </summary>
@@ -29,31 +31,24 @@ namespace SqlWorker
         /// </summary>
         /// <param name="ReopenOnlyIfNotInTransaction">connection will be reopenned only if ReopenOnlyIfNotInTransaction=true and transaction is not openned</param>
         /// <returns>true - connection was opened</returns>
-        virtual public bool ReOpenConnection(bool dontCloseTransaction = true)
+        public virtual bool ReOpenConnection()
         {
-            if (Conn.State != ConnectionState.Open && ReConnectPause.Ticks > 0)
+            if (Conn.State == ConnectionState.Open) return true;
+            if (LastDisconnect == null)
             {
-                if (LastDisconnect == null)
-                {
-                    LastDisconnect = DateTime.Now;
-                    return false;
-                }
+                LastDisconnect = DateTime.Now;
+                return false;
+            }
 
-                if (DateTime.Now - LastDisconnect < ReConnectPause) return false;
-            }
-            else
-            {
-                if (TransactionIsOpened || !dontCloseTransaction) return true;
-            }
+            if (DateTime.Now - LastDisconnect < ReConnectPause) return false;
 
             LastDisconnect = null;
-            if (TransactionIsOpened) TransactionRollback();
             if (Conn.State != ConnectionState.Closed)
             {
                 Conn.Close();
             }
             Conn.Open();
-            
+
             return Conn.State == ConnectionState.Open;
         }
 
@@ -62,54 +57,20 @@ namespace SqlWorker
         /// <summary>
         /// Only single one transaction is supported!
         /// </summary>
-        virtual public void TransactionBegin(IsolationLevel SpecificIsolationLevel = IsolationLevel.ReadCommitted)
+        virtual public IDbTransaction TransactionBegin(IsolationLevel specificIsolationLevel = IsolationLevel.ReadCommitted)
         {
-            if (TransactionIsOpened)
-            {
-                throw new Exception("transaction exists!");
-            }
             if (Conn.State != ConnectionState.Open) Conn.Open();
-            _transaction = Conn.BeginTransaction(SpecificIsolationLevel);
-            _transactionIsOpened = true;
+            return Conn.BeginTransaction(specificIsolationLevel);
         }
-
-        virtual public void TransactionCommit(bool closeConn = true)
-        {
-            if (!TransactionIsOpened) throw new Exception("transaction doesnt exist!");
-            _transaction.Commit();
-            _transaction.Dispose();
-            if (closeConn) Conn.Close();
-            _transactionIsOpened = false;
-        }
-
-        virtual public void TransactionRollback(bool closeConn = true)
-        {
-            if (!TransactionIsOpened) throw new Exception("transaction doesnt exist!");
-            _transaction.Rollback();
-            _transaction.Dispose();
-            if (closeConn) Conn.Close();
-            _transactionIsOpened = false;
-        }
-
-        public void DoInTransaction(Action todo, bool closeConn = true)
-        {
-            TransactionBegin();
-            todo();
-            TransactionCommit(closeConn);
-        }
-
-        private DbTransaction _transaction = null;
-        private bool _transactionIsOpened = false;
-        public bool TransactionIsOpened { get { return _transactionIsOpened; } }
-
+        
         #endregion Transactions
 
-        virtual public int Exec(String command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text)
+        virtual public int Exec(String command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
-            return ExecuteNonQuery(command, vals, timeout, commandType);
+            return ExecuteNonQuery(command, vals, timeout, commandType, transaction);
         }
 
-        virtual public int ExecuteNonQuery(String command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text)
+        virtual public int ExecuteNonQuery(String command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
             int result;
             vals = vals ?? DbParametersConstructor.emptyParams;
@@ -119,15 +80,15 @@ namespace SqlWorker
                 cmd.CommandText = command;
                 cmd.Parameters.AddRange(vals);
                 cmd.CommandType = commandType;
-                cmd.Transaction = _transaction;
-                if (timeout != null) cmd.CommandTimeout = timeout.Value;
+                cmd.Transaction = transaction;
+                cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
                 if (Conn.State != ConnectionState.Open) Conn.Open();
                 result = cmd.ExecuteNonQuery();
             }
             return result;
         }
 
-        virtual public int InsertValues(String tableName, DbParametersConstructor vals = null, bool returnIdentity = false, int? timeout = null)
+        virtual public int InsertValues(String tableName, DbParametersConstructor vals = null, bool returnIdentity = false, int? timeout = null, DbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(vals);
 
@@ -144,14 +105,14 @@ namespace SqlWorker
             q += ");";
 
             return !returnIdentity ?
-                ExecuteNonQuery(q, vals, timeout) :
+                ExecuteNonQuery(q, vals, timeout, transaction: transaction) :
                 Decimal.ToInt32(ManualProcessing(
-                q + " select SCOPE_IDENTITY()",
+                q + " ; select SCOPE_IDENTITY()",
                 r => { r.Read(); return r.GetDecimal(0); },
-                vals));
+                vals, timeout, transaction: transaction));
         }
 
-        virtual public int UpdateValues(String tableName, DbParametersConstructor values, DbParametersConstructor condition = null, int? timeout = null)
+        virtual public int UpdateValues(String tableName, DbParametersConstructor values, DbParametersConstructor condition = null, int? timeout = null, DbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(values);
             condition = condition ?? DbParametersConstructor.emptyParams;
@@ -169,10 +130,10 @@ namespace SqlWorker
 
             List<DbParameter> param = new List<DbParameter>(values.parameters);
             param.AddRange(condition.parameters);
-            return ExecuteNonQuery(q, param.ToArray(), timeout);
+            return ExecuteNonQuery(q, param.ToArray(), timeout, transaction: transaction);
         }
 
-        virtual public int UpdateValues(String tableName, DbParametersConstructor vals, String condition, int? timeout = null)
+        virtual public int UpdateValues(String tableName, DbParametersConstructor vals, String condition, int? timeout = null, DbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(vals);
 
@@ -184,21 +145,21 @@ namespace SqlWorker
             if (!String.IsNullOrWhiteSpace(condition))
                 q += " WHERE " + condition;
 
-            return ExecuteNonQuery(q, vals, timeout);
+            return ExecuteNonQuery(q, vals, timeout, transaction: transaction);
         }
 
-        virtual public T ManualProcessing<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text)
+        virtual public T ManualProcessing<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
             vals = vals ?? DbParametersConstructor.emptyParams;
             SqlParameterNullWorkaround(vals);
             T result;
             using (var cmd = Conn.CreateCommand())
             {
-                if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
+                cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
                 cmd.CommandType = commandType;
                 cmd.CommandText = command;
                 cmd.Parameters.AddRange(vals);
-                cmd.Transaction = _transaction;
+                cmd.Transaction = transaction;
                 if (Conn.State != ConnectionState.Open) Conn.Open();
                 using (var dr = cmd.ExecuteReader())
                 {
@@ -207,28 +168,29 @@ namespace SqlWorker
             }
             return result;
         }
-        
+
         /// <summary>
         /// Return IEnumerable with results
         /// </summary>
         /// <typeparam name="T">Generic resulting type</typeparam>
-        /// <param name="command">SQL command</param>
+        /// <param name="command">SQL command; in case of stored procedure this parameter stores only Proc name, commandType must be specified then</param>
         /// <param name="todo">delegate to recive T from DataReader</param>
         /// <param name="vals">values of parameters (if necessary)</param>
         /// <param name="timeout">timeout</param>
-        /// <param name="moveNextModifier">rules for obtaining next row</param>
+        /// <param name="commandType">Type of batch</param>
+        /// <param name="transaction">the transaction, inside of wich the command will be executed</param>
         /// <returns>consequentially readed data</returns>
-        virtual public IEnumerable<T> Select<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text)
+        virtual public IEnumerable<T> Select<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
             vals = vals ?? DbParametersConstructor.emptyParams;
             SqlParameterNullWorkaround(vals);
             using (var cmd = Conn.CreateCommand())
             {
-                if (timeout.HasValue) cmd.CommandTimeout = timeout.Value;
+                cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
                 cmd.CommandType = commandType;
                 cmd.CommandText = command;
                 cmd.Parameters.AddRange(vals);
-                cmd.Transaction = this._transaction;
+                cmd.Transaction = transaction;
                 if (this.Conn.State != ConnectionState.Open) Conn.Open();
                 using (var dr = cmd.ExecuteReader())
                 {
@@ -243,25 +205,22 @@ namespace SqlWorker
         /// <summary>
         /// Obtain objects from DataReader using reflection
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="command"></param>
-        /// <param name="vals"></param>
-        /// <param name="exceptions"></param>
-        /// <param name="timeout"></param>
         /// <returns></returns>
-        virtual public IEnumerable<T> SelectWithReflection<T>(String command, DbParametersConstructor vals = null, List<String> exceptions = null, int? timeout = null, CommandType commandType = CommandType.Text) where T : new()
+        virtual public IEnumerable<T> SelectWithReflection<T>(
+            String command,
+            DbParametersConstructor vals = null,
+            List<String> exceptions = null,
+            int? timeout = null,
+            CommandType commandType = CommandType.Text,
+            DbTransaction transaction = null
+            ) where T : new()
         {
-            if (exceptions != null) return Select(command, dr => DataReaderToObj<T>(dr, exceptions), vals, timeout, commandType);
+            if (exceptions != null) return Select(command, dr => DataReaderToObj<T>(dr, exceptions), vals, timeout, commandType, transaction);
             else return Select(command, dr => DataReaderToObj<T>(dr), vals, timeout);
         }
 
         /// <summary>
         /// Converts DataRow to T with reflection, writing exceptions in list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="dr"></param>
-        /// <param name="errors"></param>
-        /// <returns></returns>
         virtual public T DataReaderToObj<T>(DbDataReader dr, List<String> errors) where T : new()
         {
             T result = new T();
@@ -276,10 +235,6 @@ namespace SqlWorker
 
         /// <summary>
         /// Converts DataRow to T with reflection, throws!
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="dr"></param>
-        /// <returns></returns>
         virtual public T DataReaderToObj<T>(DbDataReader dr) where T : new()
         {
             T result = new T();
@@ -291,7 +246,7 @@ namespace SqlWorker
             return result;
         }
 
-        virtual public DataTable GetDataTable(String query, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text)
+        virtual public DataTable GetDataTable(String query, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
             return ManualProcessing(query, (dr) =>
             {
@@ -299,22 +254,15 @@ namespace SqlWorker
                 dt.Load(dr);
                 return dt;
             },
-            vals, timeout, commandType);
+            vals, timeout, commandType, transaction);
         }
 
         #region IDisposable members
 
-        public virtual void Dispose(bool commit)
-        {
-            if (!commit && TransactionIsOpened) TransactionRollback();
-            if (Conn.State != ConnectionState.Closed) Conn.Close();
-            Conn.Dispose();
-            GC.SuppressFinalize(this);
-        }
-
         public virtual void Dispose()
         {
-            Dispose(false);
+            if (Conn.State != ConnectionState.Closed) Conn.Close();
+            Conn.Dispose();
         }
 
         #endregion IDisposable members

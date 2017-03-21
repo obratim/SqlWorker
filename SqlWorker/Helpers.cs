@@ -25,8 +25,24 @@ namespace SqlWorker
 			}
 			return table;
 		}
-		
-		public static bool?	GetNullableBool(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (bool?)dr[ordinal]	: null; }
+
+        public static IEnumerable<IEnumerable<T>> Batch<T>(
+            this IEnumerable<T> source, int batchSize)
+        {
+            using (var enumerator = source.GetEnumerator())
+                while (enumerator.MoveNext())
+                    yield return YieldBatchElements(enumerator, batchSize - 1);
+        }
+
+        private static IEnumerable<T> YieldBatchElements<T>(
+            IEnumerator<T> source, int batchSize)
+        {
+            yield return source.Current;
+            for (int i = 0; i < batchSize && source.MoveNext(); i++)
+                yield return source.Current;
+        }
+
+        public static bool?	GetNullableBool(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (bool?)dr[ordinal]	: null; }
 		public static byte?	GetNullableByte(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (byte?)dr[ordinal]	: null; }
 		public static short?	GetNullableInt16(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (short?)dr[ordinal]	: null; }
 		public static int?	GetNullableInt32(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (int?)(dr[ordinal])	: null; }
