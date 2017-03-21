@@ -12,18 +12,19 @@ namespace Testing
         {
             using (var SW = new SqlWorker.MSSqlWorker("<server>", "<database>", "<user>", "<password>")) // connecting to sql server
             {
-                SW.TransactionBegin();
-                var n = SW.InsertValues("<the table>", new SWParameters { { "email", "ivan@example.com" }, { "msg", "Hello, world!" } }); // insert example
-                Console.WriteLine(n);
-                var jsonSerializer = new Newtonsoft.Json.JsonSerializer();
-                using (var writer = new System.IO.StreamWriter(Console.OpenStandardOutput()))
+                using (var tran = SW.TransactionBegin())
                 {
-                    jsonSerializer.Serialize(writer,
-                        SW.Select("select * from <the table>", delegate(System.Data.Common.DbDataReader dr) { return new[] { dr[0], dr[1], }; }) // select example
-                    );
+                    var n = SW.InsertValues("<the table>", new SWParameters { { "email", "ivan@example.com" }, { "msg", "Hello, world!" } }); // insert example
+                    Console.WriteLine(n);
+                    var jsonSerializer = new Newtonsoft.Json.JsonSerializer();
+                    using (var writer = new System.IO.StreamWriter(Console.OpenStandardOutput()))
+                    {
+                        jsonSerializer.Serialize(writer,
+                            SW.Select("select * from <the table>", delegate (System.Data.Common.DbDataReader dr) { return new[] { dr[0], dr[1], }; }) // select example
+                        );
+                    }
+                    tran.Commit();
                 }
-                SW.TransactionCommit();
-
             }
         }
     }
