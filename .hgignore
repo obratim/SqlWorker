@@ -11,3 +11,4 @@ SqlWorker/bin/**
 SqlWorker/obj/**
 SqlWorker/SqlWorker.nuspec
 SqlWorker.*.nupkg
+.vs/SqlWorker/v14/.suo
