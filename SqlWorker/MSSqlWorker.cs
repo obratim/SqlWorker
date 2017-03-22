@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
@@ -157,20 +158,29 @@ CREATE TABLE {0} (
         }
 
         #region Bulk copy
-
+        /// <summary>
+        /// Performs bulk copy from DataTable to specified table
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="targetTableName"></param>
+        /// <param name="transaction"></param>
+        /// <param name="options"></param>
+        /// <param name="timeout"></param>
+        /// <param name="mappings"></param>
         virtual public void BulkCopy(
             DataTable source,
+            String targetTableName,
             SqlTransaction transaction,
-            SqlBulkCopyColumnMappingCollection mappings = null,
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
-            int? timeout = null
+            int? timeout = null,
+            SqlBulkCopyColumnMappingCollection mappings = null
             )
         {
             if (Conn.State != ConnectionState.Open) Conn.Open();
 
             using (SqlBulkCopy sbc = new SqlBulkCopy(_conn, options, transaction))
             {
-                sbc.DestinationTableName = source.TableName;
+                sbc.DestinationTableName = targetTableName;
                 if (mappings == null)
                     foreach (var column in source.Columns)
                         sbc.ColumnMappings.Add(column.ToString(), column.ToString());
@@ -178,33 +188,87 @@ CREATE TABLE {0} (
                 sbc.WriteToServer(source);
             }
         }
-		virtual public void BulkCopy<T>(
+
+        /// <summary>
+        /// Performs bulk copy from multiple DataTable objects to specified table. Each DataTable will be disposed!
+        /// </summary>
+        /// <param name="source">IEnumerable with datatables. Each datatable will be disposed</param>
+        /// <param name="targetTableName"></param>
+        /// <param name="transaction"></param>
+        /// <param name="options"></param>
+        /// <param name="timeout"></param>
+        /// <param name="mappings"></param>
+        virtual public void BulkCopy(
+            IEnumerable<DataTable> source,
+            String targetTableName,
+            SqlTransaction transaction,
+            SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
+            int? timeout = null,
+            SqlBulkCopyColumnMappingCollection mappings = null
+            )
+        {
+            if (Conn.State != ConnectionState.Open) Conn.Open();
+
+            using (SqlBulkCopy sbc = new SqlBulkCopy(_conn, options, transaction))
+            {
+                        sbc.DestinationTableName = targetTableName;
+                        sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
+
+                using (var enumerator = source.GetEnumerator())
+                {
+                    if (!enumerator.MoveNext()) return;
+
+                    using (enumerator.Current)
+                    {
+                        if (mappings == null)
+                            foreach (var column in enumerator.Current.Columns)
+                                sbc.ColumnMappings.Add(column.ToString(), column.ToString());
+
+                        sbc.WriteToServer(enumerator.Current);
+                    }
+                    while (enumerator.MoveNext())
+                        using (enumerator.Current)
+                        {
+                            sbc.WriteToServer(enumerator.Current);
+                        }
+                } // enumerator
+            } // bulk coupy
+        } // func
+
+        /// <summary>
+        /// Performs bulk copy from objects collection to target table in database; columns are detected by reflection
+        /// </summary>
+        /// <typeparam name="T">The generic type of collection</typeparam>
+        /// <param name="source">The source collection</param>
+        /// <param name="targetTableName">Name of the table, where data will be copied</param>
+        /// <param name="transaction"></param>
+        /// <param name="options">Bulk copy options</param>
+        /// <param name="chunkSize">If greater then zero, multiple copies will be performed with specified number of rows in each iteration</param>
+        /// <param name="timeout"></param>
+        /// <param name="mappings"></param>
+		virtual public void BulkCopyWithReflection<T>(
             IEnumerable<T> source,
             String targetTableName,
             SqlTransaction transaction,
-            SqlBulkCopyColumnMappingCollection mappings = null,
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
             int chunkSize = 0,
-            int? timeout = null
+            int? timeout = null,
+            SqlBulkCopyColumnMappingCollection mappings = null
             )
 		{
-		    if (chunkSize == 0)
+		    if (chunkSize <= 0)
 		    {
-		        var dt = source.AsDataTable();
-		        dt.TableName = targetTableName;
-		        BulkCopy(dt, transaction, mappings, options, timeout);
-		    }
-		    else
-		    {
-		        foreach (var chunk in source.Batch(chunkSize))
+		        using (var dt = source.AsDataTable())
 		        {
-		            var dt = chunk.AsDataTable();
-		            dt.TableName = targetTableName;
-		            BulkCopy(dt, transaction, mappings, options, timeout);
+		            BulkCopy(dt, targetTableName, transaction, options, timeout, mappings);
 		        }
 		    }
+		    else
+            {
+                BulkCopy(source.AsDataTable(chunkSize), targetTableName, transaction, options, timeout, mappings);
+            }
 		}
-
+        
         #endregion Bulk copy
     }
 }

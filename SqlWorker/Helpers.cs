@@ -10,22 +10,65 @@ namespace SqlWorker
 {
 	public static class Helpers
 	{
-		public static DataTable AsDataTable<T>(this IEnumerable<T> data)
+        /// <summary>
+        /// Generates DataTable from generic IEnumerable using reflection
+        /// </summary>
+        /// <typeparam name="T">The generic type of collection</typeparam>
+        /// <param name="source">The source collection</param>
+        /// <returns>DataTable object with columns based on properties reflected from generic type</returns>
+		public static DataTable AsDataTable<T>(this IEnumerable<T> source)
 		{
 			PropertyDescriptorCollection properties = TypeDescriptor.GetProperties(typeof(T));
 			var table = new DataTable();
 			foreach (PropertyDescriptor prop in properties)
 				table.Columns.Add(prop.Name, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
-			foreach (T item in data)
+			foreach (T item in source)
 			{
 				DataRow row = table.NewRow();
-				foreach (PropertyDescriptor prop in properties)
-					row[prop.Name] = prop.GetValue(item) ?? DBNull.Value;
-				table.Rows.Add(row);
+			    for (var i = 0; i < properties.Count; ++i)
+			    {
+			        PropertyDescriptor prop = properties[i];
+			        row[i] = prop.GetValue(item) ?? DBNull.Value;
+			    }
+			    table.Rows.Add(row);
 			}
 			return table;
 		}
 
+        /// <summary>
+        /// Generates multiple DataTable objects from generic IEnumerable using reflection
+        /// </summary>
+        /// <typeparam name="T">The generic type of collection</typeparam>
+        /// <param name="source">The source collection</param>
+        /// <param name="chunkSize">Maximum count of rows in each returned DataTable</param>
+        /// <returns>DataTable objects with columns based on properties reflected from generic type and rows count less or equal then chunkSize</returns>
+        public static IEnumerable<DataTable> AsDataTable<T>(this IEnumerable<T> source, int chunkSize)
+	    {
+	        var properties = TypeDescriptor.GetProperties(typeof (T));
+	        using (var refTable = new DataTable())
+	        {
+	            foreach (PropertyDescriptor property in properties)
+	                refTable.Columns.Add(property.Name,
+	                    Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType);
+
+	            foreach (var chunk in source.Batch(chunkSize))
+	            {
+	                var table = refTable.Copy();
+	                foreach (T item in chunk)
+	                {
+	                    DataRow row = table.NewRow();
+	                    for (var i = 0; i < properties.Count; ++i)
+	                    {
+	                        PropertyDescriptor prop = properties[i];
+	                        row[i] = prop.GetValue(item) ?? DBNull.Value;
+	                    }
+	                    table.Rows.Add(row);
+	                }
+	                yield return table;
+	            }
+	        }
+	    }
+        
         public static IEnumerable<IEnumerable<T>> Batch<T>(
             this IEnumerable<T> source, int batchSize)
         {
