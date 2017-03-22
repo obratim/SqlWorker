@@ -50,6 +50,17 @@ namespace SqlWorker
         {
             connstr = String.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", server, dataBase, login, password);
         }
+        
+        /// <summary>
+        /// Same as TransactionBegin, but returns SqlTransaction object
+        /// </summary>
+        /// <param name="level"></param>
+        /// <returns></returns>
+        public virtual SqlTransaction SqlTransactionBegin(IsolationLevel level = IsolationLevel.ReadCommitted)
+        {
+            if (Conn.State != ConnectionState.Open) Conn.Open();
+            return _conn.BeginTransaction();
+        }
 
         #region send files
 
