@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SqlWorker</name>
+    </assembly>
+    <members>
+        <member name="M:SqlWorker.ASqlWorker`1.#ctor(System.Nullable{System.TimeSpan})">
+            <summary>
+            constructor
+            </summary>
+            <param name="reconnectPause">if null, default will be setted</param>
+        </member>
+        <member name="M:SqlWorker.ASqlWorker`1.ReOpenConnection">
+            <summary>
+            serves to reopen connection after 'ReConnectPause' time after last disconnect
+            </summary>
+            <returns>true - connection was opened</returns>
+        </member>
+        <member name="M:SqlWorker.ASqlWorker`1.TransactionBegin(System.Data.IsolationLevel)">
+            <summary>
+            Only single one transaction is supported!
+            </summary>
+        </member>
+        <member name="M:SqlWorker.ASqlWorker`1.Select``1(System.String,System.Func{System.Data.Common.DbDataReader,``0},SqlWorker.ASqlWorker{`0}.DbParametersConstructor,System.Nullable{System.Int32},System.Data.CommandType,System.Data.Common.DbTransaction)">
+            <summary>
+            Return IEnumerable with results
+            </summary>
+            <typeparam name="T">Generic resulting type</typeparam>
+            <param name="command">SQL command; in case of stored procedure this parameter stores only Proc name, commandType must be specified then</param>
+            <param name="todo">delegate to recive T from DataReader</param>
+            <param name="vals">values of parameters (if necessary)</param>
+            <param name="timeout">timeout</param>
+            <param name="commandType">Type of batch</param>
+            <param name="transaction">the transaction, inside of wich the command will be executed</param>
+            <returns>consequentially readed data</returns>
+        </member>
+        <member name="M:SqlWorker.ASqlWorker`1.SelectWithReflection``1(System.String,SqlWorker.ASqlWorker{`0}.DbParametersConstructor,System.Collections.Generic.List{System.String},System.Nullable{System.Int32},System.Data.CommandType,System.Data.Common.DbTransaction)">
+            <summary>
+            Obtain objects from DataReader using reflection
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SqlWorker.ASqlWorker`1.DataReaderToObj``1(System.Data.Common.DbDataReader,System.Collections.Generic.List{System.String})">
+            <summary>
+            Converts DataRow to T with reflection, writing exceptions in list
+            </summary>
+        </member>
+        <member name="M:SqlWorker.ASqlWorker`1.DataReaderToObj``1(System.Data.Common.DbDataReader)">
+            <summary>
+            Converts DataRow to T with reflection, throws!
+            </summary>
+        </member>
+        <member name="M:SqlWorker.Helpers.AsDataTable``1(System.Collections.Generic.IEnumerable{``0})">
+            <summary>
+            Generates DataTable from generic IEnumerable using reflection
+            </summary>
+            <typeparam name="T">The generic type of collection</typeparam>
+            <param name="source">The source collection</param>
+            <returns>DataTable object with columns based on properties reflected from generic type</returns>
+        </member>
+        <member name="M:SqlWorker.Helpers.AsDataTable``1(System.Collections.Generic.IEnumerable{``0},System.Int32)">
+            <summary>
+            Generates multiple DataTable objects from generic IEnumerable using reflection
+            </summary>
+            <typeparam name="T">The generic type of collection</typeparam>
+            <param name="source">The source collection</param>
+            <param name="chunkSize">Maximum count of rows in each returned DataTable</param>
+            <returns>DataTable objects with columns based on properties reflected from generic type and rows count less or equal then chunkSize</returns>
+        </member>
+        <member name="M:SqlWorker.MSSqlWorker.BulkCopy(System.Data.DataTable,System.String,System.Data.SqlClient.SqlTransaction,System.Data.SqlClient.SqlBulkCopyOptions,System.Nullable{System.Int32},System.Data.SqlClient.SqlBulkCopyColumnMappingCollection)">
+            <summary>
+            Performs bulk copy from DataTable to specified table
+            </summary>
+            <param name="source"></param>
+            <param name="targetTableName"></param>
+            <param name="transaction"></param>
+            <param name="options"></param>
+            <param name="timeout"></param>
+            <param name="mappings"></param>
+        </member>
+        <member name="M:SqlWorker.MSSqlWorker.BulkCopy(System.Collections.Generic.IEnumerable{System.Data.DataTable},System.String,System.Data.SqlClient.SqlTransaction,System.Data.SqlClient.SqlBulkCopyOptions,System.Nullable{System.Int32},System.Data.SqlClient.SqlBulkCopyColumnMappingCollection)">
+            <summary>
+            Performs bulk copy from multiple DataTable objects to specified table. Each DataTable will be disposed!
+            </summary>
+            <param name="source">IEnumerable with datatables. Each datatable will be disposed</param>
+            <param name="targetTableName"></param>
+            <param name="transaction"></param>
+            <param name="options"></param>
+            <param name="timeout"></param>
+            <param name="mappings"></param>
+        </member>
+        <member name="M:SqlWorker.MSSqlWorker.BulkCopyWithReflection``1(System.Collections.Generic.IEnumerable{``0},System.String,System.Data.SqlClient.SqlTransaction,System.Data.SqlClient.SqlBulkCopyOptions,System.Int32,System.Nullable{System.Int32},System.Data.SqlClient.SqlBulkCopyColumnMappingCollection)">
+            <summary>
+            Performs bulk copy from objects collection to target table in database; columns are detected by reflection
+            </summary>
+            <typeparam name="T">The generic type of collection</typeparam>
+            <param name="source">The source collection</param>
+            <param name="targetTableName">Name of the table, where data will be copied</param>
+            <param name="transaction"></param>
+            <param name="options">Bulk copy options</param>
+            <param name="chunkSize">If greater then zero, multiple copies will be performed with specified number of rows in each iteration</param>
+            <param name="timeout"></param>
+            <param name="mappings"></param>
+        </member>
+    </members>
+</doc>
