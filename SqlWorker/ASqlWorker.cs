@@ -61,14 +61,32 @@ namespace SqlWorker
             if (Conn.State != ConnectionState.Open) Conn.Open();
             return Conn.BeginTransaction(specificIsolationLevel);
         }
-        
+
         #endregion Transactions
 
+        /// <summary>
+        /// Shourtcat for ExecuteNonQuery. Executes specified query
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="vals"></param>
+        /// <param name="timeout"></param>
+        /// <param name="commandType"></param>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
         virtual public int Exec(String command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
             return ExecuteNonQuery(command, vals, timeout, commandType, transaction);
         }
 
+        /// <summary>
+        /// Executes specified query
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="vals"></param>
+        /// <param name="timeout"></param>
+        /// <param name="commandType"></param>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
         virtual public int ExecuteNonQuery(String command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
             int result;
@@ -87,6 +105,16 @@ namespace SqlWorker
             return result;
         }
 
+
+        /// <summary>
+        /// Inserts values into table. Warning: query is partly prepared by string concatenation, so don't use it with non-constant tableName parameter
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <param name="vals"></param>
+        /// <param name="returnIdentity"></param>
+        /// <param name="timeout"></param>
+        /// <param name="transaction"></param>
+        /// <returns>Returns count of inserted rows if 'returnIdentity'=false or id of last inserted row (result of SCOPE_IDENTITY build-in function) if true</returns>
         virtual public int InsertValues(String tableName, DbParametersConstructor vals, bool returnIdentity = false, int? timeout = null, DbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(vals);
@@ -111,6 +139,15 @@ namespace SqlWorker
                 vals, timeout, transaction: transaction));
         }
 
+        /// <summary>
+        /// Updates values. Warning: query is partly prepared by string concatenation, so don't use it with non-constant tableName parameter
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <param name="values"></param>
+        /// <param name="condition"></param>
+        /// <param name="timeout"></param>
+        /// <param name="transaction"></param>
+        /// <returns>Count of updated values</returns>
         virtual public int UpdateValues(String tableName, DbParametersConstructor values, DbParametersConstructor condition = null, int? timeout = null, DbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(values);
@@ -132,6 +169,15 @@ namespace SqlWorker
             return ExecuteNonQuery(q, param.ToArray(), timeout, transaction: transaction);
         }
 
+        /// <summary>
+        /// Updates values. Warning: query is partly prepared by string concatenation, so don't use it with non-constant tableName parameter
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <param name="vals"></param>
+        /// <param name="condition"></param>
+        /// <param name="timeout"></param>
+        /// <param name="transaction"></param>
+        /// <returns>Count of updated values</returns>
         virtual public int UpdateValues(String tableName, DbParametersConstructor vals, String condition, int? timeout = null, DbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(vals);

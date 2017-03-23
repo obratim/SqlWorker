@@ -59,7 +59,7 @@ namespace SqlWorker
         public virtual SqlTransaction SqlTransactionBegin(IsolationLevel level = IsolationLevel.ReadCommitted)
         {
             if (Conn.State != ConnectionState.Open) Conn.Open();
-            return _conn.BeginTransaction();
+            return _conn.BeginTransaction(level);
         }
 
         #region send files
