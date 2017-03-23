@@ -1,13 +1,15 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlWorker", "SqlWorker\SqlWorker.csproj", "{D9F0E673-2988-47BF-A0D7-842A538A3AE9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testing", "Testing\Testing.csproj", "{9BC82B25-DFDA-4C9C-8B8F-64E988D3321F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{94B827E5-A98F-414B-8ED9-31284E3FE85C}"
 	ProjectSection(SolutionItems) = preProject
-		SqlWorker\creating nuget package readme.txt = SqlWorker\creating nuget package readme.txt
+		creating nuget package readme.txt = creating nuget package readme.txt
 		Rebracer.xml = Rebracer.xml
 	EndProjectSection
 EndProject

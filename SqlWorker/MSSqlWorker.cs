@@ -169,6 +169,13 @@ CREATE TABLE {0} (
         }
 
         #region Bulk copy
+
+        protected virtual SqlBulkCopy NewBulkCopyInstance(SqlBulkCopyOptions options,
+            SqlTransaction tran)
+        {
+            return new SqlBulkCopy(_conn, options, tran);
+        }
+
         /// <summary>
         /// Performs bulk copy from DataTable to specified table
         /// </summary>
@@ -189,7 +196,7 @@ CREATE TABLE {0} (
         {
             if (Conn.State != ConnectionState.Open) Conn.Open();
 
-            using (SqlBulkCopy sbc = new SqlBulkCopy(_conn, options, transaction))
+            using (SqlBulkCopy sbc = NewBulkCopyInstance(options, transaction))
             {
                 sbc.DestinationTableName = targetTableName;
                 if (mappings == null)
@@ -220,7 +227,7 @@ CREATE TABLE {0} (
         {
             if (Conn.State != ConnectionState.Open) Conn.Open();
 
-            using (SqlBulkCopy sbc = new SqlBulkCopy(_conn, options, transaction))
+            using (SqlBulkCopy sbc = NewBulkCopyInstance(options, transaction))
             {
                         sbc.DestinationTableName = targetTableName;
                         sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
