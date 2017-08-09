@@ -34,6 +34,10 @@
       <HintPath>..\packages\MySql.Data.6.9.9\lib\net45\MySql.Data.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="SqlWorker, Version=2.1.147.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SqlWorker.2.1.147\lib\net40\SqlWorker.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -46,23 +50,19 @@
   <ItemGroup>
     <Compile Include="MySqlWorker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SqlWorker\SqlWorker.csproj">
-      <Project>{d9f0e673-2988-47bf-a0d7-842a538a3ae9}</Project>
-      <Name>SqlWorker</Name>
-    </ProjectReference>
+    <Compile Include="Properties\VersionInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+    <None Include="SqlWorker.MySql.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
+  <UsingTask TaskName="HgVersionFile" AssemblyFile="..\SqlWorker\lib\MSBuildVersioning.dll" />
   <Target Name="BeforeBuild">
+    <HgVersionFile TemplateFile="Properties\VersionInfo.base.cs" DestinationFile="Properties\VersionInfo.cs" />
+    <HgVersionFile TemplateFile="Properties\SqlWorker.MySql.nuspec.base" DestinationFile="SqlWorker.MySql.nuspec" />
   </Target>
   <Target Name="AfterBuild">
   </Target>
-  -->
 </Project>

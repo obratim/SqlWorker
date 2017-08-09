@@ -15,3 +15,7 @@ SqlWorker.*.nupkg
 .vs/SqlWorker/v15/.suo
 SqlWorker/SqlWorker.XML
 packages/**
+SqlWorker.MySql/bin/**
+SqlWorker.MySql/obj/**
+SqlWorker.MySql/Properties/VersionInfo.cs
+SqlWorker.MySql/SqlWorker.MySql.nuspec
