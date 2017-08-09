@@ -14,3 +14,4 @@ SqlWorker.*.nupkg
 .vs/SqlWorker/v14/.suo
 .vs/SqlWorker/v15/.suo
 SqlWorker/SqlWorker.XML
+packages/**

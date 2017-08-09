@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Rebracer.xml = Rebracer.xml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlWorker.MySql", "SqlWorker.MySql\SqlWorker.MySql.csproj", "{DED00584-2EC1-4F75-A707-3E82EAF9DF83}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +46,18 @@ Global
 		{9BC82B25-DFDA-4C9C-8B8F-64E988D3321F}.Release|Mixed Platforms.Build.0 = Release|x86
 		{9BC82B25-DFDA-4C9C-8B8F-64E988D3321F}.Release|x86.ActiveCfg = Release|x86
 		{9BC82B25-DFDA-4C9C-8B8F-64E988D3321F}.Release|x86.Build.0 = Release|x86
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Debug|x86.Build.0 = Debug|Any CPU
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Release|x86.ActiveCfg = Release|Any CPU
+		{DED00584-2EC1-4F75-A707-3E82EAF9DF83}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
