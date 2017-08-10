@@ -8,7 +8,6 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("Library for rapid execution SQL queries")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("SqlWorker")]
-[assembly: AssemblyCopyright("Copyright ©  2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
