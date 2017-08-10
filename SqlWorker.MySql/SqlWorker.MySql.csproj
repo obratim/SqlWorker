@@ -58,7 +58,7 @@
     <None Include="SqlWorker.MySql.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <UsingTask TaskName="HgVersionFile" AssemblyFile="..\SqlWorker\lib\MSBuildVersioning.dll" />
+  <UsingTask TaskName="HgVersionFile" AssemblyFile="..\lib\MSBuildVersioning.dll" />
   <Target Name="BeforeBuild">
     <HgVersionFile TemplateFile="Properties\VersionInfo.base.cs" DestinationFile="Properties\VersionInfo.cs" />
     <HgVersionFile TemplateFile="Properties\SqlWorker.MySql.nuspec.base" DestinationFile="SqlWorker.MySql.nuspec" />
