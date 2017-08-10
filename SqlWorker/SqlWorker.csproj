@@ -33,9 +33,6 @@
     <DocumentationFile>SqlWorker.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Mono.Security">
-      <HintPath>lib\Mono.Security.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.ServiceModel" />
@@ -44,17 +41,11 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Npgsql">
-      <HintPath>lib\Npgsql.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ASqlWorker.cs" />
     <Compile Include="AbstractDbParameterConstructors.cs" />
     <Compile Include="Helpers.cs" />
-    <Compile Include="NpgSqlWorker.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="MSSqlWorker.cs" />
     <Compile Include="OledbSqlWorker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -19,3 +19,7 @@ SqlWorker.MySql/bin/**
 SqlWorker.MySql/obj/**
 SqlWorker.MySql/Properties/VersionInfo.cs
 SqlWorker.MySql/SqlWorker.MySql.nuspec
+*/bin/**
+*/obj/**
+SqlWorker.PostgreSql/Properties/VersionInfo.cs
+*/SqlWorker*.nuspec

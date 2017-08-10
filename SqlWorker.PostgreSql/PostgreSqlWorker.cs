@@ -1,13 +1,15 @@
-﻿using System;
+﻿using Npgsql;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using Npgsql;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace SqlWorker
 {
-    public class ParameterConstructor_NPG : AbstractDbParameterConstructors
+    public class ParametersConstructorForPostgreSql : AbstractDbParameterConstructors
     {
         public override DbParameter Create(string name, object value, DbType? type = null, ParameterDirection? direction = null)
         {
@@ -20,11 +22,11 @@ namespace SqlWorker
         }
     }
 
-    public class NpgSqlWorker : ASqlWorker<ParameterConstructor_NPG>
+    public class PostgreSqlWorker : ASqlWorker<ParametersConstructorForPostgreSql>
     {
-        private String _connectionStr;
+        private string _connectionStr;
 
-        public NpgSqlWorker(String ConnectionString, TimeSpan? reconnectPause = null)
+        public PostgreSqlWorker(string ConnectionString, TimeSpan? reconnectPause = null)
             : base(reconnectPause) { _connectionStr = ConnectionString; }
 
         private NpgsqlConnection _conn;
