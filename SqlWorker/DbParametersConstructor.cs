@@ -9,83 +9,111 @@ namespace SqlWorker
     {
         #region parameters management
 
+        /// <summary>
+        /// Replaces null-values to DBNull.Value constant
+        /// </summary>
+        /// <param name="param">Parameters, that will be sent to sql command</param>
         protected static void SqlParameterNullWorkaround(DbParameter[] param)
         {
             foreach (var p in param)
                 if (p.Value == null) p.Value = DBNull.Value;
         }
-
-        protected static DbParameter[] NotNullParams(DbParameter[] param)
-        {
-            return (from DbParameter p in param
-                    where p.Value != null
-                    select p).ToArray();
-        }
-
-        protected bool IsNullableParams(params Type[] types)
-        {
-            bool result = true;
-            foreach (var i in types)
-                result = result && i.IsGenericType && i.GetGenericTypeDefinition() == typeof(Nullable<>);
-            return result;
-        }
-
+        
         #endregion parameters management
 
+        /// <summary>
+        /// Provides some implicit conversions to DbParameter[]
+        /// </summary>
         public class DbParametersConstructor
         {
             private static TPC generator = new TPC();
 
             private static readonly DbParameter[] _emptyParams = new DbParameter[0];
-            public static DbParameter[] emptyParams { get { return _emptyParams; } }
 
-            public static DbParameter[] DictionaryToDbParameters(Dictionary<String, Object> input)
-            {
-                var result = new DbParameter[input.Count];
-                int i = 0;
-                foreach (var kv in input)
-                {
-                    result[i] = generator.Create(kv.Key, kv.Value, null);
-                    ++i;
-                }
-                return result;
-            }
-
+            /// <summary>
+            /// Constant that represents empty parameters array
+            /// </summary>
+            public static DbParameter[] EmptyParams { get { return _emptyParams; } }
+            
             private DbParameter[] _parameters;
-            public DbParameter[] parameters { get { return _parameters; } }
 
+            /// <summary>
+            /// Returns array of DpParameter that are represented by current object
+            /// </summary>
+            public DbParameter[] Parameters { get { return _parameters; } }
+            
+            /// <summary>
+            /// Initialises new parameters set
+            /// </summary>
+            /// <param name="parameters">The array of parameters</param>
             public DbParametersConstructor(DbParameter[] parameters)
             {
                 _parameters = parameters;
             }
 
+            /// <summary>
+            /// Returns the number of parameters
+            /// </summary>
+            /// <returns>The number of parameters</returns>
             public int Count()
             {
-                return parameters.Count();
+                return Parameters.Count();
             }
 
-            public DbParameter this[int i] { get { return parameters[i]; } }
+            /// <summary>
+            /// Returns specified element of parameters's set
+            /// </summary>
+            /// <param name="i">The index of requested parameter</param>
+            /// <returns>The requested parameter</returns>
+            public DbParameter this[int i] { get { return Parameters[i]; } }
 
+            /// <summary>
+            /// Implicitly converts current object to DbParameter[]
+            /// </summary>
+            /// <param name="DbParametersConstructorObject">The current object</param>
             public static implicit operator DbParameter[](DbParametersConstructor DbParametersConstructorObject)
             {
-                return DbParametersConstructorObject.parameters;
+                return DbParametersConstructorObject.Parameters;
             }
 
+            /// <summary>
+            /// Implicitly converts from DbParameter[] to DbParametersConstructor
+            /// </summary>
+            /// <param name="vals">The source elements</param>
             public static implicit operator DbParametersConstructor(DbParameter[] vals)
             {
                 return new DbParametersConstructor(vals);
             }
 
+            /// <summary>
+            /// Implicitly converts from a single DbParameter to DbParametersConstructor
+            /// </summary>
+            /// <param name="vals">The source elements</param>
             public static implicit operator DbParametersConstructor(DbParameter vals)
             {
                 return new DbParametersConstructor(new DbParameter[1] { vals });
             }
 
-            public static implicit operator DbParametersConstructor(Dictionary<String, Object> vals)
+            /// <summary>
+            /// Implicitly converts from Dictionary with param names and values to DbParametersConstructor
+            /// </summary>
+            /// <param name="vals">The source elements</param>
+            public static implicit operator DbParametersConstructor(Dictionary<string, object> vals)
             {
-                return new DbParametersConstructor(DictionaryToDbParameters(vals));
+                var result = new DbParameter[vals.Count];
+                int i = 0;
+                foreach (var kv in vals)
+                {
+                    result[i] = generator.Create(kv.Key, kv.Value, null);
+                    ++i;
+                }
+                return new DbParametersConstructor(result);
             }
 
+            /// <summary>
+            /// Implicitly converts from SWParameters to DbParametersConstructor
+            /// </summary>
+            /// <param name="vals">The source elements</param>
             public static implicit operator DbParametersConstructor(SWParameters vals)
             {
                 var result = new DbParameter[vals.Count];

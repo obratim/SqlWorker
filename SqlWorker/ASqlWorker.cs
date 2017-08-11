@@ -6,20 +6,41 @@ using System.Linq;
 
 namespace SqlWorker
 {
+    /// <summary>
+    /// Core class, where main logic is realised. Dispose to close connection
+    /// </summary>
+    /// <typeparam name="TPC">Realisation of AbstractDbParameterConstructors abstract class required</typeparam>
     public abstract partial class ASqlWorker<TPC> : IDisposable where TPC : AbstractDbParameterConstructors, new()
     {
+        /// <summary>
+        /// Database connection
+        /// </summary>
         protected abstract DbConnection Conn { get; }
 
+        /// <summary>
+        /// Period for 'ReOpenConnection' method
+        /// </summary>
         public TimeSpan ReConnectPause { get; set; }
-        protected TimeSpan DefaultReconnectPause = new TimeSpan(0, 2, 0);
+
+        /// <summary>
+        /// Default value if 'ReConnectPause' wasn't specified
+        /// </summary>
+        protected static readonly TimeSpan DefaultReconnectPause = new TimeSpan(0, 2, 0);
+
+        /// <summary>
+        /// DateTime of last disconnect
+        /// </summary>
         protected DateTime? LastDisconnect;
 
+        /// <summary>
+        /// Timeout for SqlCommand
+        /// </summary>
         public int DefaultExecutionTimeout = 30;
 
         /// <summary>
-        /// constructor
+        /// Constructor
         /// </summary>
-        /// <param name="reconnectPause">if null, default will be setted</param>
+        /// <param name="reconnectPause">Period for 'ReOpenConnection' method. If null, default will be setted</param>
         public ASqlWorker(TimeSpan? reconnectPause = null)
         {
             ReConnectPause = reconnectPause ?? DefaultReconnectPause;
@@ -27,9 +48,9 @@ namespace SqlWorker
         }
 
         /// <summary>
-        /// serves to reopen connection after 'ReConnectPause' time after last disconnect
+        /// Serves to reopen connection after 'ReConnectPause' time after last disconnect
         /// </summary>
-        /// <returns>true - connection was opened</returns>
+        /// <returns>True - connection was opened</returns>
         public virtual bool ReOpenConnection()
         {
             if (Conn.State == ConnectionState.Open) return true;
@@ -67,30 +88,16 @@ namespace SqlWorker
         /// <summary>
         /// Shourtcat for ExecuteNonQuery. Executes specified query
         /// </summary>
-        /// <param name="command"></param>
-        /// <param name="vals"></param>
-        /// <param name="timeout"></param>
-        /// <param name="commandType"></param>
-        /// <param name="transaction"></param>
-        /// <returns></returns>
-        virtual public int Exec(String command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
-        {
-            return ExecuteNonQuery(command, vals, timeout, commandType, transaction);
-        }
-
-        /// <summary>
-        /// Executes specified query
-        /// </summary>
-        /// <param name="command"></param>
-        /// <param name="vals"></param>
-        /// <param name="timeout"></param>
-        /// <param name="commandType"></param>
-        /// <param name="transaction"></param>
-        /// <returns></returns>
-        virtual public int ExecuteNonQuery(String command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        /// <param name="command">Sql string or stored procedure name</param>
+        /// <param name="vals">Query parameters</param>
+        /// <param name="timeout">Timeout in seconds</param>
+        /// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
+        /// <param name="transaction">If transaction was opened, it must be specified</param>
+        /// <returns>Result code of the query</returns>
+        virtual public int Exec(string command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
             int result;
-            vals = vals ?? DbParametersConstructor.emptyParams;
+            vals = vals ?? DbParametersConstructor.EmptyParams;
             SqlParameterNullWorkaround(vals);
             using (DbCommand cmd = Conn.CreateCommand())
             {
@@ -105,21 +112,36 @@ namespace SqlWorker
             return result;
         }
 
+        /// <summary>
+        /// Executes specified query
+        /// </summary>
+        /// <param name="command">Sql string or stored procedure name</param>
+        /// <param name="vals">Query parameters</param>
+        /// <param name="timeout">Timeout in seconds</param>
+        /// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
+        /// <param name="transaction">If transaction was opened, it must be specified</param>
+        /// <returns>Result code of the query</returns>
+        [Obsolete]
+        virtual public int ExecuteNonQuery(string command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        {
+            return Exec(command, vals, timeout, commandType, transaction);
+        }
+
 
         /// <summary>
         /// Inserts values into table. Warning: query is partly prepared by string concatenation, so don't use it with non-constant tableName parameter
         /// </summary>
-        /// <param name="tableName"></param>
-        /// <param name="vals"></param>
-        /// <param name="returnIdentity"></param>
-        /// <param name="timeout"></param>
-        /// <param name="transaction"></param>
+        /// <param name="tableName">Target table</param>
+        /// <param name="vals">Values to insert</param>
+        /// <param name="returnIdentity">If true, returns result of `SCOPE_IDENTITY()`, if false, returns number of rows processed</param>
+        /// <param name="timeout">Timeout in seconds</param>
+        /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>Returns count of inserted rows if 'returnIdentity'=false or id of last inserted row (result of SCOPE_IDENTITY build-in function) if true</returns>
-        virtual public int InsertValues(String tableName, DbParametersConstructor vals, bool returnIdentity = false, int? timeout = null, DbTransaction transaction = null)
+        virtual public int InsertValues(string tableName, DbParametersConstructor vals, bool returnIdentity = false, int? timeout = null, DbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(vals);
 
-            String q = "INSERT INTO " + tableName + " (" + vals[0].ParameterName;
+            string q = "INSERT INTO " + tableName + " (" + vals[0].ParameterName;
 
             for (int i = 1; i < vals.Count(); ++i)
                 q += ", " + vals[i].ParameterName;
@@ -132,28 +154,28 @@ namespace SqlWorker
             q += ");";
 
             return !returnIdentity ?
-                ExecuteNonQuery(q, vals, timeout, transaction: transaction) :
-                Decimal.ToInt32(ManualProcessing(
+                Exec(q, vals, timeout, transaction: transaction) :
+                decimal.ToInt32(ManualProcessing(
                 q + " ; select SCOPE_IDENTITY()",
                 r => { r.Read(); return r.GetDecimal(0); },
                 vals, timeout, transaction: transaction));
         }
 
         /// <summary>
-        /// Updates values. Warning: query is partly prepared by string concatenation, so don't use it with non-constant tableName parameter
+        /// Updates values
         /// </summary>
-        /// <param name="tableName"></param>
-        /// <param name="values"></param>
-        /// <param name="condition"></param>
-        /// <param name="timeout"></param>
-        /// <param name="transaction"></param>
+        /// <param name="tableName">Target table</param>
+        /// <param name="values">Values to update</param>
+        /// <param name="condition">Values, that specifies what rows to update</param>
+        /// <param name="timeout">Timeout in seconds</param>
+        /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>Count of updated values</returns>
-        virtual public int UpdateValues(String tableName, DbParametersConstructor values, DbParametersConstructor condition = null, int? timeout = null, DbTransaction transaction = null)
+        virtual public int UpdateValues(string tableName, DbParametersConstructor values, DbParametersConstructor condition = null, int? timeout = null, DbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(values);
-            condition = condition ?? DbParametersConstructor.emptyParams;
+            condition = condition ?? DbParametersConstructor.EmptyParams;
 
-            String q = "UPDATE " + tableName + " SET " + values[0].ParameterName + " = @" + values[0].ParameterName;
+            string q = "UPDATE " + tableName + " SET " + values[0].ParameterName + " = @" + values[0].ParameterName;
 
             for (int i = 1; i < values.Count(); ++i)
                 q += ", " + values[i].ParameterName + " = @" + values[i].ParameterName;
@@ -164,38 +186,49 @@ namespace SqlWorker
             for (int i = 1; i < condition.Count(); ++i)
                 q += " AND " + condition[i].ParameterName + " = @" + condition[i].ParameterName;
 
-            List<DbParameter> param = new List<DbParameter>(values.parameters);
-            param.AddRange(condition.parameters);
-            return ExecuteNonQuery(q, param.ToArray(), timeout, transaction: transaction);
+            List<DbParameter> param = new List<DbParameter>(values.Parameters);
+            param.AddRange(condition.Parameters);
+            return Exec(q, param.ToArray(), timeout, transaction: transaction);
         }
 
         /// <summary>
         /// Updates values. Warning: query is partly prepared by string concatenation, so don't use it with non-constant tableName parameter
         /// </summary>
-        /// <param name="tableName"></param>
-        /// <param name="vals"></param>
-        /// <param name="condition"></param>
-        /// <param name="timeout"></param>
-        /// <param name="transaction"></param>
+        /// <param name="tableName">Target table</param>
+        /// <param name="values">Values to update</param>
+        /// <param name="condition">string sql condition that will be placed into `where {}` clause</param>
+        /// <param name="timeout">Timeout in seconds</param>
+        /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>Count of updated values</returns>
-        virtual public int UpdateValues(String tableName, DbParametersConstructor vals, String condition, int? timeout = null, DbTransaction transaction = null)
+        virtual public int UpdateValues(string tableName, DbParametersConstructor values, string condition, int? timeout = null, DbTransaction transaction = null)
         {
-            SqlParameterNullWorkaround(vals);
+            SqlParameterNullWorkaround(values);
 
-            String q = "UPDATE " + tableName + " SET " + vals[0].ParameterName + " = @" + vals[0].ParameterName;
+            string q = "UPDATE " + tableName + " SET " + values[0].ParameterName + " = @" + values[0].ParameterName;
 
-            for (int i = 1; i < vals.Count(); ++i)
-                q += ", " + vals[i].ParameterName + " = @" + vals[i].ParameterName;
+            for (int i = 1; i < values.Count(); ++i)
+                q += ", " + values[i].ParameterName + " = @" + values[i].ParameterName;
 
-            if (!String.IsNullOrWhiteSpace(condition))
+            if (!string.IsNullOrWhiteSpace(condition))
                 q += " WHERE " + condition;
 
-            return ExecuteNonQuery(q, vals, timeout, transaction: transaction);
+            return Exec(q, values, timeout, transaction: transaction);
         }
 
-        virtual public T ManualProcessing<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        /// <summary>
+        /// Performs ExecuteReader for specified command, performs specified delegate on result, than disposes datareader and command
+        /// </summary>
+        /// <typeparam name="T">Result type</typeparam>
+        /// <param name="command">Sql string or stored procedure name</param>
+        /// <param name="todo">Delegate for operating whith result datareader</param>
+        /// <param name="vals">Query parameters</param>
+        /// <param name="timeout">Timeout in seconds</param>
+        /// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
+        /// <param name="transaction">If transaction was opened, it must be specified</param>
+        /// <returns>T-object, result of delegate execution</returns>
+        virtual public T ManualProcessing<T>(string command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
-            vals = vals ?? DbParametersConstructor.emptyParams;
+            vals = vals ?? DbParametersConstructor.EmptyParams;
             SqlParameterNullWorkaround(vals);
             T result;
             using (var cmd = Conn.CreateCommand())
@@ -219,15 +252,15 @@ namespace SqlWorker
         /// </summary>
         /// <typeparam name="T">Generic resulting type</typeparam>
         /// <param name="command">SQL command; in case of stored procedure this parameter stores only Proc name, commandType must be specified then</param>
-        /// <param name="todo">delegate to recive T from DataReader</param>
-        /// <param name="vals">values of parameters (if necessary)</param>
-        /// <param name="timeout">timeout</param>
+        /// <param name="todo">Delegate to recive T from DataReader</param>
+        /// <param name="vals">Values of parameters (if necessary)</param>
+        /// <param name="timeout">Timeout</param>
         /// <param name="commandType">Type of batch</param>
-        /// <param name="transaction">the transaction, inside of wich the command will be executed</param>
-        /// <returns>consequentially readed data</returns>
-        virtual public IEnumerable<T> Select<T>(String command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        /// <param name="transaction">The transaction, inside of wich the command will be executed</param>
+        /// <returns>Consequentially readed data</returns>
+        virtual public IEnumerable<T> Select<T>(string command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
-            vals = vals ?? DbParametersConstructor.emptyParams;
+            vals = vals ?? DbParametersConstructor.EmptyParams;
             SqlParameterNullWorkaround(vals);
             using (var cmd = Conn.CreateCommand())
             {
@@ -250,11 +283,11 @@ namespace SqlWorker
         /// <summary>
         /// Obtain objects from DataReader using reflection
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Sequence of T-objects</returns>
         virtual public IEnumerable<T> SelectWithReflection<T>(
-            String command,
+            string command,
             DbParametersConstructor vals = null,
-            List<String> exceptions = null,
+            List<string> exceptions = null,
             int? timeout = null,
             CommandType commandType = CommandType.Text,
             DbTransaction transaction = null
@@ -267,7 +300,11 @@ namespace SqlWorker
         /// <summary>
         /// Converts DataRow to T with reflection, writing exceptions in list
         /// </summary>
-        virtual public T DataReaderToObj<T>(DbDataReader dr, List<String> errors) where T : new()
+        /// <typeparam name="T">Target type</typeparam>
+        /// <param name="dr">Source datareader</param>
+        /// <param name="errors">List with errors</param>
+        /// <returns>T-object</returns>
+        virtual public T DataReaderToObj<T>(DbDataReader dr, List<string> errors) where T : new()
         {
             T result = new T();
             foreach (System.ComponentModel.PropertyDescriptor i in System.ComponentModel.TypeDescriptor.GetProperties(result))
@@ -282,6 +319,9 @@ namespace SqlWorker
         /// <summary>
         /// Converts DataRow to T with reflection, throws!
         /// </summary>
+        /// <typeparam name="T">Target type</typeparam>
+        /// <param name="dr">Source datareader</param>
+        /// <returns>T-object</returns>
         virtual public T DataReaderToObj<T>(DbDataReader dr) where T : new()
         {
             T result = new T();
@@ -293,7 +333,16 @@ namespace SqlWorker
             return result;
         }
 
-        virtual public DataTable GetDataTable(String query, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        /// <summary>
+        /// Executes query and returns DataTable with results
+        /// </summary>
+        /// <param name="query">Sql string or stored procedure name</param>
+        /// <param name="vals">Query parameters</param>
+        /// <param name="timeout">Timeout in seconds</param>
+        /// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
+        /// <param name="transaction">If transaction was opened, it must be specified</param>
+        /// <returns>The DataTable with results</returns>
+        virtual public DataTable GetDataTable(string query, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
             return ManualProcessing(query, (dr) =>
             {
@@ -306,6 +355,9 @@ namespace SqlWorker
 
         #region IDisposable members
 
+        /// <summary>
+        /// Closes database connection
+        /// </summary>
         public virtual void Dispose()
         {
             if (Conn.State != ConnectionState.Closed) Conn.Close();

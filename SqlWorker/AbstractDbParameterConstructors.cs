@@ -6,8 +6,19 @@ using System.Linq;
 
 namespace SqlWorker
 {
+    /// <summary>
+    /// Abstract class for creation DbParameter
+    /// </summary>
     public abstract class AbstractDbParameterConstructors
     {
-        public abstract DbParameter Create(String name, Object value, System.Data.DbType? type = null, System.Data.ParameterDirection? direction = null);
+        /// <summary>
+        /// Abstract method for creating DbParameter
+        /// </summary>
+        /// <param name="name">Parameter name</param>
+        /// <param name="value">Parameter value</param>
+        /// <param name="type">Parameter DBType, optional</param>
+        /// <param name="direction">Parameter direction (Input / Output / InputOutput / ReturnValue), optional</param>
+        /// <returns></returns>
+        public abstract DbParameter Create(string name, object value, System.Data.DbType? type = null, System.Data.ParameterDirection? direction = null);
     }
 }

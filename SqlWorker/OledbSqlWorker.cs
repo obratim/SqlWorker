@@ -6,8 +6,19 @@ using System.Linq;
 
 namespace SqlWorker
 {
+    /// <summary>
+    /// Generator of OleDbParameter objects
+    /// </summary>
     public class ParametersConstructorForOledb : AbstractDbParameterConstructors
     {
+        /// <summary>
+        /// Creates an OleDbParameter
+        /// </summary>
+        /// <param name="name">Parameter name</param>
+        /// <param name="value">Parameter value</param>
+        /// <param name="type">Parameter DBType, optional</param>
+        /// <param name="direction">Parameter direction (Input / Output / InputOutput / ReturnValue), optional</param>
+        /// <returns>OleDbParameter instance</returns>
         public override System.Data.Common.DbParameter Create(string name, object value, System.Data.DbType? type = null, System.Data.ParameterDirection? direction = null)
         {
             var result = new OleDbParameter(name, value);
@@ -17,16 +28,27 @@ namespace SqlWorker
         }
     }
 
+    /// <summary>
+    /// Adapter for OLE DB
+    /// </summary>
     public class OledbSqlWorker : ASqlWorker<ParametersConstructorForOledb>
     {
         private OleDbConnection _conn { get; set; }
 
-        public OledbSqlWorker(String connectionString, TimeSpan? reconnectPause = null)
+        /// <summary>
+        /// Constructor from connection string
+        /// </summary>
+        /// <param name="connectionString">The connection string</param>
+        /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
+        public OledbSqlWorker(string connectionString, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
             _conn = new OleDbConnection(connectionString);
         }
 
+        /// <summary>
+        /// Database connection
+        /// </summary>
         protected override System.Data.Common.DbConnection Conn
         {
             get { return _conn; }

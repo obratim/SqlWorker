@@ -8,6 +8,9 @@ namespace SqlWorker
 {
     public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new()
     {
+        /// <summary>
+        /// Dictionary that maps c# types to DbTypes
+        /// </summary>
         protected static readonly Dictionary<Type, DbType> typeMap = new Dictionary<Type, DbType>() {
 	        { typeof(byte) , DbType.Byte },
 	        { typeof(sbyte) , DbType.SByte },

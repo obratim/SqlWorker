@@ -9,8 +9,19 @@ using System.Linq;
 
 namespace SqlWorker
 {
+    /// <summary>
+    /// Generator of SqlParameter objects
+    /// </summary>
     public class ParametersConstuctorsForMSSQL : AbstractDbParameterConstructors
     {
+        /// <summary>
+        /// Creates an SqlParameter
+        /// </summary>
+        /// <param name="paramName">Parameter name</param>
+        /// <param name="paramValue">Parameter value</param>
+        /// <param name="type">Parameter DBType, optional</param>
+        /// <param name="direction">Parameter direction (Input / Output / InputOutput / ReturnValue), optional</param>
+        /// <returns>SqlParameter instance</returns>
         public override DbParameter Create(string paramName, object paramValue, DbType? type = null, ParameterDirection? direction = null)
         {
             if (!type.HasValue) return new SqlParameter(paramName, paramValue);
@@ -21,12 +32,18 @@ namespace SqlWorker
         }
     }
 
+    /// <summary>
+    /// Adapter for MS Sql Server
+    /// </summary>
     public class MSSqlWorker : ASqlWorker<ParametersConstuctorsForMSSQL>
     {
         private SqlConnection _conn;
 
-        private String connstr;
+        private string connstr;
 
+        /// <summary>
+        /// Database connection
+        /// </summary>
         protected override DbConnection Conn
         {
             get
@@ -36,26 +53,45 @@ namespace SqlWorker
             }
         }
 
-        public MSSqlWorker(String ñonnectionString, TimeSpan? reconnectPause = null)
-            : base(reconnectPause) { connstr = ñonnectionString; }
+        /// <summary>
+        /// Constructor from connection string
+        /// </summary>
+        /// <param name="connectionString">The connection string</param>
+        /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
+        public MSSqlWorker(string connectionString, TimeSpan? reconnectPause = null)
+            : base(reconnectPause) { connstr = connectionString; }
 
-        public MSSqlWorker(String server, String dataBase, TimeSpan? reconnectPause = null)
+        /// <summary>
+        /// Constructor for windows authentication
+        /// </summary>
+        /// <param name="server">The target Sql Server</param>
+        /// <param name="dataBase">The target database</param>
+        /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
+        public MSSqlWorker(string server, string dataBase, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
-            connstr = String.Format("Server={0};Database={1};Integrated Security=true", server, dataBase);
+            connstr = string.Format("Server={0};Database={1};Integrated Security=true", server, dataBase);
         }
 
-        public MSSqlWorker(String server, String dataBase, String login, String password, TimeSpan? reconnectPause = null)
+        /// <summary>
+        /// Constructor for sql server authentication
+        /// </summary>
+        /// <param name="server">The target Sql Server</param>
+        /// <param name="dataBase">The target database</param>
+        /// <param name="login">Username</param>
+        /// <param name="password">Password</param>
+        /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
+        public MSSqlWorker(string server, string dataBase, string login, string password, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
-            connstr = String.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", server, dataBase, login, password);
+            connstr = string.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", server, dataBase, login, password);
         }
-        
+
         /// <summary>
         /// Same as TransactionBegin, but returns SqlTransaction object
         /// </summary>
         /// <param name="level"></param>
-        /// <returns></returns>
+        /// <returns>The SqlTransaction instance</returns>
         public virtual SqlTransaction SqlTransactionBegin(IsolationLevel level = IsolationLevel.ReadCommitted)
         {
             if (Conn.State != ConnectionState.Open) Conn.Open();
@@ -64,11 +100,22 @@ namespace SqlWorker
 
         #region send files
 
-        public SqlFileStream GetFileStreamFromDB(String tableName, String dataFieldName, System.IO.FileAccess accessType, SqlTransaction transaction, Dictionary<String, Object> attributies, String condition = "", int? timeout = null)
+        /// <summary>
+        /// Gets stream from filestream column
+        /// </summary>
+        /// <param name="tableName">The target table</param>
+        /// <param name="dataFieldName">FileStream column</param>
+        /// <param name="accessType">Access type</param>
+        /// <param name="transaction">Transaction must be opened</param>
+        /// <param name="attributies">Query parameters</param>
+        /// <param name="condition">Condition for row selection</param>
+        /// <param name="timeout">Timeout</param>
+        /// <returns>The SqlFileStream instance</returns>
+        public SqlFileStream GetFileStreamFromDB(string tableName, string dataFieldName, System.IO.FileAccess accessType, SqlTransaction transaction, Dictionary<string, object> attributies, string condition = "", int? timeout = null)
         {
             if (condition == null) condition = "";
             if (string.IsNullOrWhiteSpace(condition))
-                condition = attributies.Aggregate<KeyValuePair<String, Object>, String>("", (str, i) => { return str + (String.IsNullOrEmpty(str) ? "" : " and ") + i.Key + " = @" + i.Key; });
+                condition = attributies.Aggregate("", (str, i) => { return str + (string.IsNullOrEmpty(str) ? "" : " and ") + i.Key + " = @" + i.Key; });
             return ManualProcessing("select " + dataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + condition,
                 dr =>
                 {
@@ -77,17 +124,33 @@ namespace SqlWorker
                 }, attributies, timeout, transaction: transaction);
         }
 
+        /// <summary>
+        /// Delegate for obtaining SqlFileStream
+        /// </summary>
+        /// <returns>SqlFileStream object</returns>
         public delegate SqlFileStream FileStreamService();
 
+        /// <summary>
+        /// Performs insertion data into table with FileStream column
+        /// </summary>
+        /// <param name="tableName">The target table</param>
+        /// <param name="fileIdFieldName">Name of FielId column</param>
+        /// <param name="fileDataFieldName">Name of FileStream column</param>
+        /// <param name="transaction">Transaction must be opened</param>
+        /// <param name="attributes">Other row values to insert</param>
+        /// <param name="inputStream">Source stream</param>
+        /// <param name="bufLength">Buffer length</param>
+        /// <param name="timeout">Timeout</param>
+        /// <returns>Written size</returns>
         public int InsertFileNoStoredProcs(
-            String tableName,
-            String fileIdFieldName, String fileDataFieldName,
+            string tableName,
+            string fileIdFieldName, string fileDataFieldName,
             SqlTransaction transaction,
-            Dictionary<String, Object> attributes,
+            Dictionary<string, object> attributes,
             System.IO.Stream inputStream,
             long bufLength = 512*1024,
             int? timeout = null
-            //, String procName = null, int procFilePathIndex = 0, int procFileTokenIndex = 1
+            //, string procName = null, int procFilePathIndex = 0, int procFileTokenIndex = 1
         )
         {
             return InsertFileGeneric(inputStream,
@@ -109,6 +172,13 @@ namespace SqlWorker
                 bufLength);
         }
 
+        /// <summary>
+        /// Performs writing data into table with FileStream column
+        /// </summary>
+        /// <param name="inputStream">Source stream</param>
+        /// <param name="insertDataAndReturnSqlFileStream">Delegate for obtaining SqlFileStream</param>
+        /// <param name="bufLength">Buffer length</param>
+        /// <returns>Written size</returns>
         public int InsertFileGeneric(System.IO.Stream inputStream, FileStreamService insertDataAndReturnSqlFileStream, long bufLength = 512 * 1024)
         {
             int writen = 0;
@@ -130,7 +200,12 @@ namespace SqlWorker
 
         #endregion send files
 
-        virtual public bool CreateTableByDataTable(DataTable source, bool recreate = false)
+        /// <summary>
+        /// Creates table in database with columns relevant to specified DataTable
+        /// </summary>
+        /// <param name="source">DataTable, wich structure must be copied</param>
+        /// <param name="recreate">Check if targed table exists and drop it if necessary</param>
+        virtual public void CreateTableByDataTable(DataTable source, bool recreate = false)
         {
             if (recreate)
             {
@@ -141,19 +216,19 @@ namespace SqlWorker
             foreach (DataColumn c in source.Columns)
                 columns.Add(c);
 
-            ExecuteNonQuery(String.Format(@"
+            Exec(string.Format(@"
 CREATE TABLE {0} (
     {1}
 )
-", source.TableName, String.Join(",\n    ", columns.Select(c => String.Format("{0} {1}{4} {2} {3}",
+", source.TableName, string.Join(",\n    ", columns.Select(c => string.Format("{0} {1}{4} {2} {3}",
          c.ColumnName, typeMap_TSQL[c.DataType].ToString(),
          c.AllowDBNull ? "NULL" : "NOT NULL",
-         c.AutoIncrement ? String.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : "",
-         c.MaxLength > 0 ? String.Format("({0})", c.MaxLength) : ""))
+         c.AutoIncrement ? string.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : "",
+         c.MaxLength > 0 ? string.Format("({0})", c.MaxLength) : ""))
      )));
 
             /***************************************
-            ExecuteNonQuery(String.Format(@"
+            ExecuteNonQuery(string.Format(@"
             if exists (select * from sysobjects where name='{0}' and xtype='U')
             begin
                 drop table {0}
@@ -162,15 +237,21 @@ CREATE TABLE {0} (
             CREATE TABLE {0} (
             {1}
             );
-            ", source.TableName, String.Join(",\n\t", (from c in source.Columns.Cast<DataColumn>() select c.ColumnName + " " + typeMap[c.DataType].ToString() + (c.AllowDBNull ? " NULL" : " NOT NULL")))));
+            ", source.TableName, string.Join(",\n\t", (from c in source.Columns.Cast<DataColumn>() select c.ColumnName + " " + typeMap[c.DataType].ToString() + (c.AllowDBNull ? " NULL" : " NOT NULL")))));
 
             ***************************************/
-            return true;
         }
 
         #region Bulk copy
 
-        protected virtual SqlBulkCopy NewBulkCopyInstance(SqlBulkCopyOptions options,
+        /// <summary>
+        /// Gets new BulkCopy instance with current connection
+        /// </summary>
+        /// <param name="options">Bulk copy options</param>
+        /// <param name="tran">Transaction</param>
+        /// <returns>BulkCopy instance</returns>
+        protected virtual SqlBulkCopy NewBulkCopyInstance(
+            SqlBulkCopyOptions options,
             SqlTransaction tran)
         {
             return new SqlBulkCopy(_conn, options, tran);
@@ -179,15 +260,15 @@ CREATE TABLE {0} (
         /// <summary>
         /// Performs bulk copy from DataTable to specified table
         /// </summary>
-        /// <param name="source"></param>
-        /// <param name="targetTableName"></param>
-        /// <param name="transaction"></param>
-        /// <param name="options"></param>
-        /// <param name="timeout"></param>
-        /// <param name="mappings"></param>
+        /// <param name="source">Source data</param>
+        /// <param name="targetTableName">Target table</param>
+        /// <param name="transaction">Transaction</param>
+        /// <param name="options">Bulk copy options</param>
+        /// <param name="timeout">Timeout</param>
+        /// <param name="mappings">Mappings for bulk copy</param>
         virtual public void BulkCopy(
             DataTable source,
-            String targetTableName,
+            string targetTableName,
             SqlTransaction transaction,
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
             int? timeout = null,
@@ -211,14 +292,14 @@ CREATE TABLE {0} (
         /// Performs bulk copy from multiple DataTable objects to specified table. Each DataTable will be disposed!
         /// </summary>
         /// <param name="source">IEnumerable with datatables. Each datatable will be disposed</param>
-        /// <param name="targetTableName"></param>
-        /// <param name="transaction"></param>
-        /// <param name="options"></param>
-        /// <param name="timeout"></param>
-        /// <param name="mappings"></param>
+        /// <param name="targetTableName">Target table</param>
+        /// <param name="transaction">Transaction</param>
+        /// <param name="options">Bulk copy options</param>
+        /// <param name="timeout">Timeout</param>
+        /// <param name="mappings">Mappings for bulk copy</param>
         virtual public void BulkCopy(
             IEnumerable<DataTable> source,
-            String targetTableName,
+            string targetTableName,
             SqlTransaction transaction,
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
             int? timeout = null,
@@ -259,14 +340,14 @@ CREATE TABLE {0} (
         /// <typeparam name="T">The generic type of collection</typeparam>
         /// <param name="source">The source collection</param>
         /// <param name="targetTableName">Name of the table, where data will be copied</param>
-        /// <param name="transaction"></param>
+        /// <param name="transaction">Transaction</param>
         /// <param name="options">Bulk copy options</param>
         /// <param name="chunkSize">If greater then zero, multiple copies will be performed with specified number of rows in each iteration</param>
-        /// <param name="timeout"></param>
-        /// <param name="mappings"></param>
+        /// <param name="timeout">Timeout</param>
+        /// <param name="mappings">Mappings for bulk copy</param>
 		virtual public void BulkCopyWithReflection<T>(
             IEnumerable<T> source,
-            String targetTableName,
+            string targetTableName,
             SqlTransaction transaction,
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
             int chunkSize = 0,
