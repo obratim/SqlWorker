@@ -8,7 +8,6 @@ It can be useful when implementing simple applications and utilities, that execu
 
 * SqlWorker is available with ** nuget **
 * Initialisation requires specification of connection string to target database
-* Operating with **PostgreSql** requires *NpgSql* driver. **MySql** requires *MySql.Data* driver.
 * Wiki page contains several examples to start with
 
 [comment]: <> (### Contribution guidelines ###)
