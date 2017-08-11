@@ -11,7 +11,7 @@ namespace SqlWorker
         /// <summary>
         /// Dictionary that maps c# types to DbTypes
         /// </summary>
-        protected static readonly Dictionary<Type, DbType> typeMap = new Dictionary<Type, DbType>() {
+        protected static readonly Dictionary<Type, DbType> TypeMap = new Dictionary<Type, DbType> {
 	        { typeof(byte) , DbType.Byte },
 	        { typeof(sbyte) , DbType.SByte },
 	        { typeof(short) , DbType.Int16 },

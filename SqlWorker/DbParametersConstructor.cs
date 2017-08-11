@@ -26,7 +26,7 @@ namespace SqlWorker
         /// </summary>
         public class DbParametersConstructor
         {
-            private static TPC generator = new TPC();
+            private static readonly TPC Generator = new TPC();
 
             private static readonly DbParameter[] _emptyParams = new DbParameter[0];
 
@@ -35,7 +35,7 @@ namespace SqlWorker
             /// </summary>
             public static DbParameter[] EmptyParams { get { return _emptyParams; } }
             
-            private DbParameter[] _parameters;
+            private readonly DbParameter[] _parameters;
 
             /// <summary>
             /// Returns array of DpParameter that are represented by current object
@@ -46,7 +46,7 @@ namespace SqlWorker
             /// Initialises new parameters set
             /// </summary>
             /// <param name="parameters">The array of parameters</param>
-            public DbParametersConstructor(DbParameter[] parameters)
+            private DbParametersConstructor(DbParameter[] parameters)
             {
                 _parameters = parameters;
             }
@@ -70,10 +70,10 @@ namespace SqlWorker
             /// <summary>
             /// Implicitly converts current object to DbParameter[]
             /// </summary>
-            /// <param name="DbParametersConstructorObject">The current object</param>
-            public static implicit operator DbParameter[](DbParametersConstructor DbParametersConstructorObject)
+            /// <param name="dbParametersConstructorObject">The current object</param>
+            public static implicit operator DbParameter[](DbParametersConstructor dbParametersConstructorObject)
             {
-                return DbParametersConstructorObject.Parameters;
+                return dbParametersConstructorObject.Parameters;
             }
 
             /// <summary>
@@ -104,7 +104,7 @@ namespace SqlWorker
                 int i = 0;
                 foreach (var kv in vals)
                 {
-                    result[i] = generator.Create(kv.Key, kv.Value, null);
+                    result[i] = Generator.Create(kv.Key, kv.Value, null);
                     ++i;
                 }
                 return new DbParametersConstructor(result);
@@ -120,7 +120,7 @@ namespace SqlWorker
                 int j = 0;
                 for (int i = 0; i < vals.Count; ++i)
                 {
-                    result[j] = generator.Create(vals[i].Item1, vals[i].Item2, vals[i].Item3, vals[i].Item4);
+                    result[j] = Generator.Create(vals[i].Item1, vals[i].Item2, vals[i].Item3, vals[i].Item4);
                     ++j;
                 }
                 return new DbParametersConstructor(result);

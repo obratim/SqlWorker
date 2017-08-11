@@ -39,7 +39,7 @@ namespace SqlWorker
     {
         private SqlConnection _conn;
 
-        private string connstr;
+        private readonly string _connstr;
 
         /// <summary>
         /// Database connection
@@ -48,7 +48,7 @@ namespace SqlWorker
         {
             get
             {
-                if (_conn == null) _conn = new SqlConnection(connstr);
+                if (_conn == null) _conn = new SqlConnection(_connstr);
                 return _conn;
             }
         }
@@ -59,7 +59,7 @@ namespace SqlWorker
         /// <param name="connectionString">The connection string</param>
         /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
         public MSSqlWorker(string connectionString, TimeSpan? reconnectPause = null)
-            : base(reconnectPause) { connstr = connectionString; }
+            : base(reconnectPause) { _connstr = connectionString; }
 
         /// <summary>
         /// Constructor for windows authentication
@@ -70,7 +70,7 @@ namespace SqlWorker
         public MSSqlWorker(string server, string dataBase, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
-            connstr = string.Format("Server={0};Database={1};Integrated Security=true", server, dataBase);
+            _connstr = string.Format("Server={0};Database={1};Integrated Security=true", server, dataBase);
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace SqlWorker
         public MSSqlWorker(string server, string dataBase, string login, string password, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
-            connstr = string.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", server, dataBase, login, password);
+            _connstr = string.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", server, dataBase, login, password);
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace SqlWorker
         {
             if (condition == null) condition = "";
             if (string.IsNullOrWhiteSpace(condition))
-                condition = attributies.Aggregate("", (str, i) => { return str + (string.IsNullOrEmpty(str) ? "" : " and ") + i.Key + " = @" + i.Key; });
+                condition = attributies.Aggregate("", (str, i) => str + (string.IsNullOrEmpty(str) ? "" : " and ") + i.Key + " = @" + i.Key);
             return ManualProcessing("select " + dataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + condition,
                 dr =>
                 {
@@ -167,7 +167,7 @@ namespace SqlWorker
 
                     InsertValues(tableName, attributes);
 
-                    return GetFileStreamFromDB(tableName, fileDataFieldName, System.IO.FileAccess.Write, transaction, new Dictionary<string, object>() { { fileIdFieldName, attributes[fileIdFieldName] } }, timeout: timeout);
+                    return GetFileStreamFromDB(tableName, fileDataFieldName, System.IO.FileAccess.Write, transaction, new Dictionary<string, object> { { fileIdFieldName, attributes[fileIdFieldName] } }, timeout: timeout);
                 },
                 bufLength);
         }
@@ -209,19 +209,18 @@ namespace SqlWorker
         {
             if (recreate)
             {
-                ExecuteNonQuery("IF OBJECT_ID(@tname, 'U') IS NOT NULL DROP TABLE " + source.TableName, new SWParameters { { "tname", source.TableName } });
+                Exec("IF OBJECT_ID(@tname, 'U') IS NOT NULL DROP TABLE " + source.TableName, new SWParameters { { "tname", source.TableName } });
             }
 
-            var columns = new List<DataColumn> { };
-            foreach (DataColumn c in source.Columns)
-                columns.Add(c);
+            var columns = new List<DataColumn>();
+            columns.AddRange(source.Columns.Cast<DataColumn>());
 
             Exec(string.Format(@"
 CREATE TABLE {0} (
     {1}
 )
 ", source.TableName, string.Join(",\n    ", columns.Select(c => string.Format("{0} {1}{4} {2} {3}",
-         c.ColumnName, typeMap_TSQL[c.DataType].ToString(),
+         c.ColumnName, TypeMapTsql[c.DataType].ToString(),
          c.AllowDBNull ? "NULL" : "NOT NULL",
          c.AutoIncrement ? string.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : "",
          c.MaxLength > 0 ? string.Format("({0})", c.MaxLength) : ""))

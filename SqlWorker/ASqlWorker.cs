@@ -35,7 +35,7 @@ namespace SqlWorker
         /// <summary>
         /// Timeout for SqlCommand
         /// </summary>
-        public int DefaultExecutionTimeout = 30;
+        public int DefaultExecutionTimeout { get; set; } = 30;
 
         /// <summary>
         /// Constructor
@@ -220,13 +220,13 @@ namespace SqlWorker
         /// </summary>
         /// <typeparam name="T">Result type</typeparam>
         /// <param name="command">Sql string or stored procedure name</param>
-        /// <param name="todo">Delegate for operating whith result datareader</param>
+        /// <param name="jobToDo">Delegate for operating whith result datareader</param>
         /// <param name="vals">Query parameters</param>
         /// <param name="timeout">Timeout in seconds</param>
         /// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
         /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>T-object, result of delegate execution</returns>
-        virtual public T ManualProcessing<T>(string command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        virtual public T ManualProcessing<T>(string command, Func<DbDataReader, T> jobToDo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
             vals = vals ?? DbParametersConstructor.EmptyParams;
             SqlParameterNullWorkaround(vals);
@@ -241,7 +241,7 @@ namespace SqlWorker
                 if (Conn.State != ConnectionState.Open) Conn.Open();
                 using (var dr = cmd.ExecuteReader())
                 {
-                    result = todo(dr);
+                    result = jobToDo(dr);
                 }
             }
             return result;
@@ -252,13 +252,13 @@ namespace SqlWorker
         /// </summary>
         /// <typeparam name="T">Generic resulting type</typeparam>
         /// <param name="command">SQL command; in case of stored procedure this parameter stores only Proc name, commandType must be specified then</param>
-        /// <param name="todo">Delegate to recive T from DataReader</param>
+        /// <param name="jobToDo">Delegate to recive T from DataReader</param>
         /// <param name="vals">Values of parameters (if necessary)</param>
         /// <param name="timeout">Timeout</param>
         /// <param name="commandType">Type of batch</param>
         /// <param name="transaction">The transaction, inside of wich the command will be executed</param>
         /// <returns>Consequentially readed data</returns>
-        virtual public IEnumerable<T> Select<T>(string command, Func<DbDataReader, T> todo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        virtual public IEnumerable<T> Select<T>(string command, Func<DbDataReader, T> jobToDo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
         {
             vals = vals ?? DbParametersConstructor.EmptyParams;
             SqlParameterNullWorkaround(vals);
@@ -274,7 +274,7 @@ namespace SqlWorker
                 {
                     while (dr.Read())
                     {
-                        yield return todo(dr);
+                        yield return jobToDo(dr);
                     }
                 }
             }
@@ -294,7 +294,7 @@ namespace SqlWorker
             ) where T : new()
         {
             if (exceptions != null) return Select(command, dr => DataReaderToObj<T>(dr, exceptions), vals, timeout, commandType, transaction);
-            else return Select(command, dr => DataReaderToObj<T>(dr), vals, timeout);
+            else return Select(command, DataReaderToObj<T>, vals, timeout);
         }
 
         /// <summary>

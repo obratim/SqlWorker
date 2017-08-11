@@ -33,7 +33,7 @@ namespace SqlWorker
     /// </summary>
     public class OledbSqlWorker : ASqlWorker<ParametersConstructorForOledb>
     {
-        private OleDbConnection _conn { get; set; }
+        private readonly OleDbConnection _conn;
 
         /// <summary>
         /// Constructor from connection string
