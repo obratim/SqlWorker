@@ -9,7 +9,7 @@ namespace SqlWorker
     /// <summary>
     /// Generator of OleDbParameter objects
     /// </summary>
-    public class ParametersConstructorForOledb : IDbParameterConstructors
+    public class ParametersConstructorForOledb : IDbParameterCreator
     {
         /// <summary>
         /// Creates an OleDbParameter

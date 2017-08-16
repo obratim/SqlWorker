@@ -12,7 +12,7 @@ namespace SqlWorker
     /// <summary>
     /// Generator of SqlParameter objects
     /// </summary>
-    public class ParametersConstuctorsForMsSql : IDbParameterConstructors
+    public class ParametersConstuctorsForMsSql : IDbParameterCreator
     {
         /// <summary>
         /// Creates an SqlParameter

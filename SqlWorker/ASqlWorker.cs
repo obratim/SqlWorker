@@ -12,7 +12,7 @@ namespace SqlWorker
     /// <typeparam name="TPC">Realisation of AbstractDbParameterConstructors abstract class required</typeparam>
     public abstract partial class ASqlWorker<TPC>
         : IDisposable
-        where TPC : IDbParameterConstructors, new()
+        where TPC : IDbParameterCreator, new()
     {
         /// <summary>
         /// Database connection
