@@ -10,12 +10,14 @@ namespace SqlWorker
     /// Core class, where main logic is realised. Dispose to close connection
     /// </summary>
     /// <typeparam name="TPC">Realisation of AbstractDbParameterConstructors abstract class required</typeparam>
-    public abstract partial class ASqlWorker<TPC> : IDisposable where TPC : AbstractDbParameterConstructors, new()
+    public abstract partial class ASqlWorker<TPC>
+        : IDisposable
+        where TPC : IDbParameterConstructors, new()
     {
         /// <summary>
         /// Database connection
         /// </summary>
-        protected abstract DbConnection Conn { get; }
+        protected abstract IDbConnection Conn { get; }
 
         /// <summary>
         /// Period for 'ReOpenConnection' method
@@ -94,15 +96,20 @@ namespace SqlWorker
         /// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
         /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>Result code of the query</returns>
-        virtual public int Exec(string command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        virtual public int Exec(
+            string command,
+            DbParametersConstructor vals = null,
+            int? timeout = null,
+            CommandType commandType = CommandType.Text,
+            IDbTransaction transaction = null)
         {
             int result;
             vals = vals ?? DbParametersConstructor.EmptyParams;
             SqlParameterNullWorkaround(vals);
-            using (DbCommand cmd = Conn.CreateCommand())
+            using (var cmd = Conn.CreateCommand())
             {
                 cmd.CommandText = command;
-                cmd.Parameters.AddRange(vals);
+                foreach (var c in vals.Parameters) cmd.Parameters.Add(c);
                 cmd.CommandType = commandType;
                 cmd.Transaction = transaction;
                 cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
@@ -122,7 +129,12 @@ namespace SqlWorker
         /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>Result code of the query</returns>
         [Obsolete]
-        virtual public int ExecuteNonQuery(string command, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        virtual public int ExecuteNonQuery(
+            string command,
+            DbParametersConstructor vals = null,
+            int? timeout = null,
+            CommandType commandType = CommandType.Text,
+            IDbTransaction transaction = null)
         {
             return Exec(command, vals, timeout, commandType, transaction);
         }
@@ -137,7 +149,12 @@ namespace SqlWorker
         /// <param name="timeout">Timeout in seconds</param>
         /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>Returns count of inserted rows if 'returnIdentity'=false or id of last inserted row (result of SCOPE_IDENTITY build-in function) if true</returns>
-        virtual public int InsertValues(string tableName, DbParametersConstructor vals, bool returnIdentity = false, int? timeout = null, DbTransaction transaction = null)
+        virtual public int InsertValues(
+            string tableName,
+            DbParametersConstructor vals,
+            bool returnIdentity = false,
+            int? timeout = null,
+            IDbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(vals);
 
@@ -170,7 +187,12 @@ namespace SqlWorker
         /// <param name="timeout">Timeout in seconds</param>
         /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>Count of updated values</returns>
-        virtual public int UpdateValues(string tableName, DbParametersConstructor values, DbParametersConstructor condition = null, int? timeout = null, DbTransaction transaction = null)
+        virtual public int UpdateValues(
+            string tableName,
+            DbParametersConstructor values,
+            DbParametersConstructor condition = null,
+            int? timeout = null,
+            IDbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(values);
             condition = condition ?? DbParametersConstructor.EmptyParams;
@@ -186,7 +208,7 @@ namespace SqlWorker
             for (int i = 1; i < condition.Count(); ++i)
                 q += " AND " + condition[i].ParameterName + " = @" + condition[i].ParameterName;
 
-            List<DbParameter> param = new List<DbParameter>(values.Parameters);
+            List<IDataParameter> param = new List<IDataParameter>(values.Parameters);
             param.AddRange(condition.Parameters);
             return Exec(q, param.ToArray(), timeout, transaction: transaction);
         }
@@ -200,7 +222,12 @@ namespace SqlWorker
         /// <param name="timeout">Timeout in seconds</param>
         /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>Count of updated values</returns>
-        virtual public int UpdateValues(string tableName, DbParametersConstructor values, string condition, int? timeout = null, DbTransaction transaction = null)
+        virtual public int UpdateValues(
+            string tableName,
+            DbParametersConstructor values,
+            string condition,
+            int? timeout = null,
+            IDbTransaction transaction = null)
         {
             SqlParameterNullWorkaround(values);
 
@@ -226,7 +253,13 @@ namespace SqlWorker
         /// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
         /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>T-object, result of delegate execution</returns>
-        virtual public T ManualProcessing<T>(string command, Func<DbDataReader, T> jobToDo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        virtual public T ManualProcessing<T>(
+            string command,
+            Func<IDataReader, T> jobToDo,
+            DbParametersConstructor vals = null,
+            int? timeout = null,
+            CommandType commandType = CommandType.Text,
+            IDbTransaction transaction = null)
         {
             vals = vals ?? DbParametersConstructor.EmptyParams;
             SqlParameterNullWorkaround(vals);
@@ -236,7 +269,7 @@ namespace SqlWorker
                 cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
                 cmd.CommandType = commandType;
                 cmd.CommandText = command;
-                cmd.Parameters.AddRange(vals);
+                foreach (var c in vals.Parameters) cmd.Parameters.Add(c);
                 cmd.Transaction = transaction;
                 if (Conn.State != ConnectionState.Open) Conn.Open();
                 using (var dr = cmd.ExecuteReader())
@@ -258,7 +291,13 @@ namespace SqlWorker
         /// <param name="commandType">Type of batch</param>
         /// <param name="transaction">The transaction, inside of wich the command will be executed</param>
         /// <returns>Consequentially readed data</returns>
-        virtual public IEnumerable<T> Select<T>(string command, Func<DbDataReader, T> jobToDo, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        virtual public IEnumerable<T> Query<T>(
+            string command,
+            Func<IDataReader, T> jobToDo,
+            DbParametersConstructor vals = null,
+            int? timeout = null,
+            CommandType commandType = CommandType.Text,
+            IDbTransaction transaction = null)
         {
             vals = vals ?? DbParametersConstructor.EmptyParams;
             SqlParameterNullWorkaround(vals);
@@ -267,7 +306,7 @@ namespace SqlWorker
                 cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
                 cmd.CommandType = commandType;
                 cmd.CommandText = command;
-                cmd.Parameters.AddRange(vals);
+                foreach (var c in vals.Parameters) cmd.Parameters.Add(c);
                 cmd.Transaction = transaction;
                 if (this.Conn.State != ConnectionState.Open) Conn.Open();
                 using (var dr = cmd.ExecuteReader())
@@ -281,6 +320,29 @@ namespace SqlWorker
         }
 
         /// <summary>
+        /// Return IEnumerable with results
+        /// </summary>
+        /// <typeparam name="T">Generic resulting type</typeparam>
+        /// <param name="command">SQL command; in case of stored procedure this parameter stores only Proc name, commandType must be specified then</param>
+        /// <param name="jobToDo">Delegate to recive T from DataReader</param>
+        /// <param name="vals">Values of parameters (if necessary)</param>
+        /// <param name="timeout">Timeout</param>
+        /// <param name="commandType">Type of batch</param>
+        /// <param name="transaction">The transaction, inside of wich the command will be executed</param>
+        /// <returns>Consequentially readed data</returns>
+        [Obsolete]
+        virtual public IEnumerable<T> Select<T>(
+            string command,
+            Func<IDataReader, T> jobToDo,
+            DbParametersConstructor vals = null,
+            int? timeout = null,
+            CommandType commandType = CommandType.Text,
+            IDbTransaction transaction = null)
+        {
+            return Query(command, jobToDo, vals, timeout, commandType, transaction);
+        }
+
+        /// <summary>
         /// Obtain objects from DataReader using reflection
         /// </summary>
         /// <returns>Sequence of T-objects</returns>
@@ -290,7 +352,7 @@ namespace SqlWorker
             List<string> exceptions = null,
             int? timeout = null,
             CommandType commandType = CommandType.Text,
-            DbTransaction transaction = null
+            IDbTransaction transaction = null
             ) where T : new()
         {
             if (exceptions != null) return Select(command, dr => DataReaderToObj<T>(dr, exceptions), vals, timeout, commandType, transaction);
@@ -304,7 +366,7 @@ namespace SqlWorker
         /// <param name="dr">Source datareader</param>
         /// <param name="errors">List with errors</param>
         /// <returns>T-object</returns>
-        virtual public T DataReaderToObj<T>(DbDataReader dr, List<string> errors) where T : new()
+        virtual public T DataReaderToObj<T>(IDataReader dr, List<string> errors) where T : new()
         {
             T result = new T();
             foreach (System.ComponentModel.PropertyDescriptor i in System.ComponentModel.TypeDescriptor.GetProperties(result))
@@ -322,7 +384,7 @@ namespace SqlWorker
         /// <typeparam name="T">Target type</typeparam>
         /// <param name="dr">Source datareader</param>
         /// <returns>T-object</returns>
-        virtual public T DataReaderToObj<T>(DbDataReader dr) where T : new()
+        virtual public T DataReaderToObj<T>(IDataReader dr) where T : new()
         {
             T result = new T();
             foreach (System.ComponentModel.PropertyDescriptor i in System.ComponentModel.TypeDescriptor.GetProperties(result))
@@ -342,9 +404,14 @@ namespace SqlWorker
         /// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
         /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>The DataTable with results</returns>
-        virtual public DataTable GetDataTable(string query, DbParametersConstructor vals = null, int? timeout = null, CommandType commandType = CommandType.Text, DbTransaction transaction = null)
+        virtual public DataTable GetDataTable(
+            string query,
+            DbParametersConstructor vals = null,
+            int? timeout = null,
+            CommandType commandType = CommandType.Text,
+            IDbTransaction transaction = null)
         {
-            return ManualProcessing(query, (dr) =>
+            return ManualProcessing(query, dr =>
             {
                 var dt = new DataTable();
                 dt.Load(dr);

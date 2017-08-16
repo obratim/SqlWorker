@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace SqlWorker
 {
-    public abstract partial class ASqlWorker<TPC> where TPC : AbstractDbParameterConstructors, new()
+    public abstract partial class ASqlWorker<TPC>
     {
         /// <summary>
         /// Dictionary that maps c# types to SqlDbTypes
