@@ -44,7 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ASqlWorker.cs" />
-    <Compile Include="AbstractDbParameterConstructors.cs" />
+    <Compile Include="IDbParameterCreator.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="MSSqlWorker.cs" />
     <Compile Include="OledbSqlWorker.cs" />

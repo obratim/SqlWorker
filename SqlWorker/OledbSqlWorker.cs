@@ -9,7 +9,7 @@ namespace SqlWorker
     /// <summary>
     /// Generator of OleDbParameter objects
     /// </summary>
-    public class ParametersConstructorForOledb : AbstractDbParameterConstructors
+    public class ParametersConstructorForOledb : IDbParameterCreator
     {
         /// <summary>
         /// Creates an OleDbParameter
@@ -19,7 +19,7 @@ namespace SqlWorker
         /// <param name="type">Parameter DBType, optional</param>
         /// <param name="direction">Parameter direction (Input / Output / InputOutput / ReturnValue), optional</param>
         /// <returns>OleDbParameter instance</returns>
-        public override System.Data.Common.DbParameter Create(string name, object value, System.Data.DbType? type = null, System.Data.ParameterDirection? direction = null)
+        public System.Data.IDataParameter Create(string name, object value, System.Data.DbType? type = null, System.Data.ParameterDirection? direction = null)
         {
             var result = new OleDbParameter(name, value);
             result.DbType = type ?? result.DbType;
@@ -49,7 +49,7 @@ namespace SqlWorker
         /// <summary>
         /// Database connection
         /// </summary>
-        protected override System.Data.Common.DbConnection Conn
+        protected override System.Data.IDbConnection Conn
         {
             get { return _conn; }
         }

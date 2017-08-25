@@ -101,7 +101,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `bool?` type</returns>
-        public static bool?	GetNullableBool(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (bool?)dr[ordinal]	: null; }
+        public static bool?	GetNullableBool(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (bool?)dr[ordinal]	: null; }
 
         /// <summary>
         /// Obtains byte? variable from NULL-able column
@@ -109,7 +109,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `byte?` type</returns>
-		public static byte?	GetNullableByte(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (byte?)dr[ordinal]	: null; }
+		public static byte?	GetNullableByte(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (byte?)dr[ordinal]	: null; }
 
         /// <summary>
         /// Obtains short? variable from NULL-able column
@@ -117,7 +117,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `short?` type</returns>
-		public static short?	GetNullableInt16(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (short?)dr[ordinal]	: null; }
+		public static short?	GetNullableInt16(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (short?)dr[ordinal]	: null; }
 
         /// <summary>
         /// Obtains int? variable from NULL-able column
@@ -125,7 +125,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `int?` type</returns>
-		public static int?	GetNullableInt32(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (int?)(dr[ordinal])	: null; }
+		public static int?	GetNullableInt32(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (int?)(dr[ordinal])	: null; }
 
         /// <summary>
         /// Obtains long? variable from NULL-able column
@@ -133,7 +133,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `long?` type</returns>
-		public static long?	GetNullableInt64(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (long?)dr[ordinal]	: null; }
+		public static long?	GetNullableInt64(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (long?)dr[ordinal]	: null; }
 
         /// <summary>
         /// Obtains float? variable from NULL-able column
@@ -141,7 +141,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `float?` type</returns>
-		public static float?	GetNullableFloat(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (float?)dr[ordinal]	: null; }
+		public static float?	GetNullableFloat(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (float?)dr[ordinal]	: null; }
 
         /// <summary>
         /// Obtains double? variable from NULL-able column
@@ -149,7 +149,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `double?` type</returns>
-		public static double?	GetNullableDouble(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (double?)dr[ordinal]	: null; }
+		public static double?	GetNullableDouble(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (double?)dr[ordinal]	: null; }
 
         /// <summary>
         /// Obtains Guid? variable from NULL-able column
@@ -157,7 +157,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `Guid?` type</returns>
-		public static Guid?	GetNullableGuid(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (Guid?)dr[ordinal]	: null; }
+		public static Guid?	GetNullableGuid(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (Guid?)dr[ordinal]	: null; }
 
         /// <summary>
         /// Obtains DateTime? variable from NULL-able column
@@ -165,7 +165,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `DateTime?` type</returns>
-		public static DateTime?	GetNullableDateTime(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (DateTime?)dr[ordinal]	: null; }
+		public static DateTime?	GetNullableDateTime(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (DateTime?)dr[ordinal]	: null; }
 
         /// <summary>
         /// Obtains string variable from NULL-able column
@@ -173,6 +173,6 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `string` type</returns>
-		public static string	GetNullableString(this DbDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? dr[ordinal].ToString()	: null; }
+		public static string	GetNullableString(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? dr[ordinal].ToString()	: null; }
 	}
 }

@@ -12,7 +12,7 @@ namespace SqlWorker
     /// <summary>
     /// Generator of SqlParameter objects
     /// </summary>
-    public class ParametersConstuctorsForMSSQL : AbstractDbParameterConstructors
+    public class ParametersConstuctorsForMsSql : IDbParameterCreator
     {
         /// <summary>
         /// Creates an SqlParameter
@@ -22,11 +22,10 @@ namespace SqlWorker
         /// <param name="type">Parameter DBType, optional</param>
         /// <param name="direction">Parameter direction (Input / Output / InputOutput / ReturnValue), optional</param>
         /// <returns>SqlParameter instance</returns>
-        public override DbParameter Create(string paramName, object paramValue, DbType? type = null, ParameterDirection? direction = null)
+        public IDataParameter Create(string paramName, object paramValue, DbType? type = null, ParameterDirection? direction = null)
         {
             if (!type.HasValue) return new SqlParameter(paramName, paramValue);
-            var x = new SqlParameter(paramName, type.Value);
-            x.Value = paramValue;
+            var x = new SqlParameter(paramName, type.Value) {Value = paramValue};
             if (direction.HasValue) x.Direction = direction.Value;
             return x;
         }
@@ -35,7 +34,7 @@ namespace SqlWorker
     /// <summary>
     /// Adapter for MS Sql Server
     /// </summary>
-    public class MSSqlWorker : ASqlWorker<ParametersConstuctorsForMSSQL>
+    public class MsSqlWorker : ASqlWorker<ParametersConstuctorsForMsSql>
     {
         private SqlConnection _conn;
 
@@ -44,7 +43,7 @@ namespace SqlWorker
         /// <summary>
         /// Database connection
         /// </summary>
-        protected override DbConnection Conn
+        protected override IDbConnection Conn
         {
             get
             {
@@ -58,7 +57,7 @@ namespace SqlWorker
         /// </summary>
         /// <param name="connectionString">The connection string</param>
         /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
-        public MSSqlWorker(string connectionString, TimeSpan? reconnectPause = null)
+        public MsSqlWorker(string connectionString, TimeSpan? reconnectPause = null)
             : base(reconnectPause) { _connstr = connectionString; }
 
         /// <summary>
@@ -67,7 +66,7 @@ namespace SqlWorker
         /// <param name="server">The target Sql Server</param>
         /// <param name="dataBase">The target database</param>
         /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
-        public MSSqlWorker(string server, string dataBase, TimeSpan? reconnectPause = null)
+        public MsSqlWorker(string server, string dataBase, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
             _connstr = string.Format("Server={0};Database={1};Integrated Security=true", server, dataBase);
@@ -81,7 +80,7 @@ namespace SqlWorker
         /// <param name="login">Username</param>
         /// <param name="password">Password</param>
         /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
-        public MSSqlWorker(string server, string dataBase, string login, string password, TimeSpan? reconnectPause = null)
+        public MsSqlWorker(string server, string dataBase, string login, string password, TimeSpan? reconnectPause = null)
             : base(reconnectPause)
         {
             _connstr = string.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", server, dataBase, login, password);
