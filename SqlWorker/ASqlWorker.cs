@@ -355,8 +355,8 @@ namespace SqlWorker
             IDbTransaction transaction = null
             ) where T : new()
         {
-            if (exceptions != null) return Select(command, dr => DataReaderToObj<T>(dr, exceptions), vals, timeout, commandType, transaction);
-            else return Select(command, DataReaderToObj<T>, vals, timeout);
+            if (exceptions != null) return Query(command, dr => DataReaderToObj<T>(dr, exceptions), vals, timeout, commandType, transaction);
+            else return Query(command, DataReaderToObj<T>, vals, timeout);
         }
 
         /// <summary>
