@@ -214,30 +214,19 @@ namespace SqlWorker
             var columns = new List<DataColumn>();
             columns.AddRange(source.Columns.Cast<DataColumn>());
 
-            Exec(string.Format(@"
+			Exec(string.Format(@"
 CREATE TABLE {0} (
     {1}
 )
-", source.TableName, string.Join(",\n    ", columns.Select(c => string.Format("{0} {1}{4} {2} {3}",
-         c.ColumnName, TypeMapTsql[c.DataType].ToString(),
-         c.AllowDBNull ? "NULL" : "NOT NULL",
-         c.AutoIncrement ? string.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : "",
-         c.MaxLength > 0 ? string.Format("({0})", c.MaxLength) : ""))
-     )));
-
-            /***************************************
-            ExecuteNonQuery(string.Format(@"
-            if exists (select * from sysobjects where name='{0}' and xtype='U')
-            begin
-                drop table {0}
-            end
-            go
-            CREATE TABLE {0} (
-            {1}
-            );
-            ", source.TableName, string.Join(",\n\t", (from c in source.Columns.Cast<DataColumn>() select c.ColumnName + " " + typeMap[c.DataType].ToString() + (c.AllowDBNull ? " NULL" : " NOT NULL")))));
-
-            ***************************************/
+",
+			source.TableName,
+			string.Join(",\n    ", columns.Select(c => string.Format("[{0}] {1}{4} {2} {3}",
+				 c.ColumnName,
+				 TypeMapTsql[c.DataType].ToString(),
+				 c.AllowDBNull ? "NULL" : "NOT NULL",
+				 c.AutoIncrement ? string.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : "",
+				 c.MaxLength > 0 ? string.Format("({0})", c.MaxLength) : ""))
+			 )));
         }
 
         #region Bulk copy
