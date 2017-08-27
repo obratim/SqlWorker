@@ -48,15 +48,7 @@ namespace NUnitLite.Tests
         {
             return new AutoRun().Execute(args);
         }
-
-        [Test, Order(0)]
-        public static void CanInicialise()
-        {
-            using (var sw = new MsSqlWorker(_connectionString))
-            {
-            }
-        }
-
+		
         [Test, Order(1)]
         public static void CanExec()
         {
@@ -70,7 +62,7 @@ namespace NUnitLite.Tests
         }
         
         [Test, Order(2)]
-        public static void CanQueryConst()
+        public static void CanQuery()
         {
             using (var sw = new MsSqlWorker(_connectionString))
             {
@@ -164,7 +156,7 @@ namespace NUnitLite.Tests
 					vals: new SWParameters {
 						{ "number", 3 },
 						{ "square", 9, System.Data.DbType.Int64 },
-						{ "sqrt", Math.Sqrt(3) },
+						{ "sqrt", Math.Sqrt(3), System.Data.DbType.Double, System.Data.ParameterDirection.Input },
 						{ "is_prime", true },
 						{ "as_text", "three" },
 						});
