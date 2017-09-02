@@ -1,6 +1,6 @@
 # SqlWorker #
 
-SqlWorker allows developer to most easily run database queries. Library automatically manages DbConnection, DbTransaction, DbCommand and DbDataReader objects. Developer only writes queries.
+SqlWorker allows developer to most easily run database queries. Library automatically manages DbConnection, DbCommand and DbDataReader objects. Developer only writes queries.
 
 It can be useful when implementing simple applications and utilities, that execute a few queries to database, or as workaround for ORM system issues when performing complicated stuff.
 
