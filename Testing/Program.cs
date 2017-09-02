@@ -112,7 +112,7 @@ namespace NUnitLite.Tests
 						as_text: dr.GetNullableString(4)
 						))
 						.Single();
-				Assert.AreEqual(inserted, (1, 1L, 1.0, true, "one"));
+				Assert.AreEqual((1, 1L, 1.0, true, "one"), inserted);
 			}
 		}
 
@@ -142,7 +142,7 @@ namespace NUnitLite.Tests
 						as_text: dr.GetNullableString(4)
 						))
 						.Single();
-				Assert.AreEqual(inserted, (2, 4L, 1.4142135623730951, true, "two"));
+				Assert.AreEqual((2, 4L, 1.4142135623730951, true, "two"), inserted);
 			}
 		}
 
@@ -172,7 +172,7 @@ namespace NUnitLite.Tests
 						as_text: dr.GetNullableString(4)
 						))
 						.Single();
-				Assert.AreEqual(inserted, (3, 9L, 1.7320508075688773, true, "three"));
+				Assert.AreEqual((3, 9L, 1.7320508075688773, true, "three"), inserted);
 			}
 		}
 
