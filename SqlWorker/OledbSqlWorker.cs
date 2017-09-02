@@ -6,27 +6,10 @@ using System.Linq;
 
 namespace SqlWorker
 {
-    /// <summary>
-    /// Generator of OleDbParameter objects
-    /// </summary>
-    public class ParametersConstructorForOledb : IDbParameterCreator
-    {
-        /// <summary>
-        /// Creates an OleDbParameter
-        /// </summary>
-        /// <param name="name">Parameter name</param>
-        /// <param name="value">Parameter value</param>
-        /// <param name="type">Parameter DBType, optional</param>
-        /// <param name="direction">Parameter direction (Input / Output / InputOutput / ReturnValue), optional</param>
-        /// <returns>OleDbParameter instance</returns>
-        public System.Data.IDataParameter Create(string name, object value, System.Data.DbType? type = null, System.Data.ParameterDirection? direction = null)
-        {
-            var result = new OleDbParameter(name, value);
-            result.DbType = type ?? result.DbType;
-            result.Direction = direction ?? result.Direction;
-            return result;
-        }
-    }
+	/// <summary>
+	/// Generator of OleDbParameter objects
+	/// </summary>
+	public class ParametersConstructorForOledb : ADbParameterCreator<OleDbParameter> { }
 
     /// <summary>
     /// Adapter for OLE DB

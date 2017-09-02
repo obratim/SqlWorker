@@ -9,27 +9,10 @@ using System.Linq;
 
 namespace SqlWorker
 {
-    /// <summary>
-    /// Generator of SqlParameter objects
-    /// </summary>
-    public class ParametersConstuctorsForMsSql : IDbParameterCreator
-    {
-        /// <summary>
-        /// Creates an SqlParameter
-        /// </summary>
-        /// <param name="paramName">Parameter name</param>
-        /// <param name="paramValue">Parameter value</param>
-        /// <param name="type">Parameter DBType, optional</param>
-        /// <param name="direction">Parameter direction (Input / Output / InputOutput / ReturnValue), optional</param>
-        /// <returns>SqlParameter instance</returns>
-        public IDataParameter Create(string paramName, object paramValue, DbType? type = null, ParameterDirection? direction = null)
-        {
-            if (!type.HasValue) return new SqlParameter(paramName, paramValue);
-            var x = new SqlParameter(paramName, type.Value) {Value = paramValue};
-            if (direction.HasValue) x.Direction = direction.Value;
-            return x;
-        }
-    }
+	/// <summary>
+	/// Generator of SqlParameter objects
+	/// </summary>
+	public class ParametersConstuctorsForMsSql : ADbParameterCreator<SqlParameter> { }
 
     /// <summary>
     /// Adapter for MS Sql Server
