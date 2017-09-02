@@ -118,11 +118,9 @@ namespace SqlWorker
             public static implicit operator DbParametersConstructor(SWParameters vals)
             {
                 var result = new IDataParameter[vals.Count];
-                int j = 0;
                 for (int i = 0; i < vals.Count; ++i)
                 {
-                    result[j] = Generator.Create(vals[i].Item1, vals[i].Item2, vals[i].Item3, vals[i].Item4);
-                    ++j;
+                    result[i] = Generator.Create(vals[i].Item1, vals[i].Item2, vals[i].Item3, vals[i].Item4);
                 }
                 return new DbParametersConstructor(result);
             }
