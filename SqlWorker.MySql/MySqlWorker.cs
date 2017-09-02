@@ -8,17 +8,7 @@ using System.Threading.Tasks;
 
 namespace SqlWorker
 {
-    public class ParametersConstructorForMySql : AbstractDbParameterConstructors
-    {
-        public override DbParameter Create(string name, object value, DbType? type = default(DbType?), ParameterDirection? direction = default(ParameterDirection?))
-        {
-            if (!type.HasValue && !direction.HasValue) return new MySql.Data.MySqlClient.MySqlParameter(name, value);
-
-            var parameter = type.HasValue ? new MySql.Data.MySqlClient.MySqlParameter(name, type.Value) { Value = value } : new MySql.Data.MySqlClient.MySqlParameter(name, value);
-            parameter.Direction = direction ?? ParameterDirection.Input;
-            return parameter;
-        }
-    }
+	public class ParametersConstructorForMySql : ADbParameterCreator<MySql.Data.MySqlClient.MySqlParameter> { }
 
     public class MySqlWorker : ASqlWorker<ParametersConstructorForMySql>
     {
@@ -32,7 +22,7 @@ namespace SqlWorker
 
         private MySql.Data.MySqlClient.MySqlConnection _conn;
 
-        protected override DbConnection Conn
+        protected override IDbConnection Conn
         {
             get
             {
