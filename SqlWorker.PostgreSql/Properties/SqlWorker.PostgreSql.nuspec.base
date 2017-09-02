@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>SqlWorker.PostgreSql</id>
-    <version>2.1.$REVNUM$.$DIRTY$</version>
+    <version>2.2.$REVNUM$.$DIRTY$</version>
     <authors>Viktor A. Koryagin</authors>
     <owners>Viktor A. Koryagin</owners>
     <licenseUrl>http://sqlworker.codeplex.com/license</licenseUrl>
