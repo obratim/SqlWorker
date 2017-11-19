@@ -427,7 +427,7 @@ namespace SqlWorker
         /// </summary>
         public virtual void Dispose()
         {
-            if (Conn.State != ConnectionState.Closed) Conn.Close();
+            if (Conn.State != ConnectionState.Closed && Conn.State != ConnectionState.Broken) Conn.Close();
             Conn.Dispose();
         }
 
