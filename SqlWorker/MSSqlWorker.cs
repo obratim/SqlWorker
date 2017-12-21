@@ -280,26 +280,32 @@ CREATE TABLE {0} (
 
             using (SqlBulkCopy sbc = NewBulkCopyInstance(options, transaction))
             {
-                        sbc.DestinationTableName = targetTableName;
-                        sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
+                sbc.DestinationTableName = targetTableName;
+                sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
 
                 using (var enumerator = source.GetEnumerator())
                 {
                     if (!enumerator.MoveNext()) return;
 
-                    using (enumerator.Current)
+                    try
                     {
                         if (mappings == null)
+                        {
                             foreach (var column in enumerator.Current.Columns)
                                 sbc.ColumnMappings.Add(column.ToString(), column.ToString());
+                        }
+                        else foreach (SqlBulkCopyColumnMapping m in mappings)
+                                sbc.ColumnMappings.Add(m);
 
                         sbc.WriteToServer(enumerator.Current);
+
+                        while (enumerator.MoveNext())
+                            using (enumerator.Current)
+                            {
+                                sbc.WriteToServer(enumerator.Current);
+                            }
                     }
-                    while (enumerator.MoveNext())
-                        using (enumerator.Current)
-                        {
-                            sbc.WriteToServer(enumerator.Current);
-                        }
+                    finally { enumerator.Current.Dispose(); }
                 } // enumerator
             } // bulk coupy
         } // func

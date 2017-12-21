@@ -48,27 +48,50 @@ namespace SqlWorker
         public static IEnumerable<DataTable> AsDataTable<T>(this IEnumerable<T> source, int chunkSize)
 	    {
 	        var properties = TypeDescriptor.GetProperties(typeof (T));
-	        using (var refTable = new DataTable())
+	        using (var table = new DataTable())
 	        {
 	            foreach (PropertyDescriptor property in properties)
-	                refTable.Columns.Add(property.Name,
+                    table.Columns.Add(property.Name,
 	                    Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType);
 
-	            foreach (var chunk in source.Batch(chunkSize))
-	            {
-	                var table = refTable.Copy();
-	                foreach (T item in chunk)
-	                {
-	                    DataRow row = table.NewRow();
-	                    for (var i = 0; i < properties.Count; ++i)
-	                    {
-	                        PropertyDescriptor prop = properties[i];
-	                        row[i] = prop.GetValue(item) ?? DBNull.Value;
-	                    }
-	                    table.Rows.Add(row);
-	                }
-	                yield return table;
-	            }
+                using (var enumerator = source.Batch(chunkSize).GetEnumerator())
+                {
+                    if (!enumerator.MoveNext()) yield break;
+
+                    // initially fill table
+                    foreach (T item in enumerator.Current)
+                    {
+                        DataRow row = table.NewRow();
+                        for (var i = 0; i < properties.Count; ++i)
+                        {
+                            PropertyDescriptor prop = properties[i];
+                            row[i] = prop.GetValue(item) ?? DBNull.Value;
+                        }
+                        table.Rows.Add(row);
+                    }
+                    yield return table;
+
+                    // replace values
+                    while (enumerator.MoveNext())
+                    {
+                        int rowNumber = 0;
+                        foreach (var item in enumerator.Current)
+                        {
+                            for (var i = 0; i < properties.Count; ++i)
+                            {
+                                PropertyDescriptor prop = properties[i];
+                                table.Rows[rowNumber][i] = prop.GetValue(item) ?? DBNull.Value;
+                            }
+                            ++rowNumber;
+                        }
+
+                        if (rowNumber < chunkSize)
+                            while (table.Rows.Count > rowNumber)
+                                table.Rows.RemoveAt(rowNumber);
+
+                        yield return table;
+                    }
+                }
 	        }
 	    }
 
