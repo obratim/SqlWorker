@@ -295,9 +295,10 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNOR
 						CollectionAssert.AreEquivalent(
 							expected: rangeToInsert,
 							actual: sw.Query(
-								"select top (@length) * from numbers where number >= @min_number",
+								"select * from numbers where number >= @min_number",
 								dr => new { number = (int)dr[0], square = (long)dr[1], sqrt = (double)dr[2], is_prime = (bool)dr[3], as_text = dr.GetNullableString(4) },
-								vals: new SWParameters { { "min_number", start }, { nameof(length), length } }));
+								vals: new SWParameters { { "min_number", start } })
+								.ToArray());
 					}
 				}
 
