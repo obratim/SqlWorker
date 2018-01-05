@@ -83,6 +83,19 @@ namespace NUnitLite.Tests
 				dt.Columns.Add(new System.Data.DataColumn("as_text", typeof(string)) { MaxLength = 400 });
 
 				sw.CreateTableByDataTable(dt);
+
+				sw.Exec(@"
+CREATE UNIQUE CLUSTERED INDEX [PK_number] ON [dbo].[numbers]([number] ASC)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+");
+				sw.Exec(@"
+CREATE UNIQUE NONCLUSTERED INDEX [IX_square] ON [dbo].[numbers]([square] ASC)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+");
+				sw.Exec(@"
+CREATE UNIQUE NONCLUSTERED INDEX [IX_sqrt] ON [dbo].[numbers]([sqrt] ASC)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+");
 			}
         }
 
@@ -259,32 +272,51 @@ namespace NUnitLite.Tests
 			}
 		}
 
-		[Test, Order(4)]
+		[Test, Order(5)]
 		public static void CanBulkInsert()
 		{
 			using (var sw = new MsSqlWorker(_connectionString))
-			using (var tran = sw.SqlTransactionBegin())
 			{
-				var rangeToInsert = Enumerable
-						.Range(5, 10)
-						.Select(i => new { number = i, square = (long)i * i, sqrt = Math.Sqrt(i), is_prime = _primes.Contains(i), as_text = (string)null });
+				void bulkInsert(int start, int length, int chunkSize)
+				{
+					using (var tran = sw.SqlTransactionBegin())
+					{
+						var rangeToInsert = Enumerable
+								.Range(start, length)
+								.Select(i => new { number = i, square = (long)i * i, sqrt = Math.Sqrt(i), is_prime = _primes.Contains(i), as_text = (string)null })
+								.ToArray();
 
-				sw.BulkCopyWithReflection(
-					source: rangeToInsert,
-					targetTableName: "numbers",
-					transaction: tran);
-				tran.Commit();
+						sw.BulkCopyWithReflection(
+							source: rangeToInsert,
+							targetTableName: "numbers",
+							transaction: tran);
+						tran.Commit();
 
-				CollectionAssert.AreEquivalent(
-					expected: rangeToInsert,
-					actual: sw.Query(
-						"select * from numbers where number >= @min_number",
-						dr => new { number = (int)dr[0], square = (long)dr[1], sqrt = (double)dr[2], is_prime = (bool)dr[3], as_text = dr.GetNullableString(4) },
-						vals: new SqlParameter("min_number", 5)));
+						CollectionAssert.AreEquivalent(
+							expected: rangeToInsert,
+							actual: sw.Query(
+								"select top (@length) * from numbers where number >= @min_number",
+								dr => new { number = (int)dr[0], square = (long)dr[1], sqrt = (double)dr[2], is_prime = (bool)dr[3], as_text = dr.GetNullableString(4) },
+								vals: new SWParameters { { "min_number", start }, { nameof(length), length } }));
+					}
+				}
+
+				bulkInsert(5, 3, 1);
+				bulkInsert(8, 7, 2);
+				bulkInsert(15, 10, 3);
+				bulkInsert(25, 11, 3);
+				bulkInsert(36, 16, 5);
+				bulkInsert(52, 18, 5);
+				bulkInsert(70, 20, 5);
+				bulkInsert(90, 20, 7);
+				bulkInsert(110, 0, 11);
+				bulkInsert(110, 10, 11);
+				bulkInsert(120, 11, 11);
+				bulkInsert(131, 20, 13);
 			}
 		}
 
-		[Test, Order(5)]
+		[Test, Order(6)]
 		public static void CanUpdate()
 		{
 			using (var sw = new MsSqlWorker(_connectionString))
@@ -300,7 +332,7 @@ namespace NUnitLite.Tests
 			}
 		}
 
-		[Test, Order(5)]
+		[Test, Order(6)]
 		public static void CanUpdateWithStringCondition()
 		{
 			using (var sw = new MsSqlWorker(_connectionString))
