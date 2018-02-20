@@ -253,7 +253,10 @@ CREATE TABLE {0} (
                 if (mappings == null)
                     foreach (var column in source.Columns)
                         sbc.ColumnMappings.Add(column.ToString(), column.ToString());
-                sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
+				else
+					foreach (SqlBulkCopyColumnMapping m in mappings)
+						sbc.ColumnMappings.Add(m);
+				sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
                 sbc.WriteToServer(source);
             }
         }
