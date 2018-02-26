@@ -132,6 +132,11 @@ CREATE TABLE {0} (
 		}
 
 		/// <summary>
+		/// Default chunk size for bulk copy
+		/// </summary>
+		public int DefaultChunkSize { get; set; } = 5000;
+
+		/// <summary>
 		/// Performs bulk copy from DataTable to specified table
 		/// </summary>
 		/// <param name="source">Source data</param>
@@ -140,14 +145,17 @@ CREATE TABLE {0} (
 		/// <param name="options">Bulk copy options</param>
 		/// <param name="timeout">Timeout</param>
 		/// <param name="mappings">Mappings for bulk copy</param>
+		/// <param name="chunkSize"></param>
+		/// <param name="streamed"></param>
 		virtual public void BulkCopy(
 			DataTable source,
 			string targetTableName,
 			SqlTransaction transaction,
 			SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
 			int? timeout = null,
-			SqlBulkCopyColumnMappingCollection mappings = null
-			)
+			SqlBulkCopyColumnMappingCollection mappings = null,
+			int? chunkSize = null,
+			bool enableStreaming = false)
 		{
 			if (Connection.State != ConnectionState.Open) Connection.Open();
 
@@ -161,6 +169,8 @@ CREATE TABLE {0} (
 					foreach (SqlBulkCopyColumnMapping m in mappings)
 						sbc.ColumnMappings.Add(m);
 				sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
+				sbc.BatchSize = chunkSize ?? DefaultChunkSize;
+				sbc.EnableStreaming = enableStreaming;
 				sbc.WriteToServer(source);
 			}
 		}
@@ -173,18 +183,18 @@ CREATE TABLE {0} (
 		/// <param name="targetTableName">Name of the table, where data will be copied</param>
 		/// <param name="transaction">Transaction</param>
 		/// <param name="options">Bulk copy options</param>
-		/// <param name="chunkSize">If greater then zero, multiple copies will be performed with specified number of rows in each iteration</param>
 		/// <param name="timeout">Timeout</param>
 		/// <param name="mappings">Mappings for bulk copy</param>
+		/// <param name="chunkSize"></param>
 		/// <param name="streamed"></param>
 		virtual public void BulkCopyWithReflection<T>(
 			IEnumerable<T> source,
 			string targetTableName,
 			SqlTransaction transaction,
 			SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
-			int chunkSize = 0,
 			int? timeout = null,
 			SqlBulkCopyColumnMappingCollection mappings = null,
+			int? chunkSize = null,
 			bool enableStreaming = false)
 		{
 			if (Connection.State != ConnectionState.Open) Connection.Open();
@@ -200,7 +210,7 @@ CREATE TABLE {0} (
 					foreach (SqlBulkCopyColumnMapping m in mappings)
 						sbc.ColumnMappings.Add(m);
 				sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
-				sbc.BatchSize = chunkSize;
+				sbc.BatchSize = chunkSize ?? DefaultChunkSize;
 				sbc.EnableStreaming = enableStreaming;
 				sbc.WriteToServer(srcreader);
 			}
