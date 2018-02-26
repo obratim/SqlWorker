@@ -190,7 +190,7 @@ CREATE TABLE {0} (
 			if (Connection.State != ConnectionState.Open) Connection.Open();
 
 			using (SqlBulkCopy sbc = NewBulkCopyInstance(options, transaction))
-			using (var srcreader = new EnumerableDataReader<T>(source))
+			using (var srcreader = new EnumerableDbDataReader<T>(source))
 			{
 				sbc.DestinationTableName = targetTableName;
 				if (mappings == null)

@@ -1,13 +1,14 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
 
 namespace SqlWorker
 {
-	public class EnumerableDataReader<T> : IDataReader
+	public class EnumerableDbDataReader<T> : System.Data.Common.DbDataReader
 	{
-		public EnumerableDataReader(IEnumerable<T> source)
+		public EnumerableDbDataReader(IEnumerable<T> source)
 		{
 			_enumerator = source.GetEnumerator();
 			_properties = System.ComponentModel.TypeDescriptor.GetProperties(typeof(T));
@@ -24,7 +25,7 @@ namespace SqlWorker
 
 		private System.ComponentModel.PropertyDescriptorCollection _properties;
 
-		public object this[int i]
+		public override object this[int i]
 		{
 			get
 			{
@@ -33,7 +34,7 @@ namespace SqlWorker
 			}
 		}
 
-		public object this[string name]
+		public override object this[string name]
 		{
 			get
 			{
@@ -42,13 +43,14 @@ namespace SqlWorker
 			}
 		}
 
-		public int Depth => 0;
+		public override int Depth => 0;
 
-		public bool IsClosed { get; private set; } = false;
+		private bool _isClosed = false;
+		public override bool IsClosed => _isClosed;
 
-		public int RecordsAffected => -1;
+		public override int RecordsAffected => -1;
 
-		public int FieldCount
+		public override int FieldCount
 		{
 			get
 			{
@@ -62,83 +64,77 @@ namespace SqlWorker
 			}
 		}
 
-		public void Close()
-		{
-		}
+		public override bool HasRows => throw new NotImplementedException();
 
-		public void Dispose()
+		public override void Close()
 		{
-			Console.WriteLine("...disposing");
 			_enumerator.Dispose();
-			IsClosed = true;
-			Console.WriteLine("...disposed");
+			_isClosed = true;
 		}
+		
+		public override bool GetBoolean(int i) => (bool)this[i];
+		public override byte GetByte(int i) => (byte)this[i];
 
-		public bool GetBoolean(int i) => (bool)this[i];
-		public byte GetByte(int i) => (byte)this[i];
-
-		public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
+		public override long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
 		{
 			return 0;
 			throw new NotImplementedException();
 		}
 
-		public char GetChar(int i) => (char)this[i];
+		public override char GetChar(int i) => (char)this[i];
 
-		public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
+		public override long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
+		{
+			return 0;
+			throw new NotImplementedException();
+		}
+		
+		public override string GetDataTypeName(int i) => _properties[i].PropertyType.Name;
+		public override DateTime GetDateTime(int i) => (DateTime)this[i];
+		public override decimal GetDecimal(int i) => (decimal)this[i];
+		public override double GetDouble(int i) => (double)this[i];
+		public override Type GetFieldType(int i) => _properties[i].PropertyType;
+		public override float GetFloat(int i) => (float)this[i];
+		public override Guid GetGuid(int i) => (Guid)this[i];
+		public override short GetInt16(int i) => (short)this[i];
+		public override int GetInt32(int i) => (int)this[i];
+		public override long GetInt64(int i) => (long)this[i];
+		public override string GetString(int i) => (string)this[i];
+		public override object GetValue(int i) => this[i];
+
+		public override int GetValues(object[] values)
 		{
 			return 0;
 			throw new NotImplementedException();
 		}
 
-		public IDataReader GetData(int i)
-		{
-			Console.WriteLine("...getting 'data'");
-			return null;
-			throw new NotImplementedException();
-		}
+		public override bool IsDBNull(int i) => this[i] == DBNull.Value;
 
-		public string GetDataTypeName(int i) => _properties[i].PropertyType.Name;
-		public DateTime GetDateTime(int i) => (DateTime)this[i];
-		public decimal GetDecimal(int i) => (decimal)this[i];
-		public double GetDouble(int i) => (double)this[i];
-		public Type GetFieldType(int i) => _properties[i].PropertyType;
-		public float GetFloat(int i) => (float)this[i];
-		public Guid GetGuid(int i) => (Guid)this[i];
-		public short GetInt16(int i) => (short)this[i];
-		public int GetInt32(int i) => (int)this[i];
-		public long GetInt64(int i) => (long)this[i];
-		public string GetString(int i) => (string)this[i];
-		public object GetValue(int i) => this[i];
+		public override string GetName(int i) => _dataTable.Columns[i].ColumnName;
 
-		public int GetValues(object[] values)
-		{
-			return 0;
-			throw new NotImplementedException();
-		}
+		public override int GetOrdinal(string name) => _dataTable.Columns.IndexOf(name);
 
-		public bool IsDBNull(int i) => this[i] == DBNull.Value;
+		public override DataTable GetSchemaTable() => _dataTable;
 
-		public string GetName(int i) => _dataTable.Columns[i].ColumnName;
-
-		public int GetOrdinal(string name) => _dataTable.Columns.IndexOf(name);
-
-		public DataTable GetSchemaTable() => _dataTable;
-
-		public bool NextResult()
+		public override bool NextResult()
 		{
 			Console.WriteLine("...next result");
 			_enumerator.Dispose();
 			_enumerator = System.Linq.Enumerable.Empty<T>().GetEnumerator();
-			IsClosed = true;
+			_isClosed = true;
 			Console.WriteLine("...next result");
 			return false;
 		}
 
-		public bool Read()
+		public override bool Read()
 		{
 			Console.WriteLine("...reading next value");
-			return !(IsClosed = !_enumerator.MoveNext());
+			return !(_isClosed = !_enumerator.MoveNext());
+		}
+
+		public override IEnumerator GetEnumerator()
+		{
+			return _enumerator;
 		}
 	}
 }
