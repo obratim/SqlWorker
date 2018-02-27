@@ -153,7 +153,7 @@ CREATE TABLE {0} (
 			SqlTransaction transaction,
 			SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
 			int? timeout = null,
-			SqlBulkCopyColumnMappingCollection mappings = null,
+			IEnumerable<SqlBulkCopyColumnMapping> mappings = null,
 			int? chunkSize = null,
 			bool enableStreaming = false)
 		{
@@ -166,7 +166,7 @@ CREATE TABLE {0} (
 					foreach (var column in source.Columns)
 						sbc.ColumnMappings.Add(column.ToString(), column.ToString());
 				else
-					foreach (SqlBulkCopyColumnMapping m in mappings)
+					foreach (var m in mappings)
 						sbc.ColumnMappings.Add(m);
 				sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
 				sbc.BatchSize = chunkSize ?? DefaultChunkSize;
@@ -193,7 +193,7 @@ CREATE TABLE {0} (
 			SqlTransaction transaction,
 			SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
 			int? timeout = null,
-			SqlBulkCopyColumnMappingCollection mappings = null,
+			IEnumerable<SqlBulkCopyColumnMapping> mappings = null,
 			int? chunkSize = null,
 			bool enableStreaming = false)
 		{
@@ -207,7 +207,7 @@ CREATE TABLE {0} (
 					foreach (var column in srcreader.GetSchemaTable().Columns)
 						sbc.ColumnMappings.Add(column.ToString(), column.ToString());
 				else
-					foreach (SqlBulkCopyColumnMapping m in mappings)
+					foreach (var m in mappings)
 						sbc.ColumnMappings.Add(m);
 				sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
 				sbc.BatchSize = chunkSize ?? DefaultChunkSize;

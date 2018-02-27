@@ -197,5 +197,27 @@ namespace SqlWorker
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `string` type</returns>
 		public static string	GetNullableString(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? dr[ordinal].ToString()	: null; }
+
+
+		public static Dictionary<string, string> BuildMapping<T>(Dictionary<string, string> irregular, Func<string, string> transform = null)
+		{
+			transform = transform ?? (str => str);
+			PropertyDescriptorCollection properties = TypeDescriptor.GetProperties(typeof(T));
+
+			var result = new Dictionary<string, string>(properties.Count);
+			foreach (var kv in irregular)
+				if (kv.Value != null)
+					result.Add(kv.Key, kv.Value);
+
+			foreach (PropertyDescriptor prop in properties)
+			{
+				if (irregular.ContainsKey(prop.Name)) continue;
+				var value = transform(prop.Name);
+				if (value == null) continue;
+				result.Add(prop.Name, value);
+			}
+
+			return result;
+		}
 	}
 }
