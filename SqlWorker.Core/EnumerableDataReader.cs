@@ -25,23 +25,9 @@ namespace SqlWorker
 
 		private System.ComponentModel.PropertyDescriptorCollection _properties;
 
-		public override object this[int i]
-		{
-			get
-			{
-				Console.WriteLine("...getting property [{0}]", i);
-				return _properties[i].GetValue(_enumerator.Current);
-			}
-		}
+		public override object this[int i] => _properties[i].GetValue(_enumerator.Current);
 
-		public override object this[string name]
-		{
-			get
-			{
-				Console.WriteLine("...getting property ['{0}']", name);
-				return _properties[name].GetValue(_enumerator.Current);
-			}
-		}
+		public override object this[string name] => _properties[name].GetValue(_enumerator.Current);
 
 		public override int Depth => 0;
 
@@ -50,19 +36,7 @@ namespace SqlWorker
 
 		public override int RecordsAffected => -1;
 
-		public override int FieldCount
-		{
-			get
-			{
-				Console.WriteLine("...getting fields count");
-				Console.WriteLine(_dataTable);
-				Console.WriteLine(_dataTable?.Columns);
-				Console.WriteLine(_dataTable?.Columns?.Count);
-				var result = _dataTable.Columns.Count;
-				Console.WriteLine("...got columns count");
-				return result;
-			}
-		}
+		public override int FieldCount => _dataTable.Columns.Count;
 
 		public override bool HasRows => throw new NotImplementedException();
 
@@ -118,19 +92,13 @@ namespace SqlWorker
 
 		public override bool NextResult()
 		{
-			Console.WriteLine("...next result");
 			_enumerator.Dispose();
 			_enumerator = System.Linq.Enumerable.Empty<T>().GetEnumerator();
 			_isClosed = true;
-			Console.WriteLine("...next result");
 			return false;
 		}
 
-		public override bool Read()
-		{
-			Console.WriteLine("...reading next value");
-			return !(_isClosed = !_enumerator.MoveNext());
-		}
+		public override bool Read() => !(_isClosed = !_enumerator.MoveNext());
 
 		public override IEnumerator GetEnumerator()
 		{
