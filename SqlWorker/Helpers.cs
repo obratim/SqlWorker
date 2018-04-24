@@ -175,6 +175,14 @@ namespace SqlWorker
 		public static double?	GetNullableDouble(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (double?)dr[ordinal]	: null; }
 
         /// <summary>
+        /// Obtains decimal? variable from NULL-able column
+        /// </summary>
+        /// <param name="dr">The DataReader with results</param>
+        /// <param name="ordinal">The index of the column</param>
+        /// <returns>The result of `decimal?` type</returns>
+        public static decimal? GetNullableDecimal(this IDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (decimal?)dr[ordinal] : null; }
+
+        /// <summary>
         /// Obtains Guid? variable from NULL-able column
         /// </summary>
         /// <param name="dr">The DataReader with results</param>
