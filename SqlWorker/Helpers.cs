@@ -5,6 +5,7 @@ using System.Text;
 using System.Data;
 using System.ComponentModel;
 using System.Data.Common;
+using System.Reflection;
 
 namespace SqlWorker
 {
@@ -21,17 +22,18 @@ namespace SqlWorker
         /// <returns>DataTable object with columns based on properties reflected from generic type</returns>
 		public static DataTable AsDataTable<T>(this IEnumerable<T> source)
 		{
-			PropertyDescriptorCollection properties = TypeDescriptor.GetProperties(typeof(T));
+            //PropertyDescriptorCollection properties = TypeDescriptor.GetProperties(typeof(T));
+            var properties = GetFlatProperties<T>().ToList();
 			var table = new DataTable();
-			foreach (PropertyDescriptor prop in properties)
-				table.Columns.Add(prop.Name, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
+			foreach (var prop in properties)
+				table.Columns.Add(prop.Item1, Nullable.GetUnderlyingType(prop.Item2) ?? prop.Item2);
 			foreach (T item in source)
 			{
 				DataRow row = table.NewRow();
 			    for (var i = 0; i < properties.Count; ++i)
 			    {
-			        PropertyDescriptor prop = properties[i];
-			        row[i] = prop.GetValue(item) ?? DBNull.Value;
+			        var prop = properties[i];
+			        row[i] = prop.Item3(item) ?? DBNull.Value;
 			    }
 			    table.Rows.Add(row);
 			}
@@ -47,12 +49,12 @@ namespace SqlWorker
         /// <returns>DataTable objects with columns based on properties reflected from generic type and rows count less or equal then chunkSize</returns>
         public static IEnumerable<DataTable> AsDataTable<T>(this IEnumerable<T> source, int chunkSize)
 	    {
-	        var properties = TypeDescriptor.GetProperties(typeof (T));
+	        //var properties = TypeDescriptor.GetProperties(typeof (T));
+            var properties = GetFlatProperties<T>().ToList();
 	        using (var table = new DataTable())
-	        {
-	            foreach (PropertyDescriptor property in properties)
-                    table.Columns.Add(property.Name,
-	                    Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType);
+            {
+	            foreach (var property in properties)
+                    table.Columns.Add(property.Item1, Nullable.GetUnderlyingType(property.Item2) ?? property.Item2);
 
                 using (var enumerator = source.Batch(chunkSize).GetEnumerator())
                 {
@@ -64,8 +66,8 @@ namespace SqlWorker
                         DataRow row = table.NewRow();
                         for (var i = 0; i < properties.Count; ++i)
                         {
-                            PropertyDescriptor prop = properties[i];
-                            row[i] = prop.GetValue(item) ?? DBNull.Value;
+                            var prop = properties[i];
+                            row[i] = prop.Item3(item) ?? DBNull.Value;
                         }
                         table.Rows.Add(row);
                     }
@@ -79,8 +81,8 @@ namespace SqlWorker
                         {
                             for (var i = 0; i < properties.Count; ++i)
                             {
-                                PropertyDescriptor prop = properties[i];
-                                table.Rows[rowNumber][i] = prop.GetValue(item) ?? DBNull.Value;
+                                var prop = properties[i];
+                                table.Rows[rowNumber][i] = prop.Item3(item) ?? DBNull.Value;
                             }
                             ++rowNumber;
                         }
@@ -117,6 +119,121 @@ namespace SqlWorker
             for (int i = 0; i < batchSize && source.MoveNext(); i++)
                 yield return source.Current;
         }
+
+
+        private static IEnumerable<Tuple<string, Type, Func<T, object>>> GetFlatProperties<T>()
+        {
+            return GetFlatPropertyInfos<T>(typeof(T), "", x => x, x => { })
+                .Select(x => new Tuple<string, Type, Func<T, object>>(
+                    x.Key,
+                    x.Value.Item1.PropertyType,
+                    (T obj) =>
+                    {
+                        var subObj = x.Value.Item2(obj);
+                        if (subObj == null) return null;
+                        return x.Value.Item1.GetValue(subObj, null);
+                    }));
+        }
+
+        /// <summary>
+        /// Create flat list of properties from nested object; recursive
+        /// </summary>
+        /// <remarks>Nested type must have parameterless constructor</remarks>
+        /// <param name="type">The type</param>
+        /// <param name="prefix">Property name prefix</param>
+        /// <param name="getter">Func for getting child value of specified type from root TelemetryData value</param>
+        /// <param name="initializer">Action for creating child value of specified type in root TelemetryData value</param>
+        /// <param name="getterAttributeName">Func for getting retreive property name from <see cref="TPropertyAttribute"/></param>
+        /// <returns>IEnumerable of KeyValuePair where Key - full name of a property and Value - tuple of instruments for working with the property, getting and setting values</returns>
+        public static IEnumerable<KeyValuePair<string, Tuple<PropertyInfo, Func<T, object>, Action<T>>>>
+            GetFlatPropertyInfos<T>(
+                Type type,
+                string prefix,
+                Func<T, object> getter,
+                Action<T> initializer)
+        {
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                foreach (var p in GetFlatPropertyInfos(Nullable.GetUnderlyingType(type), prefix, getter, initializer))
+                    yield return p;
+                yield break;
+            }
+
+            foreach (PropertyInfo p in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+            {
+                // var dma = p.GetCustomAttribute<TPropertyAttribute>();
+                // if (dma == null) continue;
+
+                var name = /*getterAttributeName(dma) ??*/ p.Name;
+
+                if (p.PropertyType.IsEnum || SupportedBasicTypesDictionary.Contains(p.PropertyType))
+                {
+                    yield return new KeyValuePair<string, Tuple<PropertyInfo, Func<T, object>, Action<T>>>(
+                        prefix + name,
+                        new Tuple<PropertyInfo, Func<T, object>, Action<T>>(p, getter, initializer));
+                }
+                else
+                {
+                    foreach (var pn in GetFlatPropertyInfos<T>(
+                        p.PropertyType,
+                        prefix + name + '.',
+                        x =>
+                        {
+                            var subObj = getter(x);
+                            return subObj == null ? null : p.GetValue(subObj, null);
+                        },
+                        x =>
+                        {
+                            var subVal = getter(x);
+                            if (subVal == null)
+                            {
+                                initializer(x);
+                                subVal = getter(x);
+                            }
+
+                            p.SetValue(
+                                subVal,
+                                TypeDescriptor.CreateInstance(
+                                    null,
+                                    p.PropertyType,
+                                    new Type[0],
+                                    new object[0]),
+                                null);
+                        }))
+                        yield return pn;
+                }
+            }
+        }
+
+        public static readonly HashSet<Type> SupportedBasicTypesDictionary =
+        new HashSet<Type>
+        {
+            typeof(string),
+            typeof(bool),
+            typeof(short),
+            typeof(int),
+            typeof(long),
+            typeof(ushort),
+            typeof(uint),
+            typeof(ulong),
+            typeof(decimal),
+            typeof(double),
+            typeof(DateTime),
+            typeof(TimeSpan),
+            typeof(Guid),
+            typeof(bool?),
+            typeof(short?),
+            typeof(int?),
+            typeof(long?),
+            typeof(ushort?),
+            typeof(uint?),
+            typeof(ulong?),
+            typeof(decimal?),
+            typeof(double?),
+            typeof(DateTime?),
+            typeof(TimeSpan?),
+            typeof(Guid?),
+        };
 
         /// <summary>
         /// Obtains bool? variable from NULL-able column
