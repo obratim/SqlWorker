@@ -242,7 +242,7 @@ CREATE TABLE {0} (
             SqlTransaction transaction,
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
             int? timeout = null,
-            SqlBulkCopyColumnMappingCollection mappings = null
+            IEnumerable<SqlBulkCopyColumnMapping> mappings = null
             )
         {
             if (Conn.State != ConnectionState.Open) Conn.Open();
@@ -276,7 +276,7 @@ CREATE TABLE {0} (
             SqlTransaction transaction,
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
             int? timeout = null,
-            SqlBulkCopyColumnMappingCollection mappings = null
+            IEnumerable<SqlBulkCopyColumnMapping> mappings = null
             )
         {
             if (Conn.State != ConnectionState.Open) Conn.Open();
@@ -331,7 +331,7 @@ CREATE TABLE {0} (
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
             int chunkSize = 0,
             int? timeout = null,
-            SqlBulkCopyColumnMappingCollection mappings = null
+            IEnumerable<SqlBulkCopyColumnMapping> mappings = null
             )
 		{
 		    if (chunkSize <= 0)
