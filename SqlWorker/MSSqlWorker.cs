@@ -198,14 +198,14 @@ namespace SqlWorker
             columns.AddRange(source.Columns.Cast<DataColumn>());
 
 			Exec(string.Format(@"
-CREATE TABLE {0} (
+CREATE TABLE [{0}] (
     {1}
 )
 ",
 			source.TableName,
 			string.Join(",\n    ", columns.Select(c => string.Format("[{0}] {1}{4} {2} {3}",
 				 c.ColumnName,
-				 TypeMapTsql[c.DataType].ToString(),
+				 c.DataType.IsEnum ? "int" : c.DataType == typeof(string) ? "nvarchar(max)" : TypeMapTsql[c.DataType].ToString(),
 				 c.AllowDBNull ? "NULL" : "NOT NULL",
 				 c.AutoIncrement ? string.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : "",
 				 c.MaxLength > 0 ? string.Format("({0})", c.MaxLength) : ""))
@@ -236,16 +236,32 @@ CREATE TABLE {0} (
         /// <param name="options">Bulk copy options</param>
         /// <param name="timeout">Timeout</param>
         /// <param name="mappings">Mappings for bulk copy</param>
+        /// <param name="createTableIfNotExists">Checks if table exists and creates if necessary</param>
         virtual public void BulkCopy(
             DataTable source,
             string targetTableName,
             SqlTransaction transaction,
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
             int? timeout = null,
-            IEnumerable<SqlBulkCopyColumnMapping> mappings = null
+            IEnumerable<SqlBulkCopyColumnMapping> mappings = null,
+            bool createTableIfNotExists = false
             )
         {
             if (Conn.State != ConnectionState.Open) Conn.Open();
+
+            if (createTableIfNotExists)
+            {
+                source.TableName = targetTableName;
+                var objId = Query(
+                    @"SELECT OBJECT_ID(@name, 'U')",
+                    dr => dr.GetNullableInt32(0),
+                    new SWParameters { { "name", targetTableName } },
+                    timeout,
+                    transaction: transaction)
+                    .Single();
+                if (objId == null)
+                    CreateTableByDataTable(source, false);
+            }
 
             using (SqlBulkCopy sbc = NewBulkCopyInstance(options, transaction))
             {
@@ -270,13 +286,15 @@ CREATE TABLE {0} (
         /// <param name="options">Bulk copy options</param>
         /// <param name="timeout">Timeout</param>
         /// <param name="mappings">Mappings for bulk copy</param>
+        /// <param name="createTableIfNotExists">Checks if table exists and creates if necessary</param>
         virtual public void BulkCopy(
             IEnumerable<DataTable> source,
             string targetTableName,
             SqlTransaction transaction,
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
             int? timeout = null,
-            IEnumerable<SqlBulkCopyColumnMapping> mappings = null
+            IEnumerable<SqlBulkCopyColumnMapping> mappings = null,
+            bool createTableIfNotExists = false
             )
         {
             if (Conn.State != ConnectionState.Open) Conn.Open();
@@ -289,6 +307,20 @@ CREATE TABLE {0} (
                 using (var enumerator = source.GetEnumerator())
                 {
                     if (!enumerator.MoveNext()) return;
+
+                    if (createTableIfNotExists)
+                    {
+                        enumerator.Current.TableName = targetTableName;
+                        var objId = Query(
+                            @"SELECT OBJECT_ID(@name, 'U')",
+                            dr => dr.GetNullableInt32(0),
+                            new SWParameters {{"name", targetTableName}},
+                            timeout,
+                            transaction: transaction)
+                            .Single();
+                        if (objId == null)
+                            CreateTableByDataTable(enumerator.Current, false);
+                    }
 
                     try
                     {
@@ -324,6 +356,7 @@ CREATE TABLE {0} (
         /// <param name="chunkSize">If greater then zero, multiple copies will be performed with specified number of rows in each iteration</param>
         /// <param name="timeout">Timeout</param>
         /// <param name="mappings">Mappings for bulk copy</param>
+        /// <param name="createTableIfNotExists">Checks if table exists and creates if necessary</param>
 		virtual public void BulkCopyWithReflection<T>(
             IEnumerable<T> source,
             string targetTableName,
@@ -331,19 +364,20 @@ CREATE TABLE {0} (
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
             int chunkSize = 0,
             int? timeout = null,
-            IEnumerable<SqlBulkCopyColumnMapping> mappings = null
+            IEnumerable<SqlBulkCopyColumnMapping> mappings = null,
+            bool createTableIfNotExists = false
             )
 		{
 		    if (chunkSize <= 0)
 		    {
 		        using (var dt = source.AsDataTable())
 		        {
-		            BulkCopy(dt, targetTableName, transaction, options, timeout, mappings);
+		            BulkCopy(dt, targetTableName, transaction, options, timeout, mappings, createTableIfNotExists);
 		        }
 		    }
 		    else
             {
-                BulkCopy(source.AsDataTable(chunkSize), targetTableName, transaction, options, timeout, mappings);
+                BulkCopy(source.AsDataTable(chunkSize), targetTableName, transaction, options, timeout, mappings, createTableIfNotExists);
             }
 		}
         
