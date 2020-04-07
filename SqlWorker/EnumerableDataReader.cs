@@ -42,8 +42,7 @@ namespace SqlWorker
 
 		public override void Close()
 		{
-			_enumerator.Dispose();
-			_isClosed = true;
+			NextResult();
 		}
 		
 		public override bool GetBoolean(int i) => (bool)this[i];
@@ -103,6 +102,26 @@ namespace SqlWorker
 		public override IEnumerator GetEnumerator()
 		{
 			return _enumerator;
+		}
+
+		private bool disposed = false;
+
+		protected override void Dispose(bool disposing)
+		{
+			if (disposed)
+				return;
+			if (disposing)
+			{
+				_enumerator.Dispose();
+				_dataTable.Dispose();
+			}
+			disposed = true;
+			base.Dispose(disposing);
+		}
+
+		~EnumerableDbDataReader()
+		{
+			Dispose(false);
 		}
 	}
 }
