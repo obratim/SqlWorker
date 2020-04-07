@@ -26,7 +26,7 @@ namespace SqlWorker
         /// <summary>
         /// Database connection
         /// </summary>
-        protected override IDbConnection Conn
+        protected override IDbConnection Connection
         {
             get
             {
@@ -38,19 +38,17 @@ namespace SqlWorker
         /// <summary>
         /// Constructor from connection string
         /// </summary>
-        /// <param name="connectionString">The connection string</param>
-        /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
-        public MsSqlWorker(string connectionString, TimeSpan? reconnectPause = null)
-            : base(reconnectPause) { _connstr = connectionString; }
+        /// <param name="connectionString">The connection string, for example 'Server={0};Database={1};User ID={2};Password={3};Integrated Security=false'</param>
+        public MsSqlWorker(string connectionString)
+            : base() { _connstr = connectionString; }
 
         /// <summary>
         /// Constructor for windows authentication
         /// </summary>
         /// <param name="server">The target Sql Server</param>
         /// <param name="dataBase">The target database</param>
-        /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
-        public MsSqlWorker(string server, string dataBase, TimeSpan? reconnectPause = null)
-            : base(reconnectPause)
+        public MsSqlWorker(string server, string dataBase)
+            : base()
         {
             _connstr = string.Format("Server={0};Database={1};Integrated Security=true", server, dataBase);
         }
@@ -62,11 +60,19 @@ namespace SqlWorker
         /// <param name="dataBase">The target database</param>
         /// <param name="login">Username</param>
         /// <param name="password">Password</param>
-        /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
-        public MsSqlWorker(string server, string dataBase, string login, string password, TimeSpan? reconnectPause = null)
-            : base(reconnectPause)
+        public MsSqlWorker(string server, string dataBase, string login, string password)
+            : base()
         {
             _connstr = string.Format("Server={0};Database={1};User ID={2};Password={3};Integrated Security=false", server, dataBase, login, password);
+        }
+
+        /// <summary>
+        /// Constructor from existing sql connection
+        /// </summary>
+        /// <param name="connection">sql connection</param>
+        public MsSqlWorker(SqlConnection connection) : base()
+        {
+            _conn = connection;
         }
 
         /// <summary>
@@ -76,112 +82,10 @@ namespace SqlWorker
         /// <returns>The SqlTransaction instance</returns>
         public virtual SqlTransaction SqlTransactionBegin(IsolationLevel level = IsolationLevel.ReadCommitted)
         {
-            if (Conn.State != ConnectionState.Open) Conn.Open();
+            if (Connection.State != ConnectionState.Open) Connection.Open();
             return _conn.BeginTransaction(level);
         }
-
-        #region send files
-
-        /// <summary>
-        /// Gets stream from filestream column
-        /// </summary>
-        /// <param name="tableName">The target table</param>
-        /// <param name="dataFieldName">FileStream column</param>
-        /// <param name="accessType">Access type</param>
-        /// <param name="transaction">Transaction must be opened</param>
-        /// <param name="attributies">Query parameters</param>
-        /// <param name="condition">Condition for row selection</param>
-        /// <param name="timeout">Timeout</param>
-        /// <returns>The SqlFileStream instance</returns>
-        public SqlFileStream GetFileStreamFromDB(string tableName, string dataFieldName, System.IO.FileAccess accessType, SqlTransaction transaction, Dictionary<string, object> attributies, string condition = "", int? timeout = null)
-        {
-            if (condition == null) condition = "";
-            if (string.IsNullOrWhiteSpace(condition))
-                condition = attributies.Aggregate("", (str, i) => str + (string.IsNullOrEmpty(str) ? "" : " and ") + i.Key + " = @" + i.Key);
-            return ManualProcessing("select " + dataFieldName + ".PathName() as Path, GET_FILESTREAM_TRANSACTION_CONTEXT() as Context from " + tableName + " where " + condition,
-                dr =>
-                {
-                    if (!dr.Read()) throw new Exception("No sutch file");
-                    return new SqlFileStream(dr.GetString(0), (byte[])dr[1], accessType);
-                }, attributies, timeout, transaction: transaction);
-        }
-
-        /// <summary>
-        /// Delegate for obtaining SqlFileStream
-        /// </summary>
-        /// <returns>SqlFileStream object</returns>
-        public delegate SqlFileStream FileStreamService();
-
-        /// <summary>
-        /// Performs insertion data into table with FileStream column
-        /// </summary>
-        /// <param name="tableName">The target table</param>
-        /// <param name="fileIdFieldName">Name of FielId column</param>
-        /// <param name="fileDataFieldName">Name of FileStream column</param>
-        /// <param name="transaction">Transaction must be opened</param>
-        /// <param name="attributes">Other row values to insert</param>
-        /// <param name="inputStream">Source stream</param>
-        /// <param name="bufLength">Buffer length</param>
-        /// <param name="timeout">Timeout</param>
-        /// <returns>Written size</returns>
-        public int InsertFileNoStoredProcs(
-            string tableName,
-            string fileIdFieldName, string fileDataFieldName,
-            SqlTransaction transaction,
-            Dictionary<string, object> attributes,
-            System.IO.Stream inputStream,
-            long bufLength = 512*1024,
-            int? timeout = null
-            //, string procName = null, int procFilePathIndex = 0, int procFileTokenIndex = 1
-        )
-        {
-            return InsertFileGeneric(inputStream,
-                () =>
-                {
-                    Guid fileId;
-                    if (!attributes.ContainsKey(fileIdFieldName))
-                    {
-                        fileId = Guid.NewGuid();
-                        attributes.Add(fileIdFieldName, fileId);
-                    }
-                    else fileId = (Guid)attributes[fileIdFieldName];
-                    attributes[fileDataFieldName] = new byte[0];
-
-                    InsertValues(tableName, attributes);
-
-                    return GetFileStreamFromDB(tableName, fileDataFieldName, System.IO.FileAccess.Write, transaction, new Dictionary<string, object> { { fileIdFieldName, attributes[fileIdFieldName] } }, timeout: timeout);
-                },
-                bufLength);
-        }
-
-        /// <summary>
-        /// Performs writing data into table with FileStream column
-        /// </summary>
-        /// <param name="inputStream">Source stream</param>
-        /// <param name="insertDataAndReturnSqlFileStream">Delegate for obtaining SqlFileStream</param>
-        /// <param name="bufLength">Buffer length</param>
-        /// <returns>Written size</returns>
-        public int InsertFileGeneric(System.IO.Stream inputStream, FileStreamService insertDataAndReturnSqlFileStream, long bufLength = 512 * 1024)
-        {
-            int writen = 0;
-            using (var sfs = insertDataAndReturnSqlFileStream())
-            {
-
-                byte[] buffer = new byte[bufLength];
-                int readen = inputStream.Read(buffer, 0, buffer.Length);
-                writen = readen;
-                while (readen > 0)
-                {
-                    sfs.Write(buffer, 0, readen);
-                    readen = inputStream.Read(buffer, 0, buffer.Length);
-                    writen += readen;
-                }
-            }
-            return writen;
-        }
-
-        #endregion send files
-
+        
         /// <summary>
         /// Creates table in database with columns relevant to specified DataTable
         /// </summary>
@@ -191,7 +95,7 @@ namespace SqlWorker
         {
             if (recreate)
             {
-                Exec("IF OBJECT_ID(@tname, 'U') IS NOT NULL DROP TABLE " + source.TableName, new SWParameters { { "tname", source.TableName } });
+                Exec("IF OBJECT_ID(@tname, 'U') IS NOT NULL DROP TABLE " + source.TableName, new SwParameters { { "tname", source.TableName } });
             }
 
             var columns = new List<DataColumn>();
@@ -228,6 +132,11 @@ CREATE TABLE [{0}] (
         }
 
         /// <summary>
+        /// Default chunk size for bulk copy
+        /// </summary>
+        public int DefaultChunkSize { get; set; } = 5000;
+
+        /// <summary>
         /// Performs bulk copy from DataTable to specified table
         /// </summary>
         /// <param name="source">Source data</param>
@@ -237,6 +146,8 @@ CREATE TABLE [{0}] (
         /// <param name="timeout">Timeout</param>
         /// <param name="mappings">Mappings for bulk copy</param>
         /// <param name="createTableIfNotExists">Checks if table exists and creates if necessary</param>
+        /// <param name="chunkSize"></param>
+        /// <param name="enableStreaming"></param>
         virtual public void BulkCopy(
             DataTable source,
             string targetTableName,
@@ -244,10 +155,11 @@ CREATE TABLE [{0}] (
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
             int? timeout = null,
             IEnumerable<SqlBulkCopyColumnMapping> mappings = null,
-            bool createTableIfNotExists = false
-            )
+            bool createTableIfNotExists = false,
+            int? chunkSize = null,
+            bool enableStreaming = false)
         {
-            if (Conn.State != ConnectionState.Open) Conn.Open();
+            if (Connection.State != ConnectionState.Open) Connection.Open();
 
             if (createTableIfNotExists)
             {
@@ -255,7 +167,7 @@ CREATE TABLE [{0}] (
                 var objId = Query(
                     @"SELECT OBJECT_ID(@name, 'U')",
                     dr => dr.GetNullableInt32(0),
-                    new SWParameters { { "name", targetTableName } },
+                    new SwParameters { { "name", targetTableName } },
                     timeout,
                     transaction: transaction)
                     .Single();
@@ -270,80 +182,14 @@ CREATE TABLE [{0}] (
                     foreach (var column in source.Columns)
                         sbc.ColumnMappings.Add(column.ToString(), column.ToString());
 				else
-					foreach (SqlBulkCopyColumnMapping m in mappings)
+					foreach (var m in mappings)
 						sbc.ColumnMappings.Add(m);
 				sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
+                sbc.BatchSize = chunkSize ?? DefaultChunkSize;
+                sbc.EnableStreaming = enableStreaming;
                 sbc.WriteToServer(source);
             }
         }
-
-        /// <summary>
-        /// Performs bulk copy from multiple DataTable objects to specified table. Each DataTable will be disposed!
-        /// </summary>
-        /// <param name="source">IEnumerable with datatables. Each datatable will be disposed</param>
-        /// <param name="targetTableName">Target table</param>
-        /// <param name="transaction">Transaction</param>
-        /// <param name="options">Bulk copy options</param>
-        /// <param name="timeout">Timeout</param>
-        /// <param name="mappings">Mappings for bulk copy</param>
-        /// <param name="createTableIfNotExists">Checks if table exists and creates if necessary</param>
-        virtual public void BulkCopy(
-            IEnumerable<DataTable> source,
-            string targetTableName,
-            SqlTransaction transaction,
-            SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
-            int? timeout = null,
-            IEnumerable<SqlBulkCopyColumnMapping> mappings = null,
-            bool createTableIfNotExists = false
-            )
-        {
-            if (Conn.State != ConnectionState.Open) Conn.Open();
-
-            using (SqlBulkCopy sbc = NewBulkCopyInstance(options, transaction))
-            {
-                sbc.DestinationTableName = targetTableName;
-                sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
-
-                using (var enumerator = source.GetEnumerator())
-                {
-                    if (!enumerator.MoveNext()) return;
-
-                    if (createTableIfNotExists)
-                    {
-                        enumerator.Current.TableName = targetTableName;
-                        var objId = Query(
-                            @"SELECT OBJECT_ID(@name, 'U')",
-                            dr => dr.GetNullableInt32(0),
-                            new SWParameters {{"name", targetTableName}},
-                            timeout,
-                            transaction: transaction)
-                            .Single();
-                        if (objId == null)
-                            CreateTableByDataTable(enumerator.Current, false);
-                    }
-
-                    try
-                    {
-                        if (mappings == null)
-                        {
-                            foreach (var column in enumerator.Current.Columns)
-                                sbc.ColumnMappings.Add(column.ToString(), column.ToString());
-                        }
-                        else foreach (SqlBulkCopyColumnMapping m in mappings)
-                                sbc.ColumnMappings.Add(m);
-
-                        sbc.WriteToServer(enumerator.Current);
-
-                        while (enumerator.MoveNext())
-                            using (enumerator.Current)
-                            {
-                                sbc.WriteToServer(enumerator.Current);
-                            }
-                    }
-                    finally { enumerator.Current.Dispose(); }
-                } // enumerator
-            } // bulk coupy
-        } // func
 
         /// <summary>
         /// Performs bulk copy from objects collection to target table in database; columns are detected by reflection
@@ -357,30 +203,51 @@ CREATE TABLE [{0}] (
         /// <param name="timeout">Timeout</param>
         /// <param name="mappings">Mappings for bulk copy</param>
         /// <param name="createTableIfNotExists">Checks if table exists and creates if necessary</param>
+        /// <param name="streamed"></param>
 		virtual public void BulkCopyWithReflection<T>(
             IEnumerable<T> source,
             string targetTableName,
             SqlTransaction transaction,
             SqlBulkCopyOptions options = SqlBulkCopyOptions.Default,
-            int chunkSize = 0,
+            int? chunkSize = null,
             int? timeout = null,
             IEnumerable<SqlBulkCopyColumnMapping> mappings = null,
-            bool createTableIfNotExists = false
-            )
-		{
-		    if (chunkSize <= 0)
-		    {
-		        using (var dt = source.AsDataTable())
-		        {
-		            BulkCopy(dt, targetTableName, transaction, options, timeout, mappings, createTableIfNotExists);
-		        }
-		    }
-		    else
+            bool createTableIfNotExists = false,
+            bool enableStreaming = false)
+        {
+            if (Connection.State != ConnectionState.Open) Connection.Open();
+
+            if (createTableIfNotExists)
             {
-                BulkCopy(source.AsDataTable(chunkSize), targetTableName, transaction, options, timeout, mappings, createTableIfNotExists);
+                source.TableName = targetTableName;
+                var objId = Query(
+                    @"SELECT OBJECT_ID(@name, 'U')",
+                    dr => dr.GetNullableInt32(0),
+                    new SwParameters { { "name", targetTableName } },
+                    timeout,
+                    transaction: transaction)
+                    .Single();
+                if (objId == null)
+                    CreateTableByDataTable(source, false);
             }
-		}
-        
+
+            using (SqlBulkCopy sbc = NewBulkCopyInstance(options, transaction))
+            using (var srcreader = new EnumerableDbDataReader<T>(source))
+            {
+                sbc.DestinationTableName = targetTableName;
+                if (mappings == null)
+                    foreach (var column in srcreader.GetSchemaTable().Columns)
+                        sbc.ColumnMappings.Add(column.ToString(), column.ToString());
+                else
+                    foreach (var m in mappings)
+                        sbc.ColumnMappings.Add(m);
+                sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
+                sbc.BatchSize = chunkSize ?? DefaultChunkSize;
+                sbc.EnableStreaming = enableStreaming;
+                sbc.WriteToServer(srcreader);
+			}
+        }
+
         #endregion Bulk copy
     }
 }
