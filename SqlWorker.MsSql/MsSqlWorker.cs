@@ -17,7 +17,7 @@ namespace SqlWorker
     /// <summary>
     /// Adapter for MS Sql Server
     /// </summary>
-    public class MsSqlWorker : ASqlWorker<ParametersConstuctorsForMsSql>
+    public partial class MsSqlWorker : ASqlWorker<ParametersConstuctorsForMsSql>
     {
         private SqlConnection _conn;
 
@@ -217,23 +217,25 @@ CREATE TABLE [{0}] (
         {
             if (Connection.State != ConnectionState.Open) Connection.Open();
 
-            if (createTableIfNotExists)
-            {
-                source.TableName = targetTableName;
-                var objId = Query(
-                    @"SELECT OBJECT_ID(@name, 'U')",
-                    dr => dr.GetNullableInt32(0),
-                    new SwParameters { { "name", targetTableName } },
-                    timeout,
-                    transaction: transaction)
-                    .Single();
-                if (objId == null)
-                    CreateTableByDataTable(source, false);
-            }
-
             using (SqlBulkCopy sbc = NewBulkCopyInstance(options, transaction))
             using (var srcreader = new EnumerableDbDataReader<T>(source))
             {
+                if (createTableIfNotExists)
+                {
+                    var dataTable = srcreader.GetSchemaTable();
+
+                    dataTable.TableName = targetTableName;
+                    var objId = Query(
+                        @"SELECT OBJECT_ID(@name, 'U')",
+                        dr => dr.GetNullableInt32(0),
+                        new SwParameters { { "name", targetTableName } },
+                        timeout,
+                        transaction: transaction)
+                        .Single();
+                    if (objId == null)
+                        CreateTableByDataTable(dataTable, false);
+                }
+
                 sbc.DestinationTableName = targetTableName;
                 if (mappings == null)
                     foreach (var column in srcreader.GetSchemaTable().Columns)
