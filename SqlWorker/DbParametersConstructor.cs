@@ -77,7 +77,7 @@ namespace SqlWorker
 			/// <param name="vals">The source elements</param>
 			public static implicit operator DbParametersConstructor(IDataParameter[] vals)
 			{
-				return new DbParametersConstructor(vals);
+				return new DbParametersConstructor(vals ?? EmptyParams);
 			}
 
 			/// <summary>
@@ -95,6 +95,9 @@ namespace SqlWorker
 			/// <param name="vals">The source elements</param>
 			public static implicit operator DbParametersConstructor(Dictionary<string, object> vals)
 			{
+				if (vals == null)
+					return new DbParametersConstructor(EmptyParams);
+
 				var result = new IDataParameter[vals.Count];
 				int i = 0;
 				foreach (var kv in vals)
@@ -111,6 +114,9 @@ namespace SqlWorker
 			/// <param name="vals">The source elements</param>
 			public static implicit operator DbParametersConstructor(SwParameters vals)
 			{
+				if (vals == null)
+					return new DbParametersConstructor(EmptyParams);
+
 				var result = new IDataParameter[vals.Count];
 				for (int i = 0; i < vals.Count; ++i)
 				{
