@@ -23,3 +23,4 @@ SqlWorker.MySql/SqlWorker.MySql.nuspec
 */obj/**
 SqlWorker.PostgreSql/Properties/VersionInfo.cs
 */SqlWorker*.nuspec
+publish/**
