@@ -1,2 +1,19 @@
 #! /bin/bash
-dotnet pack -p:PackageVersion=3.1.$(./get-version.sh) -o publish/nuget --include-symbols -c Release /nologo
+export SW_DESCRIPTION='Minimalistic API allows developer to most easily perform operations with database. By default, library automatically manages DbConnection, DbTransaction, DbCommand and DbDataReader objects. Developer only writes queries.'
+export SW_VERSION="3.1.$(./get-version.sh)"
+export SW_NOTES="$(hg parent --template '{desc}')"
+export SW_COPYRIGHT="Copyright $(date +%Y)"
+export SW_AUTHOR="Viktor A. Koryagin"
+export SW_TAGS="sql"
+
+dotnet pack \
+    -p:PackageVersion="\"$SW_VERSION\"" \
+    -p:PackageReleaseNotes="\"$SW_NOTES\"" \
+    -p:Copyright="\"SW_COPYRIGHT\"" \
+    -p:Authors="\"SW_AUTHOR\"" \
+    -p:Description="\"$SW_DESCRIPTION\"" \
+    -p:PackageTags="\"$SW_TAGS\"" \
+    -o publish/nuget \
+    --include-symbols \
+    -c Release \
+    -nologo
