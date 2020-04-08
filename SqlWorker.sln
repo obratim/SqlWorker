@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29926.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlWorker", "SqlWorker\SqlWorker.csproj", "{D9F0E673-2988-47BF-A0D7-842A538A3AE9}"
 EndProject
@@ -16,10 +16,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlWorker.MySql", "SqlWorker.MySql\SqlWorker.MySql.csproj", "{DED00584-2EC1-4F75-A707-3E82EAF9DF83}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlWorker.PostgreSql", "SqlWorker.PostgreSql\SqlWorker.PostgreSql.csproj", "{6BD818C4-621D-497D-A110-85D4AD0F8800}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlWorker.Core", "SqlWorker.Core\SqlWorker.Core.csproj", "{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlWorker.Core.MsSql", "SqlWorker.Core.MsSql\SqlWorker.Core.MsSql.csproj", "{018EA8CC-771C-43F4-99BD-0EA9A743D863}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -76,30 +72,6 @@ Global
 		{6BD818C4-621D-497D-A110-85D4AD0F8800}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{6BD818C4-621D-497D-A110-85D4AD0F8800}.Release|x86.ActiveCfg = Release|Any CPU
 		{6BD818C4-621D-497D-A110-85D4AD0F8800}.Release|x86.Build.0 = Release|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Debug|x86.Build.0 = Debug|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Release|x86.ActiveCfg = Release|Any CPU
-		{269B1ABE-69EF-4980-B7AF-0FA4BAE6FCEC}.Release|x86.Build.0 = Release|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Debug|x86.Build.0 = Debug|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Release|Any CPU.Build.0 = Release|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Release|x86.ActiveCfg = Release|Any CPU
-		{018EA8CC-771C-43F4-99BD-0EA9A743D863}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
