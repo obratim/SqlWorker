@@ -205,10 +205,10 @@ CREATE TABLE [{0}] (
 			source.TableName,
 			string.Join(",\n    ", columns.Select(c => string.Format("[{0}] {1}{4} {2} {3}",
 				 c.ColumnName,
-				 c.DataType.IsEnum ? "int" : c.DataType == typeof(string) ? "nvarchar(max)" : TypeMapTsql[c.DataType].ToString(),
+				 c.DataType.IsEnum ? "int" : c.DataType == typeof(string) && c.MaxLength < 0 ? "nvarchar(max)" : TypeMapTsql[c.DataType].ToString(),
 				 c.AllowDBNull ? "NULL" : "NOT NULL",
 				 c.AutoIncrement ? string.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : "",
-				 c.MaxLength > 0 ? string.Format("({0})", c.MaxLength) : ""))
+				 c.MaxLength >= 0 ? string.Format("({0})", c.MaxLength) : ""))
 			 )));
         }
 
