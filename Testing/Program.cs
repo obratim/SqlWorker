@@ -46,20 +46,11 @@ namespace NUnitLite.Tests
         /// <param name="args"></param>
         public static int Main(string[] args)
         {
-            return new AutoRun().Execute(args);
+            var result = new AutoRun().Execute(args);
+            Console.ReadLine();
+            return result;
         }
 		
-        [Test, Order(1)]
-        public static void CanExec()
-        {
-            System.IO.File.Delete($"{_dbName}.mdf");
-            System.IO.File.Delete($"{_dbName}_log.ldf");
-            using (var sw = new MsSqlWorker(@"Data Source=.\sqlexpress;Initial Catalog=tempdb; Integrated Security=true;User Instance=True;"))
-            {
-                Assert.AreEqual(-1, sw.Exec($"CREATE DATABASE {_dbName} ON PRIMARY (NAME='{_dbName}', FILENAME='{System.IO.Path.GetFullPath(_dbName)}.mdf')"));
-                Assert.AreEqual(-1, sw.Exec($"EXEC sp_detach_db '{_dbName}', 'true'"));
-            }
-        }
         
         [Test, Order(2)]
         public static void CanQuery()
@@ -70,7 +61,7 @@ namespace NUnitLite.Tests
             }
         }
 
-        [Test, Order(3)]
+        [Test, Order(3), Repeat(2)]
         public static void CanCreateTableFromDataTable()
         {
 			using (var sw = new MsSqlWorker(_connectionString))
@@ -82,7 +73,7 @@ namespace NUnitLite.Tests
 				dt.Columns.Add("is_prime", typeof(bool));
 				dt.Columns.Add(new System.Data.DataColumn("as_text", typeof(string)) { MaxLength = 400 });
 
-				sw.CreateTableByDataTable(dt);
+				sw.CreateTableByDataTable(dt, true);
 
 				sw.Exec(@"
 CREATE UNIQUE CLUSTERED INDEX [PK_number] ON [dbo].[numbers]([number] ASC)
