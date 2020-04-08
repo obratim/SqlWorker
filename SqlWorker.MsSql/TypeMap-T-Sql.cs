@@ -6,8 +6,8 @@ using System.Linq;
 
 namespace SqlWorker
 {
-    public partial class MsSqlWorker
-	{
+    public abstract partial class ASqlWorker<TPC>
+    {
         /// <summary>
         /// Dictionary that maps c# types to SqlDbTypes
         /// </summary>
@@ -27,7 +27,7 @@ namespace SqlWorker
 	        { typeof(string) , SqlDbType.NVarChar },
 	        { typeof(char) , SqlDbType.NChar },
 	        { typeof(Guid) , SqlDbType.UniqueIdentifier },
-	        { typeof(DateTime) , SqlDbType.DateTime },
+	        { typeof(DateTime) , SqlDbType.DateTime2 },
 	        { typeof(DateTimeOffset) , SqlDbType.DateTimeOffset },
 	        { typeof(byte[]) , SqlDbType.VarBinary },
 	        { typeof(byte?) , SqlDbType.TinyInt },
@@ -44,7 +44,7 @@ namespace SqlWorker
 	        { typeof(bool?) , SqlDbType.Bit },
 	        { typeof(char?) , SqlDbType.NChar },
 	        { typeof(Guid?) , SqlDbType.UniqueIdentifier },
-	        { typeof(DateTime?) , SqlDbType.DateTime },
+	        { typeof(DateTime?) , SqlDbType.DateTime2 },
 	        { typeof(DateTimeOffset?) , SqlDbType.DateTimeOffset },
             { typeof(TimeSpan), SqlDbType.Timestamp },
             { typeof(TimeSpan?), SqlDbType.Timestamp },
