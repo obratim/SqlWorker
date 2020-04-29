@@ -1,3 +1,2 @@
 #! /bin/bash
-hg parent --template '{rev}.{ifeq("{files|count}",0,0,1)}'
-
+echo -n $(hg parent --template '{rev}').$(echo -n $(hg id -n) | sed -e 's/[0-9]*//' -e 's/\+/1/' -e 's/^$/0/')
