@@ -254,7 +254,7 @@ namespace Tests.SqlWorker.MsSql
         {
             using (var sw = new MsSqlWorker(ConnectionString))
             {
-                void bulkInsert(int start, int length, int chunkSize)
+                void bulkInsertAndCheck(int start, int length, int chunkSize)
                 {
                     using (var tran = sw.SqlTransactionBegin())
                     {
@@ -279,50 +279,18 @@ namespace Tests.SqlWorker.MsSql
                     }
                 }
 
-                bulkInsert(5, 3, 1);
-                bulkInsert(8, 7, 2);
-                bulkInsert(15, 10, 3);
-                bulkInsert(25, 11, 3);
-                bulkInsert(36, 16, 5);
-                bulkInsert(52, 18, 5);
-                bulkInsert(70, 20, 5);
-                bulkInsert(90, 20, 7);
-                bulkInsert(110, 0, 11);
-                bulkInsert(110, 10, 11);
-                bulkInsert(120, 11, 11);
-                bulkInsert(131, 20, 13);
-            }
-        }
-
-        [TestMethod]
-        public void CanUpdate()
-        {
-            using (var sw = new MsSqlWorker(ConnectionString))
-            {
-                var updatesCount = sw.UpdateValues(
-                    tableName: "numbers",
-                    values: new SwParameters { { "as_text", "five" } },
-                    condition: new SwParameters { { "number", 5 } });
-                Assert.AreEqual(1, updatesCount);
-                Assert.AreEqual(
-                    expected: (5, "five"),
-                    actual: sw.Query("select number, as_text from numbers where number = 5", dr => ((int)dr[0], (string)dr[1])).Single());
-            }
-        }
-
-        [TestMethod]
-        public void CanUpdateWithStringCondition()
-        {
-            using (var sw = new MsSqlWorker(ConnectionString))
-            {
-                var updatesCount = sw.UpdateValues(
-                    tableName: "numbers",
-                    values: new SwParameters { { "as_text", "six" } },
-                    condition: "number = 6");
-                Assert.AreEqual(1, updatesCount);
-                Assert.AreEqual(
-                    expected: (6, "six"),
-                    actual: sw.Query("select number, as_text from numbers where number = 6", dr => ((int)dr[0], (string)dr[1])).Single());
+                bulkInsertAndCheck(5, 3, 1);
+                bulkInsertAndCheck(8, 7, 2);
+                bulkInsertAndCheck(15, 10, 3);
+                bulkInsertAndCheck(25, 11, 3);
+                bulkInsertAndCheck(36, 16, 5);
+                bulkInsertAndCheck(52, 18, 5);
+                bulkInsertAndCheck(70, 20, 5);
+                bulkInsertAndCheck(90, 20, 7);
+                bulkInsertAndCheck(110, 0, 11);
+                bulkInsertAndCheck(110, 10, 11);
+                bulkInsertAndCheck(120, 11, 11);
+                bulkInsertAndCheck(131, 20, 13);
             }
         }
     }
