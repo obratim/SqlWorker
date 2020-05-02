@@ -19,5 +19,6 @@ dotnet pack \
     -p:PackageTags="\"$SW_TAGS\"" \
     -o publish/nuget \
     --include-symbols \
+    -p:SymbolPackageFormat=snupkg \
     -c Release \
     -nologo
