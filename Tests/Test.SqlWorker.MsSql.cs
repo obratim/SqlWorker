@@ -130,8 +130,8 @@ namespace Tests.SqlWorker.MsSql
                         sqrt: (double)dr[2],
                         is_prime: (bool)dr[3],
                         as_text: dr.GetNullableString(4)
-                        ))
-                        .Single();
+                    ))
+                    .Single();
                 Assert.AreEqual((2, 4L, 1.4142135623730951, true, "two"), inserted);
             }
         }
@@ -149,7 +149,7 @@ namespace Tests.SqlWorker.MsSql
                         { "sqrt", Math.Sqrt(3), System.Data.DbType.Double, System.Data.ParameterDirection.Input },
                         { "is_prime", true },
                         { "as_text", "three" },
-                        });
+                    });
                 Assert.AreEqual(1, insertsCount);
                 
                 var inserted = sw.Query(
@@ -160,8 +160,8 @@ namespace Tests.SqlWorker.MsSql
                         sqrt: (double)dr[2],
                         is_prime: (bool)dr[3],
                         as_text: dr.GetNullableString(4)
-                        ))
-                        .Single();
+                    ))
+                    .Single();
                 Assert.AreEqual((3, 9L, 1.7320508075688773, true, "three"), inserted);
             }
         }
