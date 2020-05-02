@@ -32,15 +32,16 @@ namespace Tests.SqlWorker.MsSql
                 Assert.AreEqual("hello", sw.Query("select 'hello'", dr => dr[0]).Single());
             }
 
-            using (var sw = new MsSqlWorker(ConnectionStringMaster))
-            {
-                sw.Exec(@"
-                    IF DB_ID('sqlworker_test') IS NOT NULL
-                        ALTER DATABASE sqlworker_test SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-                    DROP DATABASE IF EXISTS sqlworker_test;
-                    CREATE DATABASE sqlworker_test;
-                    ALTER DATABASE sqlworker_test SET RECOVERY SIMPLE;"
-                );
+            if (Config["recreateDb"]?.ToLower() == "true")
+                using (var sw = new MsSqlWorker(ConnectionStringMaster))
+                {
+                    sw.Exec(@"
+                        IF DB_ID('sqlworker_test') IS NOT NULL
+                            ALTER DATABASE sqlworker_test SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                        DROP DATABASE IF EXISTS sqlworker_test;
+                        CREATE DATABASE sqlworker_test;
+                        ALTER DATABASE sqlworker_test SET RECOVERY SIMPLE;"
+                    );
             }
             
             using (var sw = new MsSqlWorker(ConnectionString))
