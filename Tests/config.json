@@ -1,0 +1,4 @@
+{
+    "connectionStringMaster": "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=\"db.mdf\";Integrated Security=True;Connect Timeout=30",
+    "connectionString": "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=\"db.mdf\";Integrated Security=True;Connect Timeout=30"
+}
