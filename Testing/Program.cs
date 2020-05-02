@@ -33,8 +33,7 @@ namespace NUnitLite.Tests
 {
     public class Program
     {
-        private static string _dbName = "db";
-        private static string _connectionString = $@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=""{System.IO.Path.GetFullPath(_dbName)}.mdf"";Integrated Security=True;Connect Timeout=30";
+        private static string _connectionString = System.Configuration.ConfigurationManager.ConnectionStrings[0].ConnectionString;
 
 		private static HashSet<int> _primes = new HashSet<int>(Enumerable.Range(1, 1000).Where(i => !Enumerable.Range(2, (int)Math.Sqrt(i)).Any(j => i % j == 0)));
 
