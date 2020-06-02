@@ -46,9 +46,11 @@ namespace SqlWorker
             cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
             cmd.CommandType = commandType;
             cmd.CommandText = command;
-            foreach (var c in parameters.Parameters) cmd.Parameters.Add(c);
+            foreach (var c in parameters.Parameters) 
+                cmd.Parameters.Add(c);
             cmd.Transaction = transaction;
-            if (_conn.State != ConnectionState.Open) await _conn.OpenAsync();
+            if (_conn.State != ConnectionState.Open) 
+                await _conn.OpenAsync();
             await using var dr = await ((SqlCommand)cmd).ExecuteReaderAsync(CommandBehavior.SingleResult);
             while (await dr.ReadAsync())
             {
