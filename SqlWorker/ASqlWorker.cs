@@ -146,6 +146,26 @@ namespace SqlWorker
                 }
             }
         }
+#if NETSTANDARD2_1
+		/// <summary>
+		/// Return IAsyncEnumerable with results
+		/// </summary>
+		/// <typeparam name="T">Generic resulting type</typeparam>
+		/// <param name="command">SQL command; in case of stored procedure this parameter stores only Proc name, commandType must be specified then</param>
+		/// <param name="transformFunction">Delegate to recive T from DataReader</param>
+		/// <param name="parameters">Values of parameters (if necessary)</param>
+		/// <param name="timeout">Timeout</param>
+		/// <param name="commandType">Type of batch</param>
+		/// <param name="transaction">The transaction, inside of wich the command will be executed</param>
+		/// <returns>Consequentially readed data</returns>
+		public abstract IAsyncEnumerable<T> QueryAsync<T>(
+			string command,
+			Func<IDataReader, T> transformFunction,
+			DbParametersConstructor parameters = null,
+			int? timeout = null,
+			CommandType commandType = CommandType.Text,
+			IDbTransaction transaction = null);
+#endif
 
         /// <summary>
         /// Executes query and returns DataTable with results
