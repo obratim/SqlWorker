@@ -11,7 +11,12 @@ namespace SqlWorker
 {
 	public class ParametersConstructorForPostgreSql : ADbParameterCreator<NpgsqlParameter> { }
 
-    public class PostgreSqlWorker : ASqlWorker<ParametersConstructorForPostgreSql>
+    public class PostgreSqlWorker
+#if NETSTANDARD2_1
+    : Async.ASqlWorkerAsync<ParametersConstructorForPostgreSql>
+#else
+    : ASqlWorker<ParametersConstructorForPostgreSql>
+#endif
     {
         private string _connectionStr;
 
