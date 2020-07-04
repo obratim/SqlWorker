@@ -14,7 +14,12 @@ namespace SqlWorker
     /// <summary>
     /// Adapter for OLE DB
     /// </summary>
-    public class OledbSqlWorker : ASqlWorker<ParametersConstructorForOledb>
+    public class OledbSqlWorker
+#if NETSTANDARD2_1
+    : Async.ASqlWorkerAsync<ParametersConstructorForOledb>
+#else
+    : ASqlWorker<ParametersConstructorForOledb>
+#endif
     {
         private readonly OleDbConnection _conn;
 
@@ -22,9 +27,8 @@ namespace SqlWorker
         /// Constructor from connection string
         /// </summary>
         /// <param name="connectionString">The connection string</param>
-        /// <param name="reconnectPause">Period for 'ReOpenConnection' method</param>
-        public OledbSqlWorker(string connectionString, TimeSpan? reconnectPause = null)
-            : base(reconnectPause)
+        public OledbSqlWorker(string connectionString)
+            : base()
         {
             _conn = new OleDbConnection(connectionString);
         }
@@ -32,7 +36,7 @@ namespace SqlWorker
         /// <summary>
         /// Database connection
         /// </summary>
-        protected override System.Data.IDbConnection Conn
+        protected override System.Data.IDbConnection Connection
         {
             get { return _conn; }
         }
