@@ -3,8 +3,9 @@ export SW_DESCRIPTION='Minimalistic API allows developer to most easily perform 
 export SW_VERSION="3.1.$(./get-version.sh)"
 export SW_NOTES="$(hg parent --template '{desc}')"
 export SW_COPYRIGHT="Copyright $(date +%Y)"
-export SW_AUTHOR="Viktor A. Koryagin"
+export SW_AUTHOR="vkoryagin"
 export SW_TAGS="sql"
+export SW_PROJECT_URL="https://github.com/obratim/SqlWorker"
 
 if [ -n "$1" ]; then
     export SW_NOTES=$1
@@ -15,8 +16,10 @@ dotnet pack \
     -p:PackageReleaseNotes="\"$SW_NOTES\"" \
     -p:Copyright="\"$SW_COPYRIGHT\"" \
     -p:Authors="\"$SW_AUTHOR\"" \
+    -p:Owners="\"$SW_AUTHOR\"" \
     -p:Description="\"$SW_DESCRIPTION\"" \
-    -p:PackageTags="\"$SW_TAGS\"" \
+    -p:PackageLicenseExpression="MIT" \
+    -p:RepositoryUrl="\"$SW_PROJECT_URL\"" \
     -o publish/nuget \
     --include-symbols \
     -p:SymbolPackageFormat=snupkg \

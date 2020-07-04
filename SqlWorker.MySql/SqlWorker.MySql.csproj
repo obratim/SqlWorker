@@ -16,4 +16,8 @@
     <PackageReference Include="MySql.Data" Version="8.0.20" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <PackageTags>mysql,ado,ado.net,database,sql,iasyncienumerable</PackageTags>
+  </PropertyGroup>
+
 </Project>

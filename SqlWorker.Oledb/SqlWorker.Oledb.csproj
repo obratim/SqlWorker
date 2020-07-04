@@ -16,4 +16,8 @@
     <PackageReference Include="System.Data.OleDb" Version="4.7.1" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <PackageTags>oledb,ado,ado.net,database,sql,iasyncienumerable</PackageTags>
+  </PropertyGroup>
+
 </Project>

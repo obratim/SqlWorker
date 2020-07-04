@@ -16,4 +16,8 @@
     <ProjectReference Include="..\SqlWorker.Async\SqlWorker.Async.csproj" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <PackageTags>sqlserver,t-sql,sqlclient,ado,ado.net,database,sql,iasyncienumerable</PackageTags>
+  </PropertyGroup>
+
 </Project>

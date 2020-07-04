@@ -13,4 +13,8 @@
     <ProjectReference Include="..\SqlWorker\SqlWorker.csproj" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <PackageTags>ado,ado.net,database,sql,iasyncienumerable</PackageTags>
+  </PropertyGroup>
+
 </Project>
