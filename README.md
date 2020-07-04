@@ -20,3 +20,6 @@ It can be useful when implementing simple applications and utilities, that execu
 [comment]: <> ()
 [comment]: <> (* Repo owner or admin)
 [comment]: <> (* Other community or team contact)
+
+### License ###
+This project is licensed under the [MIT license](https://github.com/obratim/SqlWorker/blob/master/LICENSE).
