@@ -15,12 +15,12 @@ namespace SqlWorker
     {
         private string _connectionStr;
 
-        public PostgreSqlWorker(string ConnectionString, TimeSpan? reconnectPause = null)
-            : base(reconnectPause) { _connectionStr = ConnectionString; }
+        public PostgreSqlWorker(string ConnectionString)
+            : base() { _connectionStr = ConnectionString; }
 
         private NpgsqlConnection _conn;
 
-        protected override IDbConnection Conn
+        protected override IDbConnection Connection
         {
             get
             {
