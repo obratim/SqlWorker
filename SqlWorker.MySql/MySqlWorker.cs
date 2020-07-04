@@ -10,7 +10,12 @@ namespace SqlWorker
 {
 	public class ParametersConstructorForMySql : ADbParameterCreator<MySql.Data.MySqlClient.MySqlParameter> { }
 
-    public class MySqlWorker : ASqlWorker<ParametersConstructorForMySql>
+    public class MySqlWorker
+#if NETSTANDARD2_1
+    : Async.ASqlWorkerAsync<ParametersConstructorForMySql>
+#else
+    : ASqlWorker<ParametersConstructorForMySql>
+#endif
     {
         private string _connectionString;
 
