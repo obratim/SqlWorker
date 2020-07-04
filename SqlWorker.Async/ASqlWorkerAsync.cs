@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Threading.Tasks;
 
 namespace SqlWorker.Async
 {
-    public abstract class ASqlWorkerAsync<TPC> : ASqlWorker<TPC>
+    public abstract class ASqlWorkerAsync<TPC> : ASqlWorker<TPC>, IAsyncDisposable
 		where TPC : IDbParameterCreator, new()
     {
 		/// <summary>
@@ -47,6 +48,18 @@ namespace SqlWorker.Async
             {
                 yield return transformFunction(dr);
             }
+        }
+    
+        public async ValueTask DisposeAsync()
+        {
+            var conn = Connection as DbConnection;
+            if (conn == null)
+                throw new NotSupportedException();
+                
+			if (CloseConnectionOnDispose && Connection.State != ConnectionState.Closed && Connection.State != ConnectionState.Broken)
+				await conn.CloseAsync();
+            
+            await conn.DisposeAsync();
         }
     }
 }
