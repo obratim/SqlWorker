@@ -293,5 +293,26 @@ namespace Tests.SqlWorker.MsSql
                 bulkInsertAndCheck(131, 20, 13);
             }
         }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task CheckAsyncIEnumerable()
+        {
+            await using var sw = new MsSqlWorker(ConnectionString);
+
+            var n = 5;
+            await foreach (var x in sw.QueryAsync(
+                @"select number, square, sqrt, is_prime from dbo.numbers n",
+                dr => new {
+                    number = (int)dr[0],
+                    square = (long)dr[1],
+                    sqrt = (double)dr[2],
+                    is_prime = (bool)dr[3],
+                }
+            ))
+            {
+                Assert.AreEqual(x.number, n);
+                ++n;
+            }
+        }
     }
 }
