@@ -24,3 +24,4 @@ SqlWorker.MySql/SqlWorker.MySql.nuspec
 SqlWorker.PostgreSql/Properties/VersionInfo.cs
 */SqlWorker*.nuspec
 publish/**
+github-push.sh
