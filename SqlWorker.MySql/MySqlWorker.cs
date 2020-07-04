@@ -14,15 +14,15 @@ namespace SqlWorker
     {
         private string _connectionString;
 
-        public MySqlWorker(string connectionString, TimeSpan? reconnectPause = null)
-            : base(reconnectPause)
+        public MySqlWorker(string connectionString)
+            : base()
         {
             _connectionString = connectionString;
         }
 
         private MySql.Data.MySqlClient.MySqlConnection _conn;
 
-        protected override IDbConnection Conn
+        protected override IDbConnection Connection
         {
             get
             {
