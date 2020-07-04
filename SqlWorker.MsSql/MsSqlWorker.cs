@@ -17,7 +17,12 @@ namespace SqlWorker
     /// <summary>
     /// Adapter for MS Sql Server
     /// </summary>
-    public partial class MsSqlWorker : ASqlWorker<ParametersConstuctorsForMsSql>
+    public partial class MsSqlWorker
+#if NETSTANDARD2_1
+    : Async.ASqlWorkerAsync<ParametersConstuctorsForMsSql>
+#else
+    : ASqlWorker<ParametersConstuctorsForMsSql>
+#endif
     {
         private SqlConnection _conn;
 
@@ -34,30 +39,6 @@ namespace SqlWorker
                 return _conn;
             }
         }
-#if NETSTANDARD2_1
-        public override async IAsyncEnumerable<T> QueryAsync<T>(string command, Func<IDataReader, T> transformFunction,
-            DbParametersConstructor parameters = null,
-            int? timeout = null, CommandType commandType = CommandType.Text, IDbTransaction transaction = null)
-        {
-
-            parameters ??= DbParametersConstructor.EmptyParams;
-            SqlParameterNullWorkaround(parameters);
-            using var cmd = Connection.CreateCommand();
-            cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
-            cmd.CommandType = commandType;
-            cmd.CommandText = command;
-            foreach (var c in parameters.Parameters) 
-                cmd.Parameters.Add(c);
-            cmd.Transaction = transaction;
-            if (_conn.State != ConnectionState.Open) 
-                await _conn.OpenAsync();
-            await using var dr = await ((SqlCommand)cmd).ExecuteReaderAsync(CommandBehavior.SingleResult);
-            while (await dr.ReadAsync())
-            {
-                yield return transformFunction(dr);
-            }
-        }
-#endif
         
         /// <summary>
         /// Constructor from connection string

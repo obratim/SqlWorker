@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlWorker.MsSql", "SqlWorke
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{A85919B6-66DA-4143-AC04-3CDFE7AA2C0B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlWorker.Async", "SqlWorker.Async\SqlWorker.Async.csproj", "{AF7942EF-F92E-4500-ACB8-A021737146EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,5 +60,17 @@ Global
 		{A85919B6-66DA-4143-AC04-3CDFE7AA2C0B}.Release|x64.Build.0 = Release|Any CPU
 		{A85919B6-66DA-4143-AC04-3CDFE7AA2C0B}.Release|x86.ActiveCfg = Release|Any CPU
 		{A85919B6-66DA-4143-AC04-3CDFE7AA2C0B}.Release|x86.Build.0 = Release|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Debug|x64.Build.0 = Debug|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Debug|x86.Build.0 = Debug|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Release|x64.ActiveCfg = Release|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Release|x64.Build.0 = Release|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Release|x86.ActiveCfg = Release|Any CPU
+		{AF7942EF-F92E-4500-ACB8-A021737146EC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

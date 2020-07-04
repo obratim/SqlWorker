@@ -12,4 +12,8 @@
     <ProjectReference Include="..\SqlWorker\SqlWorker.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <ProjectReference Include="..\SqlWorker.Async\SqlWorker.Async.csproj" />
+  </ItemGroup>
+
 </Project>
