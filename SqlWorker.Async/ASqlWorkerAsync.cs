@@ -12,13 +12,16 @@ namespace SqlWorker.Async
     {
         private const string DbConnectionException = "Async calls not supported in this implementation of SqlWorker";
 
-        public ValueTask<DbTransaction> TransactionBeginAsync(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken token = default(CancellationToken))
+        public async ValueTask<DbTransaction> TransactionBeginAsync(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken token = default(CancellationToken))
         {
             var conn = Connection as DbConnection;
             if (conn == null)
                 throw new NotSupportedException(DbConnectionException);
+
+            if (conn.State != ConnectionState.Open)
+                await conn.OpenAsync();
             
-            return conn.BeginTransactionAsync(isolationLevel, token);
+            return await conn.BeginTransactionAsync(isolationLevel, token);
         }
 
 		/// <summary>
