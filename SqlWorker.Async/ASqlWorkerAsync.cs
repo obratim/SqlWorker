@@ -50,6 +50,30 @@ namespace SqlWorker.Async
                 yield return transformFunction(dr);
             }
         }
+
+        public async Task<int> ExecAsync(
+			string command,
+			DbParametersConstructor parameters = null,
+			int? timeout = null,
+			CommandType commandType = CommandType.Text,
+			DbTransaction transaction = null)
+		{
+            var conn = Connection as DbConnection;
+            if (conn == null)
+                throw new NotSupportedException(DbConnectionException);
+
+			parameters = parameters ?? DbParametersConstructor.EmptyParams;
+            SqlParameterNullWorkaround(parameters);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = command;
+            cmd.Parameters.AddRange(parameters.Parameters);
+            cmd.CommandType = commandType;
+            cmd.Transaction = transaction;
+            cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
+            if (conn.State != ConnectionState.Open)
+                await conn.OpenAsync();
+            return await cmd.ExecuteNonQueryAsync();
+		}
     
         public async ValueTask DisposeAsync()
         {
