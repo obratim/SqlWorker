@@ -299,6 +299,8 @@ namespace Tests.SqlWorker.MsSql
         {
             await using var sw = new MsSqlWorker(ConnectionString);
 
+            await using var tran = await sw.TransactionBeginAsync();
+
             var n = 5;
             await foreach (var x in sw.QueryAsync(
                 @"select number, square, sqrt, is_prime from dbo.numbers n",
@@ -307,7 +309,8 @@ namespace Tests.SqlWorker.MsSql
                     square = (long)dr[1],
                     sqrt = (double)dr[2],
                     is_prime = (bool)dr[3],
-                }
+                },
+                transaction: tran
             ))
             {
                 Assert.AreEqual(x.number, n);
