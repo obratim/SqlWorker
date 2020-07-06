@@ -9,6 +9,8 @@ namespace SqlWorker.Async
     public abstract class ASqlWorkerAsync<TPC> : ASqlWorker<TPC>, IAsyncDisposable
 		where TPC : IDbParameterCreator, new()
     {
+        private const string DbConnectionException = "Async calls not supported in this implementation of SqlWorker";
+
 		/// <summary>
 		/// Return IAsyncEnumerable with results
 		/// </summary>
@@ -30,7 +32,7 @@ namespace SqlWorker.Async
         {
             var conn = Connection as DbConnection;
             if (conn == null)
-                throw new NotSupportedException();
+                throw new NotSupportedException(DbConnectionException);
 
             parameters ??= DbParametersConstructor.EmptyParams;
             SqlParameterNullWorkaround(parameters);
@@ -53,7 +55,7 @@ namespace SqlWorker.Async
         {
             var conn = Connection as DbConnection;
             if (conn == null)
-                throw new NotSupportedException();
+                throw new NotSupportedException(DbConnectionException);
                 
 			if (CloseConnectionOnDispose && Connection.State != ConnectionState.Closed && Connection.State != ConnectionState.Broken)
 				await conn.CloseAsync();
