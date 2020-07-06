@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SqlWorker.Async
@@ -10,6 +11,15 @@ namespace SqlWorker.Async
 		where TPC : IDbParameterCreator, new()
     {
         private const string DbConnectionException = "Async calls not supported in this implementation of SqlWorker";
+
+        public ValueTask<DbTransaction> TransactionBeginAsync(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken token = default(CancellationToken))
+        {
+            var conn = Connection as DbConnection;
+            if (conn == null)
+                throw new NotSupportedException(DbConnectionException);
+            
+            return conn.BeginTransactionAsync(isolationLevel, token);
+        }
 
 		/// <summary>
 		/// Return IAsyncEnumerable with results
