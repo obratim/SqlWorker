@@ -36,7 +36,7 @@ namespace SqlWorker.Async
 
             parameters ??= DbParametersConstructor.EmptyParams;
             SqlParameterNullWorkaround(parameters);
-            using var cmd = conn.CreateCommand();
+            await using var cmd = conn.CreateCommand();
             cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
             cmd.CommandType = commandType;
             cmd.CommandText = command;
