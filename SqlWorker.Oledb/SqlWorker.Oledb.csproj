@@ -5,15 +5,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SqlWorker\SqlWorker.csproj" />
+    <PackageReference Include="SqlWorker" Version="3.1.255" />
+    <PackageReference Include="System.Data.OleDb" Version="4.7.1" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-    <ProjectReference Include="..\SqlWorker.Async\SqlWorker.Async.csproj" />
+    <PackageReference Include="SqlWorker.Async" Version="3.1.263" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Data.OleDb" Version="4.7.1" />
   </ItemGroup>
 
   <PropertyGroup>

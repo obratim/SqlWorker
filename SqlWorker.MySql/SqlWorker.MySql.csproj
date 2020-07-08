@@ -5,15 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SqlWorker\SqlWorker.csproj" />
+    <PackageReference Include="SqlWorker" Version="3.1.255" />
+    <PackageReference Include="MySql.Data" Version="8.0.20" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-    <ProjectReference Include="..\SqlWorker.Async\SqlWorker.Async.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="MySql.Data" Version="8.0.20" />
+    <PackageReference Include="SqlWorker.Async" Version="3.1.263" />
   </ItemGroup>
 
   <PropertyGroup>
