@@ -62,6 +62,7 @@ namespace SqlWorker.Async
             {
                 yield return transformFunction(dr);
             }
+            cmd.Parameters?.Clear();
         }
 
         public async Task<int> ExecAsync(
@@ -85,8 +86,10 @@ namespace SqlWorker.Async
             cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
             if (conn.State != ConnectionState.Open)
                 await conn.OpenAsync();
-            return await cmd.ExecuteNonQueryAsync();
-		}
+            var result = await cmd.ExecuteNonQueryAsync();
+            cmd.Parameters?.Clear();
+            return result;
+        }
     
         public async ValueTask DisposeAsync()
         {

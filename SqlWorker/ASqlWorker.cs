@@ -104,6 +104,7 @@ namespace SqlWorker
                 {
                     result = transformFunction(dr);
                 }
+                cmd.Parameters?.Clear();
             }
             return result;
         }
@@ -144,6 +145,7 @@ namespace SqlWorker
                         yield return transformFunction(dr);
                     }
                 }
+                cmd.Parameters?.Clear();
             }
         }
 
