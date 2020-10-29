@@ -33,6 +33,7 @@ namespace Tests.SqlWorker.MsSql
             }
 
             if (Config["recreateDb"]?.ToLower() == "true")
+            {
                 using (var sw = new MsSqlWorker(ConnectionStringMaster))
                 {
                     sw.Exec(@"
@@ -42,36 +43,37 @@ namespace Tests.SqlWorker.MsSql
                         CREATE DATABASE sqlworker_test;
                         ALTER DATABASE sqlworker_test SET RECOVERY SIMPLE;"
                     );
-            }
+                }
             
-            using (var sw = new MsSqlWorker(ConnectionString))
-            {
-                Assert.AreEqual("hello", sw.Query("select 'hello'", dr => dr[0]).Single());
-            }
+                using (var sw = new MsSqlWorker(ConnectionString))
+                {
+                    Assert.AreEqual("hello", sw.Query("select 'hello'", dr => dr[0]).Single());
+                }
 
-            using (var sw = new MsSqlWorker(ConnectionString))
-            using (var dt = new System.Data.DataTable("numbers"))
-            {
-                dt.Columns.Add("number", typeof(int));
-                dt.Columns.Add("square", typeof(long));
-                dt.Columns.Add("sqrt", typeof(double));
-                dt.Columns.Add("is_prime", typeof(bool));
-                dt.Columns.Add(new System.Data.DataColumn("as_text", typeof(string)) { MaxLength = 400 });
+                using (var sw = new MsSqlWorker(ConnectionString))
+                using (var dt = new System.Data.DataTable("numbers"))
+                {
+                    dt.Columns.Add("number", typeof(int));
+                    dt.Columns.Add("square", typeof(long));
+                    dt.Columns.Add("sqrt", typeof(double));
+                    dt.Columns.Add("is_prime", typeof(bool));
+                    dt.Columns.Add(new System.Data.DataColumn("as_text", typeof(string)) { MaxLength = 400 });
 
-                sw.CreateTableByDataTable(dt, true);
+                    sw.CreateTableByDataTable(dt, true);
 
-                sw.Exec(@"
-                    CREATE UNIQUE CLUSTERED INDEX [PK_number] ON [dbo].[numbers]([number] ASC)
-                    WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-                ");
-                sw.Exec(@"
-                    CREATE UNIQUE NONCLUSTERED INDEX [IX_square] ON [dbo].[numbers]([square] ASC)
-                    WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-                ");
-                sw.Exec(@"
-                    CREATE UNIQUE NONCLUSTERED INDEX [IX_sqrt] ON [dbo].[numbers]([sqrt] ASC)
-                    WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-                ");
+                    sw.Exec(@"
+                        CREATE UNIQUE CLUSTERED INDEX [PK_number] ON [dbo].[numbers]([number] ASC)
+                        WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+                    ");
+                    sw.Exec(@"
+                        CREATE UNIQUE NONCLUSTERED INDEX [IX_square] ON [dbo].[numbers]([square] ASC)
+                        WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+                    ");
+                    sw.Exec(@"
+                        CREATE UNIQUE NONCLUSTERED INDEX [IX_sqrt] ON [dbo].[numbers]([sqrt] ASC)
+                        WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+                    ");
+                }
             }
         }
 
