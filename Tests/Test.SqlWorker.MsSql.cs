@@ -319,5 +319,31 @@ namespace Tests.SqlWorker.MsSql
                 ++n;
             }
         }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task MultipleEnumeration()
+        {
+            await using var sw = new MsSqlWorker(ConnectionString);
+            
+            var enumeration = sw.Query(
+                @"select number, square, sqrt, is_prime from dbo.numbers n where n.number < @maxNumber",
+                dr => new {
+                    i = (int)dr[0],
+                    square = (long)dr[1],
+                },
+                new SwParameters
+                {
+                    { "maxNumber", 10 },
+                }
+            );
+
+            for (var i = 1; i <= 2; ++i)
+            {
+                foreach (var x in enumeration)
+                {
+                    Assert.AreEqual(x.square, x.i * x.i);
+                }
+            }
+        }
     }
 }
