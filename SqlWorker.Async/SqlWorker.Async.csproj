@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SqlWorker" Version="3.1.255" />
+    <PackageReference Include="SqlWorker" Version="3.1.269" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
   </ItemGroup>
 
