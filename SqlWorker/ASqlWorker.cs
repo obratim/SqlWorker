@@ -65,6 +65,7 @@ namespace SqlWorker
                 cmd.CommandTimeout = timeout ?? DefaultExecutionTimeout;
                 if (Connection.State != ConnectionState.Open) Connection.Open();
                 result = cmd.ExecuteNonQuery();
+                cmd.Parameters?.Clear();
             }
             return result;
 		}
