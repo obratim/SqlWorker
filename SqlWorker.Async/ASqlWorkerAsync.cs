@@ -95,7 +95,12 @@ namespace SqlWorker.Async
         {
             var conn = Connection as DbConnection;
             if (conn == null)
-                throw new NotSupportedException(DbConnectionException);
+            {
+                if (CloseConnectionOnDispose && Connection.State != ConnectionState.Closed && Connection.State != ConnectionState.Broken)
+                    Connection.Close();
+                
+                Connection.Dispose();
+            }
                 
 			if (CloseConnectionOnDispose && Connection.State != ConnectionState.Closed && Connection.State != ConnectionState.Broken)
 				await conn.CloseAsync();
