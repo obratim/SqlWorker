@@ -208,7 +208,7 @@ CREATE TABLE [{0}] (
         /// <param name="timeout">Timeout</param>
         /// <param name="mappings">Mappings for bulk copy</param>
         /// <param name="createTableIfNotExists">Checks if table exists and creates if necessary</param>
-        /// <param name="streamed"></param>
+        /// <param name="enableStreaming"></param>
 		virtual public void BulkCopyWithReflection<T>(
             IEnumerable<T> source,
             string targetTableName,

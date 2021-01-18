@@ -22,7 +22,11 @@ namespace SqlWorker
         /// </summary>
         public int DefaultExecutionTimeout { get; set; } = 30;
 
-		public bool CloseConnectionOnDispose { get; set; } = true;
+		/// <summary>
+		/// Dispose DbConnection when SqlWorker is disposed
+		/// </summary>
+		/// <value></value>
+        public bool CloseConnectionOnDispose { get; set; } = true;
 
         #region Transactions
 
@@ -79,6 +83,7 @@ namespace SqlWorker
         /// <param name="parameters">Query parameters</param>
         /// <param name="timeout">Timeout in seconds</param>
         /// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
+        /// <param name="commandBehavior">Hint for exucuting command <see cref="https://docs.microsoft.com/dotnet/api/system.data.commandbehavior" /></param>
         /// <param name="transaction">If transaction was opened, it must be specified</param>
         /// <returns>T-object, result of delegate execution</returns>
         virtual public T ManualProcessing<T>(

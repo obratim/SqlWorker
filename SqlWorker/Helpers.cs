@@ -36,7 +36,6 @@ namespace SqlWorker
         /// <param name="prefix">Property name prefix</param>
         /// <param name="getter">Func for getting child value of specified type from root TelemetryData value</param>
         /// <param name="initializer">Action for creating child value of specified type in root TelemetryData value</param>
-        /// <param name="getterAttributeName">Func for getting retreive property name from <see cref="TPropertyAttribute"/></param>
         /// <returns>IEnumerable of KeyValuePair where Key - full name of a property and Value - tuple of instruments for working with the property, getting and setting values</returns>
         public static IEnumerable<KeyValuePair<string, Tuple<PropertyInfo, Func<T, object>, Action<T>>>>
             GetFlatPropertyInfos<T>(
@@ -98,7 +97,7 @@ namespace SqlWorker
             }
         }
 
-        public static readonly HashSet<Type> SupportedBasicTypesDictionary =
+        private static readonly HashSet<Type> SupportedBasicTypesDictionary =
         new HashSet<Type>
         {
             typeof(string),
