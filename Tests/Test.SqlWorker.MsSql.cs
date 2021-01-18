@@ -27,14 +27,22 @@ namespace Tests.SqlWorker.MsSql
         [TestInitialize]
         public void TestConfig()
         {
+            bool dbExists;
+
             Assert.IsNotNull(ConnectionStringMaster);
             Assert.IsNotNull(ConnectionString);
             using (var sw = new MsSqlWorker(ConnectionStringMaster))
             {
                 Assert.AreEqual("hello", sw.Query("select 'hello'", dr => dr[0]).Single());
+
+                dbExists = sw.Query(
+                    @"declare @true bit = 1, @false bit = 0;
+                    SELECT CASE when DB_ID('sqlworker_test') IS NULL then @false else @true end;",
+                    dr => (bool)dr[0])
+                    .Single();
             }
 
-            if (Config["recreateDb"]?.ToLower() == "true")
+            if (Config["recreateDb"]?.ToLower() == "true" || !dbExists)
             {
                 using (var sw = new MsSqlWorker(ConnectionStringMaster))
                 {
