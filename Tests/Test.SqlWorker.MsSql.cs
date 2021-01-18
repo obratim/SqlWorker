@@ -83,6 +83,27 @@ namespace Tests.SqlWorker.MsSql
                         CREATE UNIQUE NONCLUSTERED INDEX [IX_sqrt] ON [dbo].[numbers]([sqrt] ASC)
                         WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
                     ");
+
+                    sw.Exec(@"
+CREATE PROCEDURE GetPrimeNumber
+	@primePosition int,
+    @number int output,
+    @square bigint output,
+    @sqrt float output
+AS
+BEGIN
+    SELECT
+        @number = number,
+        @square = square,
+        @sqrt = sqrt
+    FROM numbers
+    WHERE is_prime = 1
+    ORDER BY number
+    OFFSET @primePosition - 1 ROWS
+    FETCH NEXT 1 ROWS ONLY;
+
+    RETURN @@ROWCOUNT;
+END");
                 }
             }
         }
@@ -388,6 +409,52 @@ namespace Tests.SqlWorker.MsSql
                     Assert.AreEqual(x.square, x.i * x.i);
                 }
             }
+        }
+
+        [TestMethod]
+        public async Task CheckOutputParameters()
+        {
+            await using var sw = new MsSqlWorker(ConnectionString);
+
+            ASqlWorker<ParametersConstuctorsForMsSql>.DbParametersConstructor args = new SwParameters
+            {
+                { "primePosition", 1 },
+                { "number", 0, System.Data.DbType.Int32, System.Data.ParameterDirection.Output },
+                { "square", 0L, DbType.Int64, ParameterDirection.Output },
+                { "sqrt", 0.0, DbType.Double, ParameterDirection.Output },
+                { "result", 0, DbType.Int32, ParameterDirection.ReturnValue },
+            };
+
+            await sw.ExecAsync("GetPrimeNumber", args, commandType: System.Data.CommandType.StoredProcedure);
+            Assert.AreEqual((int)args[1].Value, 2);
+            Assert.AreEqual((int)args[4].Value, 1);
+
+            args[0].Value = 2;
+            await sw.ExecAsync("GetPrimeNumber", args, commandType: System.Data.CommandType.StoredProcedure);
+            Assert.AreEqual((int)args["number"].Value, 3);
+            Assert.AreEqual((int)args["result"].Value, 1);
+            
+            Func<int, int, int, Task> assert = async (position, number, result) =>
+            {
+                args["primePosition"].Value = position;
+                await sw.ExecAsync("GetPrimeNumber", args, commandType: System.Data.CommandType.StoredProcedure);
+                Assert.AreEqual((int)args["number"].Value, number);
+                Assert.AreEqual((int)args["result"].Value, result);
+            };
+            
+            await assert(3, 5, 1);
+            await assert(4, 7, 1);
+            await assert(5, 11, 1);
+            await assert(6, 13, 1);
+            await assert(7, 17, 1);
+            await assert(8, 19, 1);
+            await assert(9, 23, 1);
+            await assert(10, 29, 1);
+            await assert(11, 31, 1);
+            
+            args[0].Value = 100500;
+            await sw.ExecAsync("GetPrimeNumber", args, commandType: System.Data.CommandType.StoredProcedure);
+            Assert.AreEqual((int)args["result"].Value, 0);
         }
     }
 }
