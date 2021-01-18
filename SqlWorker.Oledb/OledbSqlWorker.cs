@@ -9,7 +9,18 @@ namespace SqlWorker
 	/// <summary>
 	/// Generator of OleDbParameter objects
 	/// </summary>
-	public class ParametersConstructorForOledb : ADbParameterCreator<OleDbParameter> { }
+	public class ParametersConstructorForOledb : ADbParameterCreator<OleDbParameter>
+    {
+		/// <summary>
+		/// Set parameter size (for types with variable size)
+		/// </summary>
+		/// <param name="parameter">The parameter</param>
+		/// <param name="size">Parameter size</param>
+        protected override void SetSize(OleDbParameter parameter, int size)
+        {
+            parameter.Size = size;
+        }
+    }
 
     /// <summary>
     /// Adapter for OLE DB

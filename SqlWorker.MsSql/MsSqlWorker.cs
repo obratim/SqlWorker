@@ -12,7 +12,18 @@ namespace SqlWorker
 	/// <summary>
 	/// Generator of SqlParameter objects
 	/// </summary>
-	public class ParametersConstuctorsForMsSql : ADbParameterCreator<SqlParameter> { }
+	public class ParametersConstuctorsForMsSql : ADbParameterCreator<SqlParameter>
+    {
+		/// <summary>
+		/// Set parameter size (for types with variable size)
+		/// </summary>
+		/// <param name="parameter">The parameter</param>
+		/// <param name="size">Parameter size</param>
+        protected override void SetSize(SqlParameter parameter, int size)
+        {
+            parameter.Size = size;
+        }
+    }
 
     /// <summary>
     /// Adapter for MS Sql Server

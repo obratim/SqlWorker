@@ -9,7 +9,18 @@ using System.Threading.Tasks;
 
 namespace SqlWorker
 {
-	public class ParametersConstructorForPostgreSql : ADbParameterCreator<NpgsqlParameter> { }
+	public class ParametersConstructorForPostgreSql : ADbParameterCreator<NpgsqlParameter>
+    {
+		/// <summary>
+		/// Set parameter size (for types with variable size)
+		/// </summary>
+		/// <param name="parameter">The parameter</param>
+		/// <param name="size">Parameter size</param>
+        protected override void SetSize(NpgsqlParameter parameter, int size)
+        {
+            parameter.Size = size;
+        }
+    }
 
     public class PostgreSqlWorker
 #if NETSTANDARD2_1

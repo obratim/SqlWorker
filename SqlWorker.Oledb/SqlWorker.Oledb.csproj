@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SqlWorker" Version="3.1.255" />
+    <PackageReference Include="SqlWorker" Version="3.1.281" />
     <PackageReference Include="System.Data.OleDb" Version="4.7.1" />
   </ItemGroup>
 

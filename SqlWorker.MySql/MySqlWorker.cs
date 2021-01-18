@@ -8,7 +8,18 @@ using System.Threading.Tasks;
 
 namespace SqlWorker
 {
-	public class ParametersConstructorForMySql : ADbParameterCreator<MySql.Data.MySqlClient.MySqlParameter> { }
+	public class ParametersConstructorForMySql : ADbParameterCreator<MySql.Data.MySqlClient.MySqlParameter>
+    {
+		/// <summary>
+		/// Set parameter size (for types with variable size)
+		/// </summary>
+		/// <param name="parameter">The parameter</param>
+		/// <param name="size">Parameter size</param>
+        protected override void SetSize(MySql.Data.MySqlClient.MySqlParameter parameter, int size)
+        {
+            parameter.Size = size;
+        }
+    }
 
     public class MySqlWorker
 #if NETSTANDARD2_1
