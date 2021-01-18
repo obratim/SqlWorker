@@ -83,7 +83,7 @@ namespace SqlWorker
 			/// <summary>
 			/// Implicitly converts from a single DbParameter to DbParametersConstructor
 			/// </summary>
-			/// <param name="vals">The source elements</param>
+			/// <param name="parameter">The single parameter for query</param>
 			public static implicit operator DbParametersConstructor(System.Data.Common.DbParameter parameter)
 			{
 				return new DbParametersConstructor(new IDataParameter[1] { parameter });
