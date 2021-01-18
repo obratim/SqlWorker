@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 
 namespace SqlWorker
 {
@@ -61,6 +62,14 @@ namespace SqlWorker
 			/// <param name="i">The index of requested parameter</param>
 			/// <returns>The requested parameter</returns>
 			public IDataParameter this[int i] { get { return Parameters[i]; } }
+
+			/// <summary>
+			/// Returns specified element of parameters's set
+			/// </summary>
+			/// <param name="name">The name of requested parameter</param>
+			/// <returns>The requested parameter</returns>
+			/// <exception cref="T:System.InvalidOperationException">No parameters has specified <paramref name="name" />.-or-More than one parameter has specified <paramref name="name" />.-or-The source sequence is empty.</exception>
+			public IDataParameter this[string name] { get { return Parameters.Single(p => p.ParameterName == name); } }
 
 			/// <summary>
 			/// Implicitly converts current object to DbParameter[]
