@@ -1,6 +1,6 @@
 ﻿*** create package: ***
 
-rm -rf publish/nuget/ && rm -rf SqlWorker/obj/ && rm -rf SqlWorker.MsSql/obj/ && ./pack.sh
+rm -rf publish/nuget/ && rm -rf SqlWorker/obj/ && rm -rf SqlWorker.MsSql/obj/ && ./pack.sh "<comment>"
 
 *** publish: ***
 
