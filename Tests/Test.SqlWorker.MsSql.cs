@@ -104,6 +104,17 @@ BEGIN
 
     RETURN @@ROWCOUNT;
 END");
+                    sw.Exec(@"
+CREATE PROCEDURE NumberName
+    @number int,
+    @name nvarchar(100) output
+AS
+BEGIN
+    SELECT @name = as_text
+    FROM numbers
+    WHERE number = @number
+END
+");
                 }
             }
         }
@@ -416,7 +427,7 @@ END");
         {
             await using var sw = new MsSqlWorker(ConnectionString);
 
-            ASqlWorker<ParametersConstuctorsForMsSql>.DbParametersConstructor args = new SwParameters
+            MsSqlWorker.DbParametersConstructor args = new SwParameters
             {
                 { "primePosition", 1 },
                 { "number", 0, System.Data.DbType.Int32, System.Data.ParameterDirection.Output },
@@ -455,6 +466,27 @@ END");
             args[0].Value = 100500;
             await sw.ExecAsync("GetPrimeNumber", args, commandType: System.Data.CommandType.StoredProcedure);
             Assert.AreEqual((int)args["result"].Value, 0);
+        }
+
+        [TestMethod]
+        public async Task SizeForSqlParameter()
+        {
+            await using var sw = new MsSqlWorker(ConnectionString);
+
+            MsSqlWorker.DbParametersConstructor args = new SwParameters
+            {
+                { "number", 1 },
+                { "name", default(string), DbType.String, ParameterDirection.Output, 100 },
+            };
+
+            Func<int, string, Task> assert = async (number, name) => {
+                args[0].Value = number;
+                await sw.ExecAsync("NumberName", args, commandType: CommandType.StoredProcedure);
+                Assert.AreEqual(args["name"].Value, name);
+            };
+
+            await assert(2, "two");
+            await assert(3, "three");
         }
     }
 }

@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-    <PackageReference Include="SqlWorker.Async" Version="3.1.263" />
+    <PackageReference Include="SqlWorker.Async" Version="3.1.270" />
   </ItemGroup>
 
   <PropertyGroup>
