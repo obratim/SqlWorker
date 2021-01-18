@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SqlWorker;
@@ -75,6 +77,14 @@ namespace Tests.SqlWorker.MsSql
                     ");
                 }
             }
+        }
+
+        [TestMethod]
+        public void CanExec()
+        {
+            using var sw = new MsSqlWorker(ConnectionString);
+
+            sw.Exec("DELETE FROM sqlworker_test.dbo.numbers");
         }
 
         [TestMethod]
