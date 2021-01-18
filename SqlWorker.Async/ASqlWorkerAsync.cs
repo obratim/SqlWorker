@@ -7,11 +7,21 @@ using System.Threading.Tasks;
 
 namespace SqlWorker.Async
 {
+	/// <summary>
+	/// Advanced SqlWorker with async methods
+	/// </summary>
+	/// <typeparam name="TPC">Implementation of IDbParameterCreator interface</typeparam>
     public abstract class ASqlWorkerAsync<TPC> : ASqlWorker<TPC>, IAsyncDisposable
 		where TPC : IDbParameterCreator, new()
     {
         private const string DbConnectionException = "Async calls not supported in this implementation of SqlWorker";
 
+        /// <summary>
+        /// Opens transaction asyncroniously
+        /// </summary>
+        /// <param name="isolationLevel">Isolation level for transaction</param>
+        /// <param name="token">Cancellation token for transaction</param>
+        /// <returns>Transaction</returns>
         public async ValueTask<DbTransaction> TransactionBeginAsync(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken token = default(CancellationToken))
         {
             var conn = Connection as DbConnection;
@@ -65,6 +75,15 @@ namespace SqlWorker.Async
             cmd.Parameters?.Clear();
         }
 
+		/// <summary>
+		/// Executes specified query asyncroniously
+		/// </summary>
+		/// <param name="command">Sql string or stored procedure name</param>
+		/// <param name="parameters">Query parameters</param>
+		/// <param name="timeout">Timeout in seconds</param>
+		/// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
+		/// <param name="transaction">If transaction was opened, it must be specified</param>
+		/// <returns>Result code of the query</returns>
         public async Task<int> ExecAsync(
 			string command,
 			DbParametersConstructor parameters = null,
@@ -91,6 +110,10 @@ namespace SqlWorker.Async
             return result;
         }
     
+        /// <summary>
+        /// Disposes asyncroniously
+        /// </summary>
+        /// <returns></returns>
         public async ValueTask DisposeAsync()
         {
             var conn = Connection as DbConnection;

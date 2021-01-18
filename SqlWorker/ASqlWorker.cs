@@ -7,7 +7,7 @@ namespace SqlWorker
 	/// <summary>
 	/// Core class, where main logic is realised. Dispose to close connection
 	/// </summary>
-	/// <typeparam name="TPC">Realisation of AbstractDbParameterConstructors abstract class required</typeparam>
+	/// <typeparam name="TPC">Implementation of IDbParameterCreator interface</typeparam>
 	public abstract partial class ASqlWorker<TPC>
 		: IDisposable
 		where TPC : IDbParameterCreator, new()
