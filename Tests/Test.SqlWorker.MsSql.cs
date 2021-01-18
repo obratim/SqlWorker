@@ -107,7 +107,7 @@ namespace Tests.SqlWorker.MsSql
                         new SqlParameter("number", 1),
                         new SqlParameter("square", 1L),
                         new SqlParameter("sqrt", 1.0),
-                        new SqlParameter("is_prime", true),
+                        new SqlParameter("is_prime", false),
                         new SqlParameter("as_text", "one"),
                     });
                 Assert.AreEqual(1, insertsCount);
@@ -122,7 +122,7 @@ namespace Tests.SqlWorker.MsSql
                         as_text: dr.GetNullableString(4)
                     ))
                     .Single();
-                Assert.AreEqual((1, 1L, 1.0, true, "one"), inserted);
+                Assert.AreEqual((1, 1L, 1.0, false, "one"), inserted);
             }
         }
 
@@ -321,7 +321,7 @@ namespace Tests.SqlWorker.MsSql
 
             await using var tran = await sw.TransactionBeginAsync();
 
-            var n = 5;
+            var n = 1;
             await foreach (var x in sw.QueryAsync(
                 @"select number, square, sqrt, is_prime from dbo.numbers n",
                 dr => new {
