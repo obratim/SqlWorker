@@ -129,7 +129,7 @@ namespace SqlWorker
 				var result = new IDataParameter[vals.Count];
 				for (int i = 0; i < vals.Count; ++i)
 				{
-					result[i] = Generator.Create(vals[i].Item1, vals[i].Item2, vals[i].Item3, vals[i].Item4);
+					result[i] = Generator.Create(vals[i].Item1, vals[i].Item2, vals[i].Item3, vals[i].Item4, vals[i].Item5);
 				}
 				return new DbParametersConstructor(result);
 			}
