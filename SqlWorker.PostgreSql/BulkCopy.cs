@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using System.Threading.Tasks;
 using Npgsql;
 
@@ -132,5 +133,9 @@ namespace SqlWorker
                 await writer.CompleteAsync();
             }
         }
+
+        public static string BulkCopyCommand(this DataColumnCollection cols) => $"COPY data ({string.Join(", ", cols.Cast<DataColumn>().Select(col => col.ColumnName))}) FROM STDIN (FORMAT BINARY)";
+
+        public static string BulkCopyCommand(this IDataReader dr) => BulkCopyCommand(dr.GetSchemaTable().Columns);
     }
 }
