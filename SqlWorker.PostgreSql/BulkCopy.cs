@@ -68,9 +68,9 @@ namespace SqlWorker
                             break;
                     }
                 }
-
-                writer.Complete();
             }
+
+            writer.Complete();
         }
 
         public static async Task PerformBulkCopyAsync(this DbDataReader dr, NpgsqlBinaryImporter writer, DataColumnCollection columns = null)
@@ -129,9 +129,9 @@ namespace SqlWorker
                             break;
                     }
                 }
-
-                await writer.CompleteAsync();
             }
+
+            await writer.CompleteAsync();
         }
 
         public static string BulkCopyCommand(this DataColumnCollection cols) => $"COPY data ({string.Join(", ", cols.Cast<DataColumn>().Select(col => col.ColumnName))}) FROM STDIN (FORMAT BINARY)";
