@@ -339,7 +339,7 @@ END
 
             var n = 1;
             await foreach (var x in sw.QueryAsync(
-                @"select number, square, sqrt, is_prime from dbo.numbers n",
+                @"select number, square, sqrt, is_prime from numbers n",
                 dr => new {
                     number = (int)dr[0],
                     square = (long)dr[1],
@@ -360,7 +360,7 @@ END
             await using var sw = new PostgreSqlWorker(ConnectionString);
             
             var enumeration = sw.Query(
-                @"select number, square, sqrt, is_prime from dbo.numbers n where n.number < @maxNumber",
+                @"select number, square, sqrt, is_prime from numbers n where n.number < @maxNumber",
                 dr => new {
                     i = (int)dr[0],
                     square = (long)dr[1],
@@ -386,7 +386,7 @@ END
             await using var sw = new PostgreSqlWorker(ConnectionString);
             
             var enumeration = sw.QueryAsync(
-                @"select number, square, sqrt, is_prime from dbo.numbers n where n.number < @maxNumber",
+                @"select number, square, sqrt, is_prime from numbers n where n.number < @maxNumber",
                 dr => new {
                     i = (int)dr[0],
                     square = (long)dr[1],
