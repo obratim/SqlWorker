@@ -58,38 +58,22 @@ namespace Tests.SqlWorker.Npgsql
                 using (var sw = new PostgreSqlWorker(ConnectionString))
                 {
                     Assert.AreEqual("hello", sw.Query("select 'hello'", dr => dr[0]).Single());
-                }
 
-                using (var sw = new PostgreSqlWorker(ConnectionString))
-                using (var dt = new System.Data.DataTable("numbers"))
-                {
-                    dt.Columns.Add("number", typeof(int));
-                    dt.Columns.Add("square", typeof(long));
-                    dt.Columns.Add("sqrt", typeof(double));
-                    dt.Columns.Add("is_prime", typeof(bool));
-                    dt.Columns.Add(new System.Data.DataColumn("as_text", typeof(string)) { MaxLength = 400 });
-
-                    //sw.CreateTableByDataTable(dt, true);
-
-                    sw.Exec(@"
-                        CREATE UNIQUE CLUSTERED INDEX [PK_number] ON [dbo].[numbers]([number] ASC)
-                        WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-                    ");
-                    sw.Exec(@"
-                        CREATE UNIQUE NONCLUSTERED INDEX [IX_square] ON [dbo].[numbers]([square] ASC)
-                        WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-                    ");
-                    sw.Exec(@"
-                        CREATE UNIQUE NONCLUSTERED INDEX [IX_sqrt] ON [dbo].[numbers]([sqrt] ASC)
-                        WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-                    ");
-
+                    sw.Exec(@"CREATE TABLE numbers
+(
+    number integer primary key not null,
+    square bigint not null,
+    sqrt double precision not null,
+    is_prime boolean not null,
+    as_text varchar(400)
+);");
+/*
                     sw.Exec(@"
 CREATE PROCEDURE GetPrimeNumber
-	@primePosition int,
-    @number int output,
+	@primePosition integer,
+    @number integer output,
     @square bigint output,
-    @sqrt float output
+    @sqrt double precision output
 AS
 BEGIN
     SELECT
@@ -106,8 +90,8 @@ BEGIN
 END");
                     sw.Exec(@"
 CREATE PROCEDURE NumberName
-    @number int,
-    @name nvarchar(100) output
+    @number integer,
+    @name varchar(100) output
 AS
 BEGIN
     SELECT @name = as_text
@@ -115,6 +99,7 @@ BEGIN
     WHERE number = @number
 END
 ");
+*/
                 }
             }
         }
@@ -124,7 +109,7 @@ END
         {
             using var sw = new PostgreSqlWorker(ConnectionString);
 
-            sw.Exec("DELETE FROM sqlworker_test.dbo.numbers");
+            sw.Exec("DELETE FROM numbers");
         }
 
         [TestMethod]
@@ -270,7 +255,7 @@ END
             {
                 Assert.AreEqual(
                     expected: 0,
-                    actual: sw.Query("select COUNT(*) from numbers where number = 100500", dr => (int)dr[0]).Single());
+                    actual: sw.Query("select COUNT(*) from numbers where number = 100500", dr => (long)dr[0]).Single()); // in PostgreSQL COUNT(*) returns bigint
             }
         }
 
@@ -297,7 +282,7 @@ END
             {
                 Assert.AreEqual(
                     expected: 0,
-                    actual: sw.Query("select COUNT(*) from numbers where number = 100500", dr => (int)dr[0]).Single());
+                    actual: sw.Query("select COUNT(*) from numbers where number = 100500", dr => (long)dr[0]).Single()); // in PostgreSQL COUNT(*) returns bigint
             }
         }
 
