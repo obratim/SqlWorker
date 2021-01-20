@@ -51,6 +51,12 @@ namespace SqlWorker
                         case ulong x:
                             writer.Write(x);
                             break;
+                        case double x:
+                            writer.Write(x);
+                            break;
+                        case float x:
+                            writer.Write(x);
+                            break;
                         case Guid x:
                             writer.Write(x);
                             break;
@@ -58,6 +64,9 @@ namespace SqlWorker
                             writer.Write(x);
                             break;
                         case TimeSpan x:
+                            writer.Write(x);
+                            break;
+                        case char x:
                             writer.Write(x);
                             break;
                         case string x:
@@ -134,8 +143,14 @@ namespace SqlWorker
             await writer.CompleteAsync();
         }
 
-        public static string BulkCopyCommand(this DataColumnCollection cols) => $"COPY data ({string.Join(", ", cols.Cast<DataColumn>().Select(col => col.ColumnName))}) FROM STDIN (FORMAT BINARY)";
+        private static readonly System.Text.RegularExpressions.Regex TableNameChecker = new System.Text.RegularExpressions.Regex(@"\w[\w\d]+", System.Text.RegularExpressions.RegexOptions.Compiled);
+        public static string BulkCopyCommand(this DataColumnCollection cols, string tableName)
+        {
+            if (!TableNameChecker.IsMatch(tableName))
+                throw new ArgumentException("Incorrect table name: " + tableName);
+            return $"COPY {tableName} ({string.Join(", ", cols.Cast<DataColumn>().Select(col => col.ColumnName))}) FROM STDIN (FORMAT BINARY)";
+        }
 
-        public static string BulkCopyCommand(this IDataReader dr) => BulkCopyCommand(dr.GetSchemaTable().Columns);
+        public static string BulkCopyCommand(this IDataReader dr, string tableName) => BulkCopyCommand(dr.GetSchemaTable().Columns, tableName);
     }
 }
