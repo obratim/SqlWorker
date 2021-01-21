@@ -50,6 +50,7 @@ namespace SqlWorker
         public void BulkCopy(DataTable source, string targetTableName, PostreSqlBulkCopySettings bulkCopySettings = null)
         {
             using var dr = source.DataSet.CreateDataReader();
+            if (Connection.State != ConnectionState.Open) Connection.Open();
             using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(source.Columns.BulkCopyCommand(targetTableName));
 
             dr.PerformBulkCopy(writer, source.Columns);
@@ -58,6 +59,7 @@ namespace SqlWorker
         public void BulkCopy<TItem>(IEnumerable<TItem> source, string targetTableName, PostreSqlBulkCopySettings bulkCopySettings = null)
         {
             using var dr = source.ToDbDataReader();
+            if (Connection.State != ConnectionState.Open) Connection.Open();
             using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(dr.BulkCopyCommand(targetTableName));
 
             dr.PerformBulkCopy(writer);
