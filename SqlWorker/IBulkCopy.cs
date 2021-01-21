@@ -41,7 +41,7 @@ namespace SqlWorker
         /// <param name="source">The source collection</param>
         /// <param name="targetTableName">Name of the table, where data will be copied</param>
         /// <param name="bulkCopySettings">Settings for this implementation of bulk copy</param>
-		void BulkCopyWithReflection<TItem>(
+		void BulkCopy<TItem>(
             IEnumerable<TItem> source,
             string targetTableName,
             T bulkCopySettings = default(T));

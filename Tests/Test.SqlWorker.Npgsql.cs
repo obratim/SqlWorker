@@ -309,7 +309,7 @@ $$;");
                                 .Select(i => new { number = i, square = (long)i * i, sqrt = Math.Sqrt(i), is_prime = _primes.Contains(i), as_text = (string)null })
                                 .ToArray();
 
-                        sw.BulkCopyWithReflection(
+                        sw.BulkCopy(
                             source: rangeToInsert,
                             targetTableName: "numbers");
                         tran.Commit();
