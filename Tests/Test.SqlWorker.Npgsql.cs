@@ -14,8 +14,8 @@ namespace Tests.SqlWorker.Npgsql
     public class TestNpgsqlWorker
     {
         private readonly IConfigurationRoot Config;
-        private string ConnectionString => Config["connectionString"];
-        private string ConnectionStringMaster => Config["connectionStringMaster"];
+        private string ConnectionString => Config["connectionStringPostgreSql"];
+        private string ConnectionStringMaster => Config["connectionStringMasterPostgreSql"];
 
 		private static HashSet<int> _primes = new HashSet<int>(Enumerable.Range(1, 1000).Where(i => !Enumerable.Range(2, (int)Math.Sqrt(i)).Any(j => i % j == 0)));
 
