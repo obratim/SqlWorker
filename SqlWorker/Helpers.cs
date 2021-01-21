@@ -235,5 +235,7 @@ namespace SqlWorker
 
 			return result;
 		}
+
+        public static EnumerableDbDataReader<T> ToDbDataReader<T>(this IEnumerable<T> sequence) => new EnumerableDbDataReader<T>(sequence);
 	}
 }

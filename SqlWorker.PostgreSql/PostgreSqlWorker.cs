@@ -28,6 +28,8 @@ namespace SqlWorker
 #else
     : ASqlWorker<ParametersConstructorForPostgreSql>
 #endif
+        , IBulkCopy<PostreSqlBulkCopySettings>
+        , IBulkCopyWithReflection<PostreSqlBulkCopySettings>
     {
         private string _connectionStr;
 
@@ -43,6 +45,22 @@ namespace SqlWorker
                 if (_conn == null) _conn = new NpgsqlConnection(_connectionStr);
                 return _conn;
             }
+        }
+
+        public void BulkCopy(DataTable source, string targetTableName, PostreSqlBulkCopySettings bulkCopySettings = null)
+        {
+            using var dr = source.DataSet.CreateDataReader();
+            using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(source.Columns.BulkCopyCommand(targetTableName));
+
+            dr.PerformBulkCopy(writer, source.Columns);
+        }
+
+        public void BulkCopy<TItem>(IEnumerable<TItem> source, string targetTableName, PostreSqlBulkCopySettings bulkCopySettings = null)
+        {
+            using var dr = source.ToDbDataReader();
+            using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(dr.BulkCopyCommand(targetTableName));
+
+            dr.PerformBulkCopy(writer);
         }
     }
 }
