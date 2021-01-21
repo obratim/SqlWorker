@@ -1,6 +1,6 @@
 #! /bin/bash
 export SW_DESCRIPTION='Minimalistic API allows developer to most easily perform operations with database. By default, library automatically manages DbConnection, DbTransaction, DbCommand and DbDataReader objects. Developer only writes queries.'
-export SW_VERSION="3.1.$(./get-version.sh)"
+export SW_VERSION="3.2.$(./get-version.sh)"
 export SW_NOTES="$(hg parent --template '{desc}')"
 export SW_COPYRIGHT="Copyright $(date +%Y)"
 export SW_AUTHOR="vkoryagin"
