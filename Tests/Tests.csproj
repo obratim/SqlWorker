@@ -12,13 +12,13 @@
     <PackageReference Include="MSTest.TestAdapter" Version="2.1.0" />
     <PackageReference Include="MSTest.TestFramework" Version="2.1.0" />
     <PackageReference Include="coverlet.collector" Version="1.2.0" />
-    <PackageReference Include="npgsql" Version="5.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SqlWorker\SqlWorker.csproj" />
     <ProjectReference Include="..\SqlWorker.MsSql\SqlWorker.MsSql.csproj" />
     <ProjectReference Include="..\SqlWorker.PostgreSql\SqlWorker.PostgreSql.csproj" />
+    <ProjectReference Include="..\SqlWorker\SqlWorker.csproj" />
+    <ProjectReference Include="..\SqlWorker.Async\SqlWorker.Async.csproj" />
   </ItemGroup>
 
   <ItemGroup>
