@@ -300,41 +300,44 @@ $$;");
         {
             using (var sw = new PostgreSqlWorker(ConnectionString))
             {
+                var copyInTransaction = true;
                 void bulkInsertAndCheck(int start, int length, int chunkSize)
                 {
-                    using (var tran = sw.TransactionBegin())
-                    {
-                        var rangeToInsert = Enumerable
-                                .Range(start, length)
-                                .Select(i => new { number = i, square = (long)i * i, sqrt = Math.Sqrt(i), is_prime = _primes.Contains(i), as_text = (string)null })
-                                .ToArray();
+                    using var tran = copyInTransaction ? sw.TransactionBegin() : null;
 
-                        sw.BulkCopy(
-                            source: rangeToInsert,
-                            targetTableName: "numbers");
-                        tran.Commit();
+                    var rangeToInsert = Enumerable
+                            .Range(start, length)
+                            .Select(i => new { number = i, square = (long)i * i, sqrt = Math.Sqrt(i), is_prime = _primes.Contains(i), as_text = (string)null })
+                            .ToArray();
 
-                        CollectionAssert.AreEquivalent(
-                            expected: rangeToInsert,
-                            actual: sw.Query(
-                                "select * from numbers where number >= @min_number",
-                                dr => new { number = (int)dr[0], square = (long)dr[1], sqrt = (double)dr[2], is_prime = (bool)dr[3], as_text = dr.GetNullableString(4) },
-                                parameters: new SwParameters { { "min_number", start } })
-                                .ToArray());
-                    }
+                    sw.BulkCopy(
+                        source: rangeToInsert,
+                        targetTableName: "numbers");
+                    tran?.Commit();
+
+                    CollectionAssert.AreEquivalent(
+                        expected: rangeToInsert,
+                        actual: sw.Query(
+                            "select * from numbers where number >= @min_number",
+                            dr => new { number = (int)dr[0], square = (long)dr[1], sqrt = (double)dr[2], is_prime = (bool)dr[3], as_text = dr.GetNullableString(4) },
+                            parameters: new SwParameters { { "min_number", start } })
+                            .ToArray());
                 }
 
                 bulkInsertAndCheck(5, 3, 1);
                 bulkInsertAndCheck(8, 7, 2);
                 bulkInsertAndCheck(15, 10, 3);
                 bulkInsertAndCheck(25, 11, 3);
+                copyInTransaction = false;
                 bulkInsertAndCheck(36, 16, 5);
                 bulkInsertAndCheck(52, 18, 5);
                 bulkInsertAndCheck(70, 20, 5);
                 bulkInsertAndCheck(90, 20, 7);
+                copyInTransaction = true;
                 bulkInsertAndCheck(110, 0, 11);
                 bulkInsertAndCheck(110, 10, 11);
                 bulkInsertAndCheck(120, 11, 11);
+                copyInTransaction = false;
                 bulkInsertAndCheck(131, 20, 13);
             }
         }
