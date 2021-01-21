@@ -67,39 +67,48 @@ namespace Tests.SqlWorker.Npgsql
     is_prime boolean not null,
     as_text varchar(400)
 );");
-/*
+
                     sw.Exec(@"
-CREATE PROCEDURE GetPrimeNumber
-	@primePosition integer,
-    @number integer output,
-    @square bigint output,
-    @sqrt double precision output
-AS
+CREATE PROCEDURE get_prime_number (
+	primePosition integer,
+    INOUT number integer,
+    INOUT square bigint,
+    INOUT sqrt double precision,
+    INOUT rows int)
+LANGUAGE 'plpgsql'
+AS $$
 BEGIN
     SELECT
-        @number = number,
-        @square = square,
-        @sqrt = sqrt
-    FROM numbers
-    WHERE is_prime = 1
-    ORDER BY number
-    OFFSET @primePosition - 1 ROWS
-    FETCH NEXT 1 ROWS ONLY;
+        n.number,
+        n.square,
+        n.sqrt
+    FROM numbers AS n
+    INTO
+        number,
+        square,
+        sqrt
+    WHERE n.is_prime = true
+    ORDER BY n.number
+    LIMIT 1
+    OFFSET primePosition - 1;
 
-    RETURN @@ROWCOUNT;
-END");
-                    sw.Exec(@"
-CREATE PROCEDURE NumberName
-    @number integer,
-    @name varchar(100) output
-AS
-BEGIN
-    SELECT @name = as_text
-    FROM numbers
-    WHERE number = @number
+    GET DIAGNOSTICS rows = ROW_COUNT;
 END
-");
-*/
+$$;");
+                    sw.Exec(@"
+CREATE PROCEDURE number_name (
+    p_number integer,
+    INOUT p_name varchar(100))
+LANGUAGE 'plpgsql'
+AS $$
+BEGIN
+    SELECT as_text
+    FROM numbers AS n
+    INTO p_name
+    WHERE n.number = p_number;
+END
+$$;");
+
                 }
             }
         }
@@ -414,27 +423,27 @@ END
             PostgreSqlWorker.DbParametersConstructor args = new SwParameters
             {
                 { "primePosition", 1 },
-                { "number", 0, System.Data.DbType.Int32, System.Data.ParameterDirection.Output },
-                { "square", 0L, DbType.Int64, ParameterDirection.Output },
-                { "sqrt", 0.0, DbType.Double, ParameterDirection.Output },
-                { "result", 0, DbType.Int32, ParameterDirection.ReturnValue },
+                { "number", 0, System.Data.DbType.Int32, System.Data.ParameterDirection.InputOutput },
+                { "square", 0L, DbType.Int64, ParameterDirection.InputOutput },
+                { "sqrt", 0.0, DbType.Double, ParameterDirection.InputOutput },
+                { "rows", 0, DbType.Int32, ParameterDirection.InputOutput },
             };
 
-            await sw.ExecAsync("GetPrimeNumber", args, commandType: System.Data.CommandType.StoredProcedure);
-            Assert.AreEqual((int)args[1].Value, 2);
-            Assert.AreEqual((int)args[4].Value, 1);
+            await sw.ExecAsync("CALL get_prime_number(@primePosition, @number, @square, @sqrt, @rows);", args);
+            Assert.AreEqual(2, args[1].Value);
+            Assert.AreEqual(1, args[4].Value);
 
             args[0].Value = 2;
-            await sw.ExecAsync("GetPrimeNumber", args, commandType: System.Data.CommandType.StoredProcedure);
-            Assert.AreEqual((int)args["number"].Value, 3);
-            Assert.AreEqual((int)args["result"].Value, 1);
+            await sw.ExecAsync("CALL get_prime_number(@primePosition, @number, @square, @sqrt, @rows);", args);
+            Assert.AreEqual(3, args["number"].Value);
+            Assert.AreEqual(1, args["rows"].Value);
             
             Func<int, int, int, Task> assert = async (position, number, result) =>
             {
                 args["primePosition"].Value = position;
-                await sw.ExecAsync("GetPrimeNumber", args, commandType: System.Data.CommandType.StoredProcedure);
-                Assert.AreEqual((int)args["number"].Value, number);
-                Assert.AreEqual((int)args["result"].Value, result);
+                await sw.ExecAsync("CALL get_prime_number(@primePosition, @number, @square, @sqrt, @rows);", args);
+                Assert.AreEqual(number, args["number"].Value);
+                Assert.AreEqual(result, args["rows"].Value);
             };
             
             await assert(3, 5, 1);
@@ -448,8 +457,8 @@ END
             await assert(11, 31, 1);
             
             args[0].Value = 100500;
-            await sw.ExecAsync("GetPrimeNumber", args, commandType: System.Data.CommandType.StoredProcedure);
-            Assert.AreEqual((int)args["result"].Value, 0);
+            await sw.ExecAsync("CALL get_prime_number(@primePosition, @number, @square, @sqrt, @rows);", args);
+            Assert.AreEqual((int)args["rows"].Value, 0);
         }
 
         [TestMethod]
@@ -460,12 +469,12 @@ END
             PostgreSqlWorker.DbParametersConstructor args = new SwParameters
             {
                 { "number", 1 },
-                { "name", default(string), DbType.String, ParameterDirection.Output, 100 },
+                { "name", default(string), DbType.String, ParameterDirection.InputOutput, 100 },
             };
 
             Func<int, string, Task> assert = async (number, name) => {
                 args[0].Value = number;
-                await sw.ExecAsync("NumberName", args, commandType: CommandType.StoredProcedure);
+                await sw.ExecAsync("CALL number_name(@number, @name);", args);
                 Assert.AreEqual(args["name"].Value, name);
             };
 
