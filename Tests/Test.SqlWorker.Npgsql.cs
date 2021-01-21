@@ -481,5 +481,55 @@ $$;");
             await assert(2, "two");
             await assert(3, "three");
         }
+
+        [TestMethod]
+        public void BulkCopyCanBeRolledBack()
+        {
+            using (var sw = new PostgreSqlWorker(ConnectionString))
+            {
+                using var tran = sw.TransactionBegin();
+
+                sw.BulkCopy(
+                    Enumerable.Range(1, 10)
+                        .Select(i => new { number = 100500 + i, square = (long)i * i, sqrt = Math.Sqrt(i), is_prime = _primes.Contains(i), as_text = (string)null }),
+                    "numbers");
+
+                tran.Rollback();
+            }
+
+            using (var sw = new PostgreSqlWorker(ConnectionString))
+            {
+                var inserted = sw.Query("SELECT COUNT(1) FROM numbers WHERE number >= 100500", dr => (long)dr[0]).Single();
+                Assert.AreEqual(inserted, 0L);
+            }
+        }
+        
+        [TestMethod]
+        public void BulkCopyRollesBackOnException()
+        {
+            try
+            {
+                using (var sw = new PostgreSqlWorker(ConnectionString))
+                {
+                    sw.BulkCopy(
+                        Enumerable
+                            .Range(1, 10)
+                            .Select(i => i switch {
+                                6 => throw new TestException(),
+                                _ => i,
+                            })
+                            .Select(i => new { number = 100500 + i, square = (long)i * i, sqrt = Math.Sqrt(i), is_prime = _primes.Contains(i), as_text = (string)null }),
+                        "numbers");
+                }
+            }
+            catch (TestException)
+            {}
+
+            using (var sw = new PostgreSqlWorker(ConnectionString))
+            {
+                var inserted = sw.Query("SELECT COUNT(1) FROM numbers WHERE number >= 100500", dr => (long)dr[0]).Single();
+                Assert.AreEqual(inserted, 0L);
+            }
+        }
     }
 }
