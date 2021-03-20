@@ -189,7 +189,7 @@ $$;");
             {
                 var insertsCount = sw.Exec(
                     command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
-                    parameters: new SwParameters {
+                    parameters: new SwParameters() {
                         { "number", 3 },
                         { "square", 9, System.Data.DbType.Int64 },
                         { "sqrt", Math.Sqrt(3), System.Data.DbType.Double, System.Data.ParameterDirection.Input },
@@ -505,6 +505,26 @@ $$;");
                 var inserted = sw.Query("SELECT COUNT(1) FROM numbers WHERE number >= 100500", dr => (long)dr[0]).Single();
                 Assert.AreEqual(inserted, 0L);
             }
+        }
+
+        [TestMethod]
+        public void BulkCopyWorksWithArrays()
+        {
+            Console.WriteLine(ConnectionString);
+            using var sw = new PostgreSqlWorker(ConnectionString);
+            using var tran = sw.TransactionBegin();
+            sw.Exec("create temporary table tmp_table(some_array int[], decimal_array decimal[]) on commit drop", transaction: tran);
+            var source = Enumerable.Range(0, 10).Select(x => new
+            {
+                some_array = Enumerable.Range(0, 10).ToArray(),
+                decimal_array = Enumerable.Range(0, 10).Select(x => (decimal) x).ToArray()
+            });
+            sw.BulkCopy(source, "tmp_table");
+            var res = sw.Query("select some_array, decimal_array from tmp_table", 
+                    dr => new { some_array = dr.GetArray<int>(0), decimal_array = dr.GetArray<decimal>(1) })
+                .ToArray();
+            Assert.IsTrue(res.Length == 10);
+            tran.Rollback();
         }
         
         [TestMethod]

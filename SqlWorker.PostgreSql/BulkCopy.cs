@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace SqlWorker
 {
@@ -12,6 +14,20 @@ namespace SqlWorker
 
     static class BulkCopy
     {
+        public static NpgsqlDbType GetDbType(this Array array) => array switch
+        {
+            short [] _ => NpgsqlDbType.Array | NpgsqlDbType.Smallint,
+            int [] _ => NpgsqlDbType.Array | NpgsqlDbType.Integer,
+            long [] _ => NpgsqlDbType.Array | NpgsqlDbType.Bigint,
+            bool [] _ => NpgsqlDbType.Array | NpgsqlDbType.Bit,
+            string [] _ => NpgsqlDbType.Array | NpgsqlDbType.Varchar,
+            char [] _ => NpgsqlDbType.Array | NpgsqlDbType.Char,
+            double [] _ => NpgsqlDbType.Array | NpgsqlDbType.Double,
+            decimal [] _ => NpgsqlDbType.Array | NpgsqlDbType.Money,
+            float [] _ => NpgsqlDbType.Array | NpgsqlDbType.Double,
+            _ => throw new NpgsqlException($"Wrong type of array ({array.GetType().FullName})")
+        };
+        
         public static void PerformBulkCopy(this IDataReader dr, NpgsqlBinaryImporter writer, DataColumnCollection columns = null)
         {
             columns ??= dr.GetSchemaTable().Columns;
@@ -57,6 +73,9 @@ namespace SqlWorker
                         case float x:
                             writer.Write(x);
                             break;
+                        case decimal x:
+                            writer.Write(x);
+                            break;
                         case Guid x:
                             writer.Write(x);
                             break;
@@ -71,6 +90,9 @@ namespace SqlWorker
                             break;
                         case string x:
                             writer.Write(x);
+                            break;
+                        case Array _:
+                            writer.Write(dr[col.Ordinal]);
                             break;
                         case null:
                             writer.WriteNull();
@@ -121,6 +143,15 @@ namespace SqlWorker
                         case ulong x:
                             await writer.WriteAsync(x);
                             break;
+                        case double x:
+                            await writer.WriteAsync(x);
+                            break;
+                        case float x:
+                            await writer.WriteAsync(x);
+                            break;
+                        case decimal x:
+                            await writer.WriteAsync(x);
+                            break;
                         case Guid x:
                             await writer.WriteAsync(x);
                             break;
@@ -133,8 +164,11 @@ namespace SqlWorker
                         case string x:
                             await writer.WriteAsync(x);
                             break;
+                        case Array _:
+                            await writer.WriteAsync(dr[col.Ordinal]);
+                            break;
                         case null:
-                            writer.WriteNull();
+                            await writer.WriteNullAsync();
                             break;
                     }
                 }

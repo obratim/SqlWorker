@@ -1,7 +1,7 @@
 {
     "connectionStringMaster": "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=\"db.mdf\";Integrated Security=True;Connect Timeout=30",
     "connectionString": "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=\"db.mdf\";Integrated Security=True;Connect Timeout=30",
-    "connectionStringMasterPostgreSql": "User ID=postgres;Host=localhost;",
-    "connectionStringPostgreSql": "User ID=galoise;Password=12345;Host=localhost;Database=numbers;",
-    "recreateDb": false
+    "connectionStringMasterPostgreSql": "User ID=galoise;Password=smokeweedeveryday;Host=localhost;",
+    "connectionStringPostgreSql": "User ID=galoise;Password=smokeweedeveryday;Host=localhost;Database=numbers;",
+    "recreateDb": true
 }
