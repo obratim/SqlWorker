@@ -1,22 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <TargetFrameworks>netstandard2.1</TargetFrameworks>
+  </PropertyGroup>
+  
+  <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>8</LangVersion>
+    <PackageTags>npgsql,postgresql,postgres,ado,ado.net,database,sql,iasyncienumerable</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="npgsql" Version="5.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Release' and '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="SqlWorker" Version="3.2.302" />
   </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+  <ItemGroup Condition="'$(Configuration)' == 'Release' and '$(TargetFramework)' == 'netstandard2.1'">
+    <PackageReference Include="SqlWorker" Version="3.2.302" />
     <PackageReference Include="SqlWorker.Async" Version="3.1.270" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <PackageTags>npgsql,postgresql,postgres,ado,ado.net,database,sql,iasyncienumerable</PackageTags>
-  </PropertyGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <ProjectReference Include="..\SqlWorker.Async\SqlWorker.Async.csproj" />
+  </ItemGroup>
 
 </Project>
