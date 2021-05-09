@@ -42,7 +42,7 @@ namespace Tests.SqlWorker.Npgsql
                     .SingleOrDefault() switch
                     {
                         1 => true,
-                        0 => false,
+                        _ => false,
                     };
             }
 
