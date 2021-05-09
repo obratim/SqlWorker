@@ -21,46 +21,11 @@ namespace SqlWorker
 
             var writeSteps = new List<Expression>();
 
-            foreach (var property in properties)
+            foreach (PropertyDescriptor property in properties)
             {
-                switch (property)
-                {
-                    case PropertyDescriptor pd when pd.PropertyType == typeof (bool):
-                    {
-                        var propertyAccess = Expression.Property(copyParameterData, pd.Name);
-                        writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {pd.PropertyType}, propertyAccess));
-                        Columns.Add(pd.Name);
-                        break;
-                    }
-                    case PropertyDescriptor pd when pd.PropertyType == typeof (int):
-                    {
-                        var propertyAccess = Expression.Property(copyParameterData, pd.Name);
-                        writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {pd.PropertyType}, propertyAccess));
-                        Columns.Add(pd.Name);
-                        break;
-                    }
-                    case PropertyDescriptor pd when pd.PropertyType == typeof (long):
-                    {
-                        var propertyAccess = Expression.Property(copyParameterData, pd.Name);
-                        writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {pd.PropertyType}, propertyAccess));
-                        Columns.Add(pd.Name);
-                        break;
-                    }
-                    case PropertyDescriptor pd when pd.PropertyType == typeof (double):
-                    {
-                        var propertyAccess = Expression.Property(copyParameterData, pd.Name);
-                        writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {pd.PropertyType}, propertyAccess));
-                        Columns.Add(pd.Name);
-                        break;
-                    }
-                    case PropertyDescriptor pd when pd.PropertyType == typeof (string):
-                    {
-                        var propertyAccess = Expression.Property(copyParameterData, pd.Name);
-                        writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {pd.PropertyType}, propertyAccess));
-                        Columns.Add(pd.Name);
-                        break;
-                    }
-                }
+                var propertyAccess = Expression.Property(copyParameterData, property.Name);
+                writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {property.PropertyType}, propertyAccess));
+                Columns.Add(property.Name);
             }
 
             var body = Expression.Block(writeSteps);
