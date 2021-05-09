@@ -24,8 +24,26 @@ namespace SqlWorker
             foreach (PropertyDescriptor property in properties)
             {
                 var propertyAccess = Expression.Property(copyParameterData, property.Name);
-                writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {property.PropertyType}, propertyAccess));
-                Columns.Add(property.Name);
+                switch (property.PropertyType)
+                {
+                    case {} when property.PropertyType.IsPrimitive || property.PropertyType == typeof(string):
+                    {
+                        writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {property.PropertyType}, propertyAccess));
+                        Columns.Add(property.Name);
+                        break;
+                    }
+                    case {} when property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>) && Nullable.GetUnderlyingType(property.PropertyType).IsPrimitive:
+                    {
+                        var valueAccess = Expression.Property(propertyAccess, nameof(Nullable<int>.Value));
+                        writeSteps.Add(
+                            Expression.Condition(
+                                Expression.Equal(propertyAccess, Expression.Default(property.PropertyType)),
+                                Expression.Call(copyParameterWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))),
+                                Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {Nullable.GetUnderlyingType(property.PropertyType)}, valueAccess)));
+                        Columns.Add(property.Name);
+                        break;
+                    }
+                }
             }
 
             var body = Expression.Block(writeSteps);

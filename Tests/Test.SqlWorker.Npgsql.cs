@@ -65,7 +65,8 @@ namespace Tests.SqlWorker.Npgsql
     square bigint not null,
     sqrt double precision not null,
     is_prime boolean not null,
-    as_text varchar(400)
+    as_text varchar(400),
+    half integer null
 );");
 
                     sw.Exec(@"
@@ -307,7 +308,13 @@ $$;");
 
                     var rangeToInsert = Enumerable
                             .Range(start, length)
-                            .Select(i => new { number = i, square = (long)i * i, sqrt = Math.Sqrt(i), is_prime = _primes.Contains(i), as_text = (string)null })
+                            .Select(i => new {
+                                number = i,
+                                square = (long)i * i,
+                                sqrt = Math.Sqrt(i),
+                                is_prime = _primes.Contains(i),
+                                as_text = i % 7 == 0 ? (string)null : i.ToString(),
+                                half = i % 2 != 0 ? default(int?) : i / 2, })
                             .ToArray();
 
                     sw.BulkCopy(
@@ -319,7 +326,7 @@ $$;");
                         expected: rangeToInsert,
                         actual: sw.Query(
                             "select * from numbers where number >= @min_number",
-                            dr => new { number = (int)dr[0], square = (long)dr[1], sqrt = (double)dr[2], is_prime = (bool)dr[3], as_text = dr.GetNullableString(4) },
+                            dr => new { number = (int)dr[0], square = (long)dr[1], sqrt = (double)dr[2], is_prime = (bool)dr[3], as_text = dr.GetNullableString(4), half = dr.GetNullableInt32(5), },
                             parameters: new SwParameters { { "min_number", start } })
                             .ToArray());
                 }
