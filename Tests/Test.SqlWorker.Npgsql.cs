@@ -13,6 +13,66 @@ namespace Tests.SqlWorker.Npgsql
     [TestClass]
     public class TestNpgsqlWorker
     {
+        enum Even { Odd = 1, Even = 2};
+        
+        [Flags]
+        enum Dividers : short {
+            Two = 0x1,
+            Three = 0x2,
+            Five = 0x4,
+            Seven = 0x8,
+            Eleven = 0x10,
+            Thirteen = 0x20,
+            Seventeen = 0x40,
+            Nineteen = 0x80,
+            TwentyThree = 0x1_00,
+            TwentyNine = 0x2_00,
+            ThirtyOne = 0x4_00,
+            ThirtySeven = 0x8_00,
+            FortyOne = 0x10_00,
+            FortyThree = 0x20_00,
+            FortySeven = 0x40_00,
+            // FiftyThree = 0x80_00,
+            // FiftyNine = 0x1_00_00,
+            // SixtyOne = 0x2_00_00,
+            // SixtySeven = 0x4_00_00,
+            // SeventyOne = 0x8_00_00,
+            // SeventyThree = 0x10_00_00,
+            // SeventyNine = 0x20_00_00,
+        };
+
+        private Even IsEven(int n) => (n % 2) switch { 1 => Even.Odd, _ => Even.Even };
+
+        private Dividers? GetDividers(int n)
+        {
+            Dividers result = 0;
+
+            if (n % 2 == 0) result |= Dividers.Two;
+            if (n % 3 == 0) result |= Dividers.Three;
+            if (n % 5 == 0) result |= Dividers.Five;
+            if (n % 7 == 0) result |= Dividers.Seven;
+            if (n % 11 == 0) result |= Dividers.Eleven;
+            if (n % 13 == 0) result |= Dividers.Thirteen;
+            if (n % 17 == 0) result |= Dividers.Seventeen;
+            if (n % 19 == 0) result |= Dividers.Nineteen;
+            if (n % 23 == 0) result |= Dividers.TwentyThree;
+            if (n % 29 == 0) result |= Dividers.TwentyNine;
+            if (n % 31 == 0) result |= Dividers.ThirtyOne;
+            if (n % 37 == 0) result |= Dividers.ThirtySeven;
+            if (n % 41 == 0) result |= Dividers.FortyOne;
+            if (n % 43 == 0) result |= Dividers.FortyThree;
+            if (n % 47 == 0) result |= Dividers.FortySeven;
+            // if (n % 53 == 0) result |= Dividers.FiftyThree;
+            // if (n % 59 == 0) result |= Dividers.FiftyNine;
+            // if (n % 61 == 0) result |= Dividers.SixtyOne;
+            // if (n % 67 == 0) result |= Dividers.SixtySeven;
+            // if (n % 71 == 0) result |= Dividers.SeventyOne;
+            // if (n % 73 == 0) result |= Dividers.SeventyThree;
+            // if (n % 79 == 0) result |= Dividers.SeventyNine;
+
+            return result > 0 ? result : null;
+        }
+
         private readonly IConfigurationRoot Config;
         private string ConnectionString => Config["connectionStringPostgreSql"];
         private string ConnectionStringMaster => Config["connectionStringMasterPostgreSql"];

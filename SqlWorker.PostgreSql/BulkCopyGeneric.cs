@@ -43,6 +43,26 @@ namespace SqlWorker
                         Columns.Add(property.Name);
                         break;
                     }
+                    case {} when property.PropertyType.IsEnum:
+                    {
+                        var underlyingType = Enum.GetUnderlyingType(property.PropertyType);
+                        var valueAccess = Expression.Convert(propertyAccess, underlyingType);
+                        writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {underlyingType}, valueAccess));
+                        Columns.Add(property.Name);
+                        break;
+                    }
+                    case {} when property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>) && Nullable.GetUnderlyingType(property.PropertyType).IsEnum:
+                    {
+                        var underlyingType = Enum.GetUnderlyingType(Nullable.GetUnderlyingType(property.PropertyType));
+                        var valueAccess = Expression.Convert(Expression.Property(propertyAccess, nameof(Nullable<int>.Value)), underlyingType);
+                        writeSteps.Add(
+                            Expression.Condition(
+                                Expression.Equal(propertyAccess, Expression.Default(property.PropertyType)),
+                                Expression.Call(copyParameterWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))),
+                                Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {underlyingType}, valueAccess)));
+                        Columns.Add(property.Name);
+                        break;
+                    }
                 }
             }
 
