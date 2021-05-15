@@ -5,4 +5,4 @@ echo '{
     "connectionStringMasterPostgreSql": "User ID=postgres;Host=localhost;",
     "connectionStringPostgreSql": "User ID=galoise;Password=12345;Host=localhost;Database=numbers;",
     "recreateDb": false
-}' > Tests/bin/Debug/netcoreapp3.1/config.json && dotnet build Tests && dotnet vstest Tests/bin/Debug/netcoreapp3.1/Tests.dll
+}' > Tests/bin/Debug/netcoreapp5/config.json && dotnet build Tests && dotnet vstest Tests/bin/Debug/netcoreapp5/Tests.dll
