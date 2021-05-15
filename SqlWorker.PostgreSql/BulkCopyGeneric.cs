@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Linq.Expressions;
 using Npgsql;
 
@@ -20,19 +21,22 @@ namespace SqlWorker
             Columns = new List<string>(properties.Count);
 
             var writeSteps = new List<Expression>();
+            var mapperType = typeof(NpgsqlParameter).Assembly.GetType("Npgsql.TypeMapping.GlobalTypeMapper");
+            var mapper = mapperType.GetProperty("Instance", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public).GetValue(null);
+            var mappings = mapperType.GetProperty("Mappings", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(mapper) as Dictionary<string, Npgsql.TypeMapping.NpgsqlTypeMapping>;
 
             foreach (PropertyDescriptor property in properties)
             {
                 var propertyAccess = Expression.Property(copyParameterData, property.Name);
                 switch (property.PropertyType)
                 {
-                    case {} when property.PropertyType.IsPrimitive || property.PropertyType == typeof(string):
+                    case {} when mappings.Any(m => m.Value.ClrTypes.Contains(property.PropertyType)):
                     {
                         writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {property.PropertyType}, propertyAccess));
                         Columns.Add(property.Name);
                         break;
                     }
-                    case {} when property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>) && Nullable.GetUnderlyingType(property.PropertyType).IsPrimitive:
+                    case {} when property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>) && mappings.Any(m => m.Value.ClrTypes.Contains(Nullable.GetUnderlyingType(property.PropertyType))):
                     {
                         var valueAccess = Expression.Property(propertyAccess, nameof(Nullable<int>.Value));
                         writeSteps.Add(

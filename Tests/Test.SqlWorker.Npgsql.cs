@@ -126,7 +126,11 @@ namespace Tests.SqlWorker.Npgsql
     sqrt double precision not null,
     is_prime boolean not null,
     as_text varchar(400),
-    half integer null
+    half integer null,
+    is_even integer null,
+    dividers smallint null,
+    id UUID null,
+    insert_timestamp timestamp null
 );");
 
                     sw.Exec(@"
@@ -374,7 +378,12 @@ $$;");
                                 sqrt = Math.Sqrt(i),
                                 is_prime = _primes.Contains(i),
                                 as_text = i % 7 == 0 ? (string)null : i.ToString(),
-                                half = i % 2 != 0 ? default(int?) : i / 2, })
+                                half = i % 2 != 0 ? default(int?) : i / 2,
+                                is_even = IsEven(i),
+                                dividers = GetDividers(i),
+                                id = Guid.NewGuid(),
+                                insert_timestamp = new DateTime(DateTime.UtcNow.Ticks / 10 * 10), // to workaround DateTimeKind comparision and precision loss
+                            })
                             .ToArray();
 
                     sw.BulkCopy(
@@ -382,13 +391,25 @@ $$;");
                         targetTableName: "numbers");
                     tran?.Commit();
 
+                    var actual = sw.Query(
+                            "select * from numbers where number >= @min_number",
+                            dr => new {
+                                number = (int)dr[0],
+                                square = (long)dr[1],
+                                sqrt = (double)dr[2],
+                                is_prime = (bool)dr[3],
+                                as_text = dr.GetNullableString(4),
+                                half = dr.GetNullableInt32(5),
+                                is_even = (Even)dr[6],
+                                dividers = (Dividers?)dr.GetNullableInt16(7),
+                                id = dr.GetGuid(8),
+                                insert_timestamp = dr.GetDateTime(9),
+                            },
+                            parameters: new SwParameters { { "min_number", start } })
+                            .ToArray();
                     CollectionAssert.AreEquivalent(
                         expected: rangeToInsert,
-                        actual: sw.Query(
-                            "select * from numbers where number >= @min_number",
-                            dr => new { number = (int)dr[0], square = (long)dr[1], sqrt = (double)dr[2], is_prime = (bool)dr[3], as_text = dr.GetNullableString(4), half = dr.GetNullableInt32(5), },
-                            parameters: new SwParameters { { "min_number", start } })
-                            .ToArray());
+                        actual: actual);
                 }
 
                 bulkInsertAndCheck(5, 3, 1);
