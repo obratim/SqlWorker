@@ -9,6 +9,7 @@ using MySqlConnector;
 
 namespace SqlWorker
 {
+    /// <inheritdoc/>
     public class ParametersConstructorForMySql : ADbParameterCreator<MySqlParameter>
     {
 		/// <summary>
@@ -22,6 +23,9 @@ namespace SqlWorker
         }
     }
 
+    /// <summary>
+    /// SqlWorker for MySql
+    /// </summary>
     public class MySqlWorker
 #if NETSTANDARD2_1
     : Async.ASqlWorkerAsync<ParametersConstructorForMySql>
@@ -31,6 +35,9 @@ namespace SqlWorker
     {
         private string _connectionString;
 
+        /// <summary>
+        /// Create SqlWorker from connection string
+        /// </summary>
         public MySqlWorker(string connectionString)
             : base()
         {
@@ -39,6 +46,7 @@ namespace SqlWorker
 
         private MySqlConnection _conn;
 
+        /// <inheritdoc/>
         protected override IDbConnection Connection
         {
             get
