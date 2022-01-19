@@ -1,0 +1,3 @@
+/etc/init.d/docker start
+docker restart mssql2
+

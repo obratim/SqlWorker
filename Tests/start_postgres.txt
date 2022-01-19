@@ -1,0 +1,7 @@
+su
+mkdir /run/postgresql
+chown postgres /run/postgresql
+su postgres
+cd ~/numbers/
+pg_ctl -w -D . -l log start
+

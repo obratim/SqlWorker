@@ -58,11 +58,10 @@ namespace SqlWorker
 
         public void BulkCopy<TItem>(IEnumerable<TItem> source, string targetTableName, PostreSqlBulkCopySettings bulkCopySettings = null)
         {
-            using var dr = source.ToDbDataReader();
             if (Connection.State != ConnectionState.Open) Connection.Open();
-            using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(dr.BulkCopyCommand(targetTableName));
+            using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(BulcCopyGeneric<TItem>.BulkCopyCommand(targetTableName));
 
-            dr.PerformBulkCopy(writer);
+            BulcCopyGeneric<TItem>.BulkCopy(source, writer);
         }
     }
 }
