@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
@@ -9,10 +10,25 @@ using NpgsqlTypes;
 
 namespace SqlWorker
 {
-    public class PostreSqlBulkCopySettings : SqlWorker.IBulkCopySettings
-    {}
+    /// <summary>
+    /// Settings for bulk copying in PostgreSQL. Used to specify types for some of properties of type being insert
+    /// </summary>
+    public class PostgreSqlBulkCopySettings : SqlWorker.IBulkCopySettings, IEnumerable<KeyValuePair<string, NpgsqlDbType>>
+    {
+        private Dictionary<string, NpgsqlDbType> typeMapping = new Dictionary<string, NpgsqlDbType>();
 
-    static class BulkCopy
+        public void Add(string key, NpgsqlDbType value) => typeMapping.Add(key, value);
+
+        public NpgsqlDbType this[string column] => typeMapping[column];
+        public IEnumerator<KeyValuePair<string, NpgsqlDbType>> GetEnumerator() =>
+            typeMapping.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public bool TryGetValue(string column, out NpgsqlDbType type) => typeMapping.TryGetValue(column, out type);
+    }
+
+    internal static class BulkCopy
     {
         public static NpgsqlDbType GetDbType(this Array array) => array switch
         {

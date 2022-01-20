@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Npgsql;
+using NpgsqlTypes;
 using SqlWorker;
 
 namespace Tests.SqlWorker.Npgsql
@@ -112,7 +113,7 @@ namespace Tests.SqlWorker.Npgsql
                 {
                     if (dbExists)
                         sw.Exec(@"DROP DATABASE numbers;");
-                    sw.Exec(@"CREATE DATABASE numbers WITH OWNER = galoise;");
+                    sw.Exec(@"CREATE DATABASE numbers WITH OWNER = compose_postgres;");
                 }
             
                 using (var sw = new PostgreSqlWorker(ConnectionString))
@@ -601,13 +602,32 @@ $$;");
             Console.WriteLine(ConnectionString);
             using var sw = new PostgreSqlWorker(ConnectionString);
             using var tran = sw.TransactionBegin();
-            sw.Exec("create temporary table tmp_table(some_array int[], decimal_array decimal[]) on commit drop", transaction: tran);
-            var source = Enumerable.Range(0, 10).Select(x => new
+            sw.Exec(@"
+create temporary table tmp_table(
+    some_array int[], 
+    money_array money[], 
+    decimal_array decimal[], 
+    varchar_array varchar[], 
+    text_array text[], 
+    uuid_array uuid[],
+    some_money money) 
+on commit drop", transaction: tran);
+            var source = Enumerable.Range(0, 10).Select(i => new
             {
                 some_array = Enumerable.Range(0, 10).ToArray(),
-                decimal_array = Enumerable.Range(0, 10).Select(x => (decimal) x).ToArray()
+                money_array = Enumerable.Range(0, 10).Select(x => (decimal) x).ToArray(),
+                decimal_array = Enumerable.Range(0, 10).Select(x => (decimal) x).ToArray(),
+                varchar_array = Enumerable.Range(0, 10).Select(x => x.ToString()).ToArray(),
+                text_array = Enumerable.Range(0, 10).Select(x => x.ToString()).ToArray(),
+                uuid_array = Enumerable.Range(0, 10).Select(x => Guid.NewGuid()).ToArray(),
+                some_money = (decimal) i
             });
-            sw.BulkCopy(source, "tmp_table");
+            sw.BulkCopy(source, "tmp_table", new PostgreSqlBulkCopySettings
+            {
+                { "money_array", NpgsqlDbType.Array | NpgsqlDbType.Money },
+                { "varchar_array", NpgsqlDbType.Array | NpgsqlDbType.Varchar },
+                { "some_money", NpgsqlDbType.Money }
+            });
             var res = sw.Query("select some_array, decimal_array from tmp_table", 
                     dr => new { some_array = dr.GetArray<int>(0), decimal_array = dr.GetArray<decimal>(1) })
                 .ToArray();

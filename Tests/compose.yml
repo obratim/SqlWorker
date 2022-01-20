@@ -9,15 +9,15 @@ services:
     depends_on:
       - sw-postgres-db
       - sw-mssql-db
-  postgres-db:
+  sw-postgres-db:
     image: postgres
     container_name: sw-postgres-db
     ports:
       - 5432:5432
     environment:
-      - POSTGRES_USER=compose-postgres
-      - POSTGRES_PASSWORD=compose-postgres
-  mssql-db:
+      - POSTGRES_USER=compose_postgres
+      - POSTGRES_PASSWORD=compose_postgres
+  sw-mssql-db:
     image: mcr.microsoft.com/mssql/server
     container_name: sw-mssql-db
     ports:
