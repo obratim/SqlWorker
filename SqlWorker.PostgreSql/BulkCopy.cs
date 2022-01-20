@@ -30,22 +30,13 @@ namespace SqlWorker
 
     internal static class BulkCopy
     {
-        public static NpgsqlDbType GetDbType(this Array array) => array switch
+        public static void PerformBulkCopy(
+            this IDataReader dr,
+            NpgsqlBinaryImporter writer, 
+            DataColumnCollection columns = null, 
+            PostgreSqlBulkCopySettings settings = null)
         {
-            short [] _ => NpgsqlDbType.Array | NpgsqlDbType.Smallint,
-            int [] _ => NpgsqlDbType.Array | NpgsqlDbType.Integer,
-            long [] _ => NpgsqlDbType.Array | NpgsqlDbType.Bigint,
-            bool [] _ => NpgsqlDbType.Array | NpgsqlDbType.Bit,
-            string [] _ => NpgsqlDbType.Array | NpgsqlDbType.Varchar,
-            char [] _ => NpgsqlDbType.Array | NpgsqlDbType.Char,
-            double [] _ => NpgsqlDbType.Array | NpgsqlDbType.Double,
-            decimal [] _ => NpgsqlDbType.Array | NpgsqlDbType.Money,
-            float [] _ => NpgsqlDbType.Array | NpgsqlDbType.Double,
-            _ => throw new NpgsqlException($"Wrong type of array ({array.GetType().FullName})")
-        };
-        
-        public static void PerformBulkCopy(this IDataReader dr, NpgsqlBinaryImporter writer, DataColumnCollection columns = null)
-        {
+            settings ??= new PostgreSqlBulkCopySettings();
             columns ??= dr.GetSchemaTable().Columns;
             
             while (dr.Read())
@@ -53,62 +44,73 @@ namespace SqlWorker
                 writer.StartRow();
 
                 foreach (DataColumn col in columns)
-                {
+                {                
+                    void Write<T>(T value)
+                    {
+                        if (settings.TryGetValue(col.Caption, out var type))
+                        {
+                            writer.Write(value, type);
+                            return;
+                        }
+                        
+                        writer.Write(value);
+                    }
+                    
                     switch (dr[col.Ordinal])
                     {
                         case bool x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case byte x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case sbyte x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case short x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case ushort x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case int x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case uint x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case long x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case ulong x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case double x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case float x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case decimal x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case Guid x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case DateTime x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case TimeSpan x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case char x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case string x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case Array _:
-                            writer.Write(dr[col.Ordinal]);
+                            Write(dr[col.Ordinal]);
                             break;
                         case null:
                             writer.WriteNull();

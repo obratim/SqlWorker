@@ -53,7 +53,7 @@ namespace SqlWorker
             if (Connection.State != ConnectionState.Open) Connection.Open();
             using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(source.Columns.BulkCopyCommand(targetTableName));
 
-            dr.PerformBulkCopy(writer, source.Columns);
+            dr.PerformBulkCopy(writer, source.Columns, bulkCopySettings);
         }
 
         public void BulkCopy<TItem>(IEnumerable<TItem> source, string targetTableName, PostgreSqlBulkCopySettings bulkCopySettings = null)

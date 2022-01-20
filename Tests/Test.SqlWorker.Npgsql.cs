@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -614,14 +615,15 @@ create temporary table tmp_table(
 on commit drop", transaction: tran);
             var source = Enumerable.Range(0, 10).Select(i => new
             {
-                some_array = Enumerable.Range(0, 10).ToArray(),
+                text_array = Enumerable.Range(0, 10).Select(x => x.ToString()).ToArray(),
                 money_array = Enumerable.Range(0, 10).Select(x => (decimal) x).ToArray(),
+                uuid_array = Enumerable.Range(0, 10).Select(x => Guid.NewGuid()).ToArray(),
                 decimal_array = Enumerable.Range(0, 10).Select(x => (decimal) x).ToArray(),
                 varchar_array = Enumerable.Range(0, 10).Select(x => x.ToString()).ToArray(),
-                text_array = Enumerable.Range(0, 10).Select(x => x.ToString()).ToArray(),
-                uuid_array = Enumerable.Range(0, 10).Select(x => Guid.NewGuid()).ToArray(),
+                some_array = Enumerable.Range(0, 10).ToArray(),
                 some_money = (decimal) i
-            });
+            }).ToArray();
+            
             sw.BulkCopy(source, "tmp_table", new PostgreSqlBulkCopySettings
             {
                 { "money_array", NpgsqlDbType.Array | NpgsqlDbType.Money },
@@ -632,6 +634,38 @@ on commit drop", transaction: tran);
                     dr => new { some_array = dr.GetArray<int>(0), decimal_array = dr.GetArray<decimal>(1) })
                 .ToArray();
             Assert.IsTrue(res.Length == 10);
+
+            sw.Exec("delete from tmp_table;");
+
+            var dt = new DataTable();
+            var set = new DataSet("a");
+            set.Tables.Add(dt);
+
+            foreach (var x in source)
+            {
+                var values = new List<object>();
+                foreach (var prop in x.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    if (!dt.Columns.Contains(prop.Name))
+                        dt.Columns.Add(prop.Name, prop.PropertyType);
+                    
+                    values.Add(prop.GetValue(x));
+                }
+
+                dt.Rows.Add(values.ToArray());
+            }
+            
+            sw.BulkCopy(dt, "tmp_table", new PostgreSqlBulkCopySettings
+            {
+                { "money_array", NpgsqlDbType.Array | NpgsqlDbType.Money },
+                { "varchar_array", NpgsqlDbType.Array | NpgsqlDbType.Varchar },
+                { "some_money", NpgsqlDbType.Money }
+            });
+            res = sw.Query("select some_array, decimal_array from tmp_table", 
+                    dr => new { some_array = dr.GetArray<int>(0), decimal_array = dr.GetArray<decimal>(1) })
+                .ToArray();
+            Assert.IsTrue(res.Length == 10);
+            
             tran.Rollback();
         }
         
