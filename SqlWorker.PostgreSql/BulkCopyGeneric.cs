@@ -158,7 +158,7 @@ namespace SqlWorker
                 PerformBulkCopyDataRow(writer, row, settings);
             }
 
-            writer.CompleteAsync().GetAwaiter().GetResult();
+            writer.Complete();
         }
 
 
