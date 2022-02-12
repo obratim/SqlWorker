@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -41,6 +42,26 @@ namespace Tests.SqlWorker.Npgsql
             // SeventyOne = 0x8_00_00,
             // SeventyThree = 0x10_00_00,
             // SeventyNine = 0x20_00_00,
+        };
+
+        static int DividerValue(Dividers i) => i switch
+        {
+            Dividers.Two => 2,
+            Dividers.Three => 3,
+            Dividers.Five => 5,
+            Dividers.Seven => 7,
+            Dividers.Eleven => 11,
+            Dividers.Thirteen => 13,
+            Dividers.Seventeen => 17,
+            Dividers.Nineteen => 19,
+            Dividers.TwentyThree => 23,
+            Dividers.TwentyNine => 29,
+            Dividers.ThirtyOne => 31,
+            Dividers.ThirtySeven => 37,
+            Dividers.FortyOne => 41,
+            Dividers.FortyThree => 43,
+            Dividers.FortySeven => 47,
+            _ => throw new NotImplementedException(),
         };
 
         private Even IsEven(int n) => (n % 2) switch { 1 => Even.Odd, _ => Even.Even };
@@ -132,7 +153,8 @@ namespace Tests.SqlWorker.Npgsql
     is_even integer null,
     dividers smallint null,
     id UUID null,
-    insert_timestamp timestamp null
+    insert_timestamp timestamp null,
+    dividers_values int[] null
 );");
 
                     sw.Exec(@"
@@ -365,6 +387,66 @@ $$;");
         [TestMethod]
         public void CanBulkInsert()
         {
+            var comparer = CreateComparerFromCollectionAndComparisionsStack(
+                Enumerable
+                    .Range(1, 0)
+                    .Select(i => new {
+                        number = i,
+                        square = (long)i * i,
+                        sqrt = Math.Sqrt(i),
+                        is_prime = _primes.Contains(i),
+                        as_text = i % 8 == 0
+                            ? default
+                            : Enum.GetValues<Dividers>()
+                                .Where(div => DividerValue(div) == i)
+                                .Select(div => div.ToString())
+                                .FirstOrDefault()
+                                ?? i.ToString(),
+                        half = i % 2 != 0 ? default(int?) : i / 2,
+                        is_even = IsEven(i),
+                        dividers = GetDividers(i),
+                        id = Guid.NewGuid(),
+                        insert_timestamp = new DateTime(DateTime.UtcNow.Ticks / 10 * 10), // to workaround DateTimeKind comparision and precision loss
+                        dividers_values = GetDividers(i) switch
+                        {
+                            {} value => Enum.GetValues<Dividers>().Where(i => value.HasFlag(i)).Select(i => DividerValue(i)).ToArray(),
+                            null => null,
+                        },
+                    }),
+                    (x, y) => Comparer.Default.Compare(x.number, y.number),
+                    (x, y) => Comparer.Default.Compare(x.square, y.square),
+                    (x, y) => Comparer.Default.Compare(x.sqrt, y.sqrt),
+                    (x, y) => Comparer.Default.Compare(x.is_prime, y.is_prime),
+                    (x, y) => Comparer.Default.Compare(x.as_text, y.as_text),
+                    (x, y) => Comparer.Default.Compare(x.half, y.half),
+                    (x, y) => Comparer.Default.Compare(x.is_even, y.is_even),
+                    (x, y) => Comparer.Default.Compare(x.dividers, y.dividers),
+                    (x, y) => Comparer.Default.Compare(x.id, y.id),
+                    (x, y) => Comparer.Default.Compare(x.insert_timestamp, y.insert_timestamp),
+                    (x, y) => {
+                        var a = x.dividers_values;
+                        var b = y.dividers_values;
+                        
+                        if (a == null && b == null)
+                            return 0;
+
+                        if (a == null)
+                            return int.MinValue;
+
+                        if (b == null)
+                            return int.MaxValue;
+
+                        if (a.Length != b.Length)
+                            return a.Length - b.Length;
+                        
+                        for (var i = 0; i < a.Length; ++i)
+                            if (a[i] != b[i])
+                                return a[i] - b[i];
+                        
+                        return 0;
+                    }
+                );
+            
             using (var sw = new PostgreSqlWorker(ConnectionString))
             {
                 var copyInTransaction = true;
@@ -379,12 +461,23 @@ $$;");
                                 square = (long)i * i,
                                 sqrt = Math.Sqrt(i),
                                 is_prime = _primes.Contains(i),
-                                as_text = i % 7 == 0 ? (string)null : i.ToString(),
+                                as_text = i % 8 == 0
+                                    ? default
+                                    : Enum.GetValues<Dividers>()
+                                        .Where(div => DividerValue(div) == i)
+                                        .Select(div => div.ToString())
+                                        .FirstOrDefault()
+                                        ?? i.ToString(),
                                 half = i % 2 != 0 ? default(int?) : i / 2,
                                 is_even = IsEven(i),
                                 dividers = GetDividers(i),
                                 id = Guid.NewGuid(),
                                 insert_timestamp = new DateTime(DateTime.UtcNow.Ticks / 10 * 10), // to workaround DateTimeKind comparision and precision loss
+                                dividers_values = GetDividers(i) switch
+                                {
+                                    {} value => Enum.GetValues<Dividers>().Where(i => value.HasFlag(i)).Select(i => DividerValue(i)).ToArray(),
+                                    null => null,
+                                },
                             })
                             .ToArray();
 
@@ -406,12 +499,12 @@ $$;");
                                 dividers = (Dividers?)dr.GetNullableInt16(7),
                                 id = dr.GetGuid(8),
                                 insert_timestamp = dr.GetDateTime(9),
+                                dividers_values = dr[10] as int[],
                             },
                             parameters: new SwParameters { { "min_number", start } })
                             .ToArray();
-                    CollectionAssert.AreEquivalent(
-                        expected: rangeToInsert,
-                        actual: actual);
+                    
+                    CollectionAssert.AreEqual(expected: rangeToInsert, actual: actual, comparer);
                 }
 
                 bulkInsertAndCheck(5, 3, 1);
@@ -694,6 +787,48 @@ on commit drop", transaction: tran);
             {
                 var inserted = sw.Query("SELECT COUNT(1) FROM numbers WHERE number >= 100500", dr => (long)dr[0]).Single();
                 Assert.AreEqual(inserted, 0L);
+            }
+        }
+
+        private static IComparer CreateComparerFromCollection<T>(IEnumerable<T> objectsToCompare, Func<T, T, int> comparison)
+        {
+            return new GenericComparer<T>(comparison);
+        }
+
+        private static IComparer CreateComparerFromCollectionAndComparisionsStack<T>(IEnumerable<T> objectsToCompare, params Func<T, T, int>[] comparisions)
+        {
+            return new GenericComparer<T>((x, y) => {
+                foreach (var comparision in comparisions)
+                {
+                    var result = comparision(x, y);
+                    if (result != 0)
+                        return result;
+                }
+                return 0;
+            });
+        }
+
+        class GenericComparer<T> : IComparer
+        {
+            private readonly Func<T, T, int> _comparer;
+
+            public GenericComparer(Func<T, T, int> comparer)
+            {
+                _comparer = comparer;
+            }
+
+            public int Compare(object x, object y)
+            {
+                if (x == null && y == null)
+                    return 0;
+                
+                if (x == null)
+                    return int.MinValue;
+                
+                if (y == null)
+                    return int.MaxValue;
+                
+                return _comparer((T)x, (T)y);
             }
         }
     }
