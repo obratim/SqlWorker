@@ -17,8 +17,8 @@ namespace SqlWorker
     }
     static class BulkCopyGeneric<T>
     {
-        private static readonly Action<NpgsqlBinaryImporter, T, PostgreSqlBulkCopySettings> PerformBulkCopyDataRow;
-        private static readonly Action<NpgsqlBinaryImporter, T> DefaultPerformBulkCopyDataRow;
+        private static readonly Action<NpgsqlBinaryImporter, T, PostgreSqlBulkCopySettings> PerformBulkCopyDataRowWithSettings;
+        private static readonly Action<NpgsqlBinaryImporter, T> PerformBulkCopyDataRow;
         private static readonly List<string> Columns;
 
         static BulkCopyGeneric()
@@ -106,7 +106,7 @@ namespace SqlWorker
                 copyParameterWriter,
                 copyParameterData);
 
-            DefaultPerformBulkCopyDataRow = lambda.Compile();
+            PerformBulkCopyDataRow = lambda.Compile();
         }
         {
             var copyParameterSettings = Expression.Parameter(typeof(PostgreSqlBulkCopySettings), "settings");
@@ -229,7 +229,7 @@ namespace SqlWorker
                 body, 
                 copyParameterWriter, copyParameterData, copyParameterSettings);
 
-            PerformBulkCopyDataRow = lambda.Compile();
+            PerformBulkCopyDataRowWithSettings = lambda.Compile();
         }
         }
 
@@ -240,9 +240,9 @@ namespace SqlWorker
             {
                 writer.StartRow();
                 if (settings == null)
-                    DefaultPerformBulkCopyDataRow(writer, row);
+                    PerformBulkCopyDataRow(writer, row);
                 else
-                    PerformBulkCopyDataRow(writer, row, settings);
+                    PerformBulkCopyDataRowWithSettings(writer, row, settings);
             }
 
             writer.Complete();
