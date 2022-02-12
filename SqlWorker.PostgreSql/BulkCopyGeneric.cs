@@ -23,30 +23,31 @@ namespace SqlWorker
 
         static BulkCopyGeneric()
         {
-            var copyParameterWriter = Expression.Parameter(typeof(NpgsqlBinaryImporter), "writer");
-            var copyParameterData = Expression.Parameter(typeof(T), "data");
-            {
-                var properties = TypeDescriptor.GetProperties(typeof(T));
-                Columns = new List<string>(properties.Count);
+            var argumentWriter = Expression.Parameter(typeof(NpgsqlBinaryImporter), "writer");
+            var argumentData = Expression.Parameter(typeof(T), "data");
+            
+            var properties = TypeDescriptor.GetProperties(typeof(T));
+            Columns = new List<string>(properties.Count);
 
+            var mapperType = typeof(NpgsqlParameter).Assembly.GetType("Npgsql.TypeMapping.GlobalTypeMapper");
+            var mapper = mapperType
+                .GetProperty("Instance", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)
+                !.GetValue(null);
+            var mappings = mapperType
+                .GetProperty("Mappings", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                !.GetValue(mapper) as Dictionary<string, Npgsql.TypeMapping.NpgsqlTypeMapping>;
+            {
                 var writeSteps = new List<Expression>();
-                var mapperType = typeof(NpgsqlParameter).Assembly.GetType("Npgsql.TypeMapping.GlobalTypeMapper");
-                var mapper = mapperType
-                    .GetProperty("Instance", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)
-                    !.GetValue(null);
-                var mappings = mapperType
-                    .GetProperty("Mappings", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                    !.GetValue(mapper) as Dictionary<string, Npgsql.TypeMapping.NpgsqlTypeMapping>;
 
                 foreach (PropertyDescriptor property in properties)
                 {
-                    var propertyAccess = Expression.Property(copyParameterData, property.Name);
+                    var propertyAccess = Expression.Property(argumentData, property.Name);
                     
                     switch (property.PropertyType)
                     {
                         case {} when mappings!.Any(m => m.Value.ClrTypes.Contains(property.PropertyType)):
                         {
-                            writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {property.PropertyType}, propertyAccess));
+                            writeSteps.Add(Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new [] {property.PropertyType}, propertyAccess));
                             Columns.Add(property.Name);
                             break;
                         }
@@ -59,8 +60,8 @@ namespace SqlWorker
                             writeSteps.Add(
                                 Expression.Condition(
                                     Expression.Equal(propertyAccess, Expression.Default(property.PropertyType)),
-                                    Expression.Call(copyParameterWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))),
-                                    Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {Nullable.GetUnderlyingType(property.PropertyType)}, valueAccess)));
+                                    Expression.Call(argumentWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))),
+                                    Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new [] {Nullable.GetUnderlyingType(property.PropertyType)}, valueAccess)));
                             Columns.Add(property.Name);
                             break;
                         }
@@ -69,7 +70,7 @@ namespace SqlWorker
                             var underlyingType = Enum.GetUnderlyingType(property.PropertyType);
                             var valueAccess = Expression.Convert(propertyAccess, underlyingType);
                             
-                            writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {underlyingType}, valueAccess));
+                            writeSteps.Add(Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new [] {underlyingType}, valueAccess));
                             Columns.Add(property.Name);
                             break;
                         }
@@ -83,8 +84,8 @@ namespace SqlWorker
                             writeSteps.Add(
                                 Expression.Condition(
                                     Expression.Equal(propertyAccess, Expression.Default(property.PropertyType)),
-                                    Expression.Call(copyParameterWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))),
-                                    Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new [] {underlyingType}, valueAccess)));
+                                    Expression.Call(argumentWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))),
+                                    Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new [] {underlyingType}, valueAccess)));
                             
                             Columns.Add(property.Name);
                             break;
@@ -92,7 +93,7 @@ namespace SqlWorker
 
                         case { IsArray: true }:
                         {
-                            writeSteps.Add(Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new[] { property.PropertyType }, propertyAccess));
+                            writeSteps.Add(Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new[] { property.PropertyType }, propertyAccess));
                             Columns.Add(property.Name);
                             break;
                         }
@@ -103,30 +104,20 @@ namespace SqlWorker
 
                 var lambda = Expression.Lambda<Action<NpgsqlBinaryImporter, T>>(
                     body, 
-                    copyParameterWriter,
-                    copyParameterData);
+                    argumentWriter,
+                    argumentData);
 
                 PerformBulkCopyDataRow = lambda.Compile();
             }
             {
                 var copyParameterSettings = Expression.Parameter(typeof(PostgreSqlBulkCopySettings), "settings");
 
-                var properties = TypeDescriptor.GetProperties(typeof(T));
-                Columns = new List<string>(properties.Count);
-
                 var writeSteps = new List<Expression>();
                 var variables = new List<ParameterExpression>();
-                var mapperType = typeof(NpgsqlParameter).Assembly.GetType("Npgsql.TypeMapping.GlobalTypeMapper");
-                var mapper = mapperType
-                    .GetProperty("Instance", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)
-                    !.GetValue(null);
-                var mappings = mapperType
-                    .GetProperty("Mappings", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                    !.GetValue(mapper) as Dictionary<string, Npgsql.TypeMapping.NpgsqlTypeMapping>;
 
                 foreach (PropertyDescriptor property in properties)
                 {
-                    var propertyAccess = Expression.Property(copyParameterData, property.Name);
+                    var propertyAccess = Expression.Property(argumentData, property.Name);
                             
                     var dbTypeDeclaration = Expression.Variable(typeof(NpgsqlDbType?), $"{property.Name}DbType");
                             
@@ -145,8 +136,8 @@ namespace SqlWorker
                     var ifDbTypeExistsInSettingsUseIt =
                         Expression.Condition(
                             Expression.Equal(dbTypeDeclaration, Expression.Constant(null)),
-                            Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new[] { property.PropertyType }, propertyAccess),
-                            Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new[] { property.PropertyType }, propertyAccess, notNullDbType));
+                            Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new[] { property.PropertyType }, propertyAccess),
+                            Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new[] { property.PropertyType }, propertyAccess, notNullDbType));
                     
                     switch (property.PropertyType)
                     {
@@ -165,13 +156,13 @@ namespace SqlWorker
                             ifDbTypeExistsInSettingsUseIt =
                                 Expression.Condition(
                                     Expression.Equal(dbTypeDeclaration, Expression.Constant(null)),
-                                    Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new[] { Nullable.GetUnderlyingType(property.PropertyType) }, valueAccess),
-                                    Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new[] { Nullable.GetUnderlyingType(property.PropertyType) }, valueAccess, notNullDbType));
+                                    Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new[] { Nullable.GetUnderlyingType(property.PropertyType) }, valueAccess),
+                                    Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new[] { Nullable.GetUnderlyingType(property.PropertyType) }, valueAccess, notNullDbType));
                             
                             writeSteps.Add(
                                 Expression.Condition(
                                     Expression.Equal(propertyAccess, Expression.Default(property.PropertyType)),
-                                    Expression.Call(copyParameterWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))!),
+                                    Expression.Call(argumentWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))!),
                                     ifDbTypeExistsInSettingsUseIt));
                             Columns.Add(property.Name);
                             break;
@@ -184,8 +175,8 @@ namespace SqlWorker
                             ifDbTypeExistsInSettingsUseIt =
                                 Expression.Condition(
                                     Expression.Equal(dbTypeDeclaration, Expression.Constant(null)),
-                                    Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new[] { underlyingType }, valueAccess),
-                                    Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new[] { underlyingType }, valueAccess, notNullDbType));
+                                    Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new[] { underlyingType }, valueAccess),
+                                    Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new[] { underlyingType }, valueAccess, notNullDbType));
                             
                             writeSteps.Add(ifDbTypeExistsInSettingsUseIt);
                             Columns.Add(property.Name);
@@ -201,13 +192,13 @@ namespace SqlWorker
                             ifDbTypeExistsInSettingsUseIt =
                                 Expression.Condition(
                                     Expression.Equal(dbTypeDeclaration, Expression.Constant(null)),
-                                    Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new[] { underlyingType }, valueAccess),
-                                    Expression.Call(copyParameterWriter, nameof(NpgsqlBinaryImporter.Write), new[] { underlyingType }, valueAccess, notNullDbType));
+                                    Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new[] { underlyingType }, valueAccess),
+                                    Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new[] { underlyingType }, valueAccess, notNullDbType));
                             
                             writeSteps.Add(
                                 Expression.Condition(
                                     Expression.Equal(propertyAccess, Expression.Default(property.PropertyType)),
-                                    Expression.Call(copyParameterWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))!),
+                                    Expression.Call(argumentWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))!),
                                     ifDbTypeExistsInSettingsUseIt));
                             
                             Columns.Add(property.Name);
@@ -227,7 +218,7 @@ namespace SqlWorker
 
                 var lambda = Expression.Lambda<Action<NpgsqlBinaryImporter, T, PostgreSqlBulkCopySettings>>(
                     body, 
-                    copyParameterWriter, copyParameterData, copyParameterSettings);
+                    argumentWriter, argumentData, copyParameterSettings);
 
                 PerformBulkCopyDataRowWithSettings = lambda.Compile();
             }
