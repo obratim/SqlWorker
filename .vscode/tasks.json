@@ -67,14 +67,23 @@
         {
             "label": "Docker compose up",
             "type": "shell",
-            "command": "docker compose -f ${workspaceFolder}/Tests/compose.yml up -d",
+            "command": "docker-compose",
+            "args": [
+                "-f", "${workspaceFolder}/Tests/compose.yml",
+                "up",
+                "-d"
+            ],
             "dependsOn": "publishTests",
             "problemMatcher": []
         },
         {
             "label": "Docker compose down",
             "type": "shell",
-            "command": "docker compose -f ${workspaceFolder}/Tests/compose.yml down",
+            "command": "docker-compose",
+            "args": [
+                "-f", "${workspaceFolder}/Tests/compose.yml",
+                "down"
+            ],
             "problemMatcher": []
         }
     ]
