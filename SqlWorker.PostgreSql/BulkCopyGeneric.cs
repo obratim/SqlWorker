@@ -144,7 +144,6 @@ namespace SqlWorker
                         case {} when mappings!.Any(m => m.Value.ClrTypes.Contains(property.PropertyType)):
                         {
                             writeSteps.Add(ifDbTypeExistsInSettingsUseIt);
-                            Columns.Add(property.Name);
                             break;
                         }
                         case { IsGenericType: true } when 
@@ -164,7 +163,6 @@ namespace SqlWorker
                                     Expression.Equal(propertyAccess, Expression.Default(property.PropertyType)),
                                     Expression.Call(argumentWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))!),
                                     ifDbTypeExistsInSettingsUseIt));
-                            Columns.Add(property.Name);
                             break;
                         }
                         case { IsEnum: true }:
@@ -179,7 +177,6 @@ namespace SqlWorker
                                     Expression.Call(argumentWriter, nameof(NpgsqlBinaryImporter.Write), new[] { underlyingType }, valueAccess, notNullDbType));
                             
                             writeSteps.Add(ifDbTypeExistsInSettingsUseIt);
-                            Columns.Add(property.Name);
                             break;
                         }
                         case { IsGenericType: true } when 
@@ -201,14 +198,12 @@ namespace SqlWorker
                                     Expression.Call(argumentWriter, typeof(NpgsqlBinaryImporter).GetMethod(nameof(NpgsqlBinaryImporter.WriteNull))!),
                                     ifDbTypeExistsInSettingsUseIt));
                             
-                            Columns.Add(property.Name);
                             break;
                         }
 
                         case { IsArray: true }:
                         {
                             writeSteps.Add(ifDbTypeExistsInSettingsUseIt);
-                            Columns.Add(property.Name);
                             break;
                         }
                     }
