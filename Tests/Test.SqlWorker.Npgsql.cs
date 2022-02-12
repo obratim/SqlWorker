@@ -447,82 +447,80 @@ $$;");
                     }
                 );
             
-            using (var sw = new PostgreSqlWorker(ConnectionString))
+            using var sw = new PostgreSqlWorker(ConnectionString);
+            var copyInTransaction = true;
+            void bulkInsertAndCheck(int start, int length, int chunkSize)
             {
-                var copyInTransaction = true;
-                void bulkInsertAndCheck(int start, int length, int chunkSize)
-                {
-                    using var tran = copyInTransaction ? sw.TransactionBegin() : null;
+                using var tran = copyInTransaction ? sw.TransactionBegin() : null;
 
-                    var rangeToInsert = Enumerable
-                            .Range(start, length)
-                            .Select(i => new {
-                                number = i,
-                                square = (long)i * i,
-                                sqrt = Math.Sqrt(i),
-                                is_prime = _primes.Contains(i),
-                                as_text = i % 8 == 0
-                                    ? default
-                                    : Enum.GetValues<Dividers>()
-                                        .Where(div => DividerValue(div) == i)
-                                        .Select(div => div.ToString())
-                                        .FirstOrDefault()
-                                        ?? i.ToString(),
-                                half = i % 2 != 0 ? default(int?) : i / 2,
-                                is_even = IsEven(i),
-                                dividers = GetDividers(i),
-                                id = Guid.NewGuid(),
-                                insert_timestamp = new DateTime(DateTime.UtcNow.Ticks / 10 * 10), // to workaround DateTimeKind comparision and precision loss
-                                dividers_values = GetDividers(i) switch
-                                {
-                                    {} value => Enum.GetValues<Dividers>().Where(i => value.HasFlag(i)).Select(i => DividerValue(i)).ToArray(),
-                                    null => null,
-                                },
-                            })
-                            .ToArray();
-
-                    sw.BulkCopy(
-                        source: rangeToInsert,
-                        targetTableName: "numbers");
-                    tran?.Commit();
-
-                    var actual = sw.Query(
-                            "select * from numbers where number >= @min_number",
-                            dr => new {
-                                number = (int)dr[0],
-                                square = (long)dr[1],
-                                sqrt = (double)dr[2],
-                                is_prime = (bool)dr[3],
-                                as_text = dr.GetNullableString(4),
-                                half = dr.GetNullableInt32(5),
-                                is_even = (Even)dr[6],
-                                dividers = (Dividers?)dr.GetNullableInt16(7),
-                                id = dr.GetGuid(8),
-                                insert_timestamp = dr.GetDateTime(9),
-                                dividers_values = dr[10] as int[],
+                var rangeToInsert = Enumerable
+                        .Range(start, length)
+                        .Select(i => new {
+                            number = i,
+                            square = (long)i * i,
+                            sqrt = Math.Sqrt(i),
+                            is_prime = _primes.Contains(i),
+                            as_text = i % 8 == 0
+                                ? default
+                                : Enum.GetValues<Dividers>()
+                                    .Where(div => DividerValue(div) == i)
+                                    .Select(div => div.ToString())
+                                    .FirstOrDefault()
+                                    ?? i.ToString(),
+                            half = i % 2 != 0 ? default(int?) : i / 2,
+                            is_even = IsEven(i),
+                            dividers = GetDividers(i),
+                            id = Guid.NewGuid(),
+                            insert_timestamp = new DateTime(DateTime.UtcNow.Ticks / 10 * 10), // to workaround DateTimeKind comparision and precision loss
+                            dividers_values = GetDividers(i) switch
+                            {
+                                {} value => Enum.GetValues<Dividers>().Where(i => value.HasFlag(i)).Select(i => DividerValue(i)).ToArray(),
+                                null => null,
                             },
-                            parameters: new SwParameters { { "min_number", start } })
-                            .ToArray();
-                    
-                    CollectionAssert.AreEqual(expected: rangeToInsert, actual: actual, comparer);
-                }
+                        })
+                        .ToArray();
 
-                bulkInsertAndCheck(5, 3, 1);
-                bulkInsertAndCheck(8, 7, 2);
-                bulkInsertAndCheck(15, 10, 3);
-                bulkInsertAndCheck(25, 11, 3);
-                copyInTransaction = false;
-                bulkInsertAndCheck(36, 16, 5);
-                bulkInsertAndCheck(52, 18, 5);
-                bulkInsertAndCheck(70, 20, 5);
-                bulkInsertAndCheck(90, 20, 7);
-                copyInTransaction = true;
-                bulkInsertAndCheck(110, 0, 11);
-                bulkInsertAndCheck(110, 10, 11);
-                bulkInsertAndCheck(120, 11, 11);
-                copyInTransaction = false;
-                bulkInsertAndCheck(131, 20, 13);
+                sw.BulkCopy(
+                    source: rangeToInsert,
+                    targetTableName: "numbers");
+                tran?.Commit();
+
+                var actual = sw.Query(
+                        "select * from numbers where number >= @min_number",
+                        dr => new {
+                            number = (int)dr[0],
+                            square = (long)dr[1],
+                            sqrt = (double)dr[2],
+                            is_prime = (bool)dr[3],
+                            as_text = dr.GetNullableString(4),
+                            half = dr.GetNullableInt32(5),
+                            is_even = (Even)dr[6],
+                            dividers = (Dividers?)dr.GetNullableInt16(7),
+                            id = dr.GetGuid(8),
+                            insert_timestamp = dr.GetDateTime(9),
+                            dividers_values = dr[10] as int[],
+                        },
+                        parameters: new SwParameters { { "min_number", start } })
+                        .ToArray();
+                
+                CollectionAssert.AreEqual(expected: rangeToInsert, actual: actual, comparer);
             }
+
+            bulkInsertAndCheck(5, 3, 1);
+            bulkInsertAndCheck(8, 7, 2);
+            bulkInsertAndCheck(15, 10, 3);
+            bulkInsertAndCheck(25, 11, 3);
+            copyInTransaction = false;
+            bulkInsertAndCheck(36, 16, 5);
+            bulkInsertAndCheck(52, 18, 5);
+            bulkInsertAndCheck(70, 20, 5);
+            bulkInsertAndCheck(90, 20, 7);
+            copyInTransaction = true;
+            bulkInsertAndCheck(110, 0, 11);
+            bulkInsertAndCheck(110, 10, 11);
+            bulkInsertAndCheck(120, 11, 11);
+            copyInTransaction = false;
+            bulkInsertAndCheck(131, 20, 13);
         }
 
         [TestMethod]
