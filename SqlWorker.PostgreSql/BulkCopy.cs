@@ -15,17 +15,17 @@ namespace SqlWorker
     /// </summary>
     public class PostgreSqlBulkCopySettings : SqlWorker.IBulkCopySettings, IEnumerable<KeyValuePair<string, NpgsqlDbType>>
     {
-        private Dictionary<string, NpgsqlDbType> typeMapping = new Dictionary<string, NpgsqlDbType>();
+        private Dictionary<string, NpgsqlDbType> _typeMapping = new Dictionary<string, NpgsqlDbType>();
 
-        public void Add(string key, NpgsqlDbType value) => typeMapping.Add(key, value);
+        public void Add(string key, NpgsqlDbType value) => _typeMapping.Add(key, value);
 
-        public NpgsqlDbType this[string column] => typeMapping[column];
+        public NpgsqlDbType this[string column] => _typeMapping[column];
         public IEnumerator<KeyValuePair<string, NpgsqlDbType>> GetEnumerator() =>
-            typeMapping.GetEnumerator();
+            _typeMapping.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public bool TryGetValue(string column, out NpgsqlDbType type) => typeMapping.TryGetValue(column, out type);
+        public bool TryGetValue(string column, out NpgsqlDbType type) => _typeMapping.TryGetValue(column, out type);
     }
 
     internal static class BulkCopy
