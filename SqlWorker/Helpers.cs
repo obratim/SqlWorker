@@ -215,9 +215,16 @@ namespace SqlWorker
         /// <returns>The result of `string` type</returns>
 		public static string	GetNullableString(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? dr[ordinal].ToString()	: null; }
         
-		public static Dictionary<string, string> BuildMapping<T>(Dictionary<string, string> irregular, Func<string, string> transform = null)
+		/// <summary>
+		/// Creates custom mapping, that can be used in bulk insert
+		/// </summary>
+		/// <param name="irregular">Mapping of property names to db column names; properties not from this mapping would not be bulk copied</param>
+		/// <param name="transform">Function to get column name, used if record in <c>irregular</c> mapping has null value</param>
+		/// <typeparam name="T"></typeparam>
+		/// <returns>Mapping, that can be used in bulk insert</returns>
+        public static Dictionary<string, string> BuildMapping<T>(Dictionary<string, string> irregular, Func<string, string> transform = null)
 		{
-			transform = transform ?? (str => str);
+			transform ??= (str => str);
 			PropertyDescriptorCollection properties = TypeDescriptor.GetProperties(typeof(T));
 
 			var result = new Dictionary<string, string>(properties.Count);
