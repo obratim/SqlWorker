@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Text;
 
 namespace SqlWorker
 {
@@ -202,7 +201,15 @@ namespace SqlWorker
 			throw new NotImplementedException();
 		}
 
-		public override bool IsDBNull(int i) => this[i] == DBNull.Value;
+		/// <summary>
+		/// Checks if i-th element is null
+		/// </summary>
+		public override bool IsDBNull(int i) => this[i] switch
+		{
+			null => true,
+			DBNull x when x == DBNull.Value => true,
+			_ => false,
+		};
 
 		/// <summary>
 		/// Get name of i-th field
