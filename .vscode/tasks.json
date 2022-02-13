@@ -77,6 +77,16 @@
             "problemMatcher": []
         },
         {
+            "label": "Docker compose build",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "-f", "${workspaceFolder}/Tests/compose.yml",
+                "build"
+            ],
+            "problemMatcher": []
+        },
+        {
             "label": "Docker compose down",
             "type": "shell",
             "command": "docker-compose",
