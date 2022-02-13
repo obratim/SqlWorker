@@ -213,8 +213,7 @@ $$;");
         [TestMethod]
         public void CanExecWithParametersArray()
         {
-            using (var sw = new PostgreSqlWorker(ConnectionString))
-            {
+            using var sw = new PostgreSqlWorker(ConnectionString);
                 var insertsCount = sw.Exec(
                     command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
                     parameters: new []
@@ -238,14 +237,12 @@ $$;");
                     ))
                     .Single();
                 Assert.AreEqual((1, 1L, 1.0, false, "one"), inserted);
-            }
         }
 
         [TestMethod]
         public void CanExecWithParametersDictionary()
         {
-            using (var sw = new PostgreSqlWorker(ConnectionString))
-            {
+            using var sw = new PostgreSqlWorker(ConnectionString);
                 var insertsCount = sw.Exec(
                     command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
                     parameters: new Dictionary<string, object> {
@@ -268,14 +265,12 @@ $$;");
                     ))
                     .Single();
                 Assert.AreEqual((2, 4L, 1.4142135623730951, true, "two"), inserted);
-            }
         }
 
         [TestMethod]
         public void CanExecWithSwParameters()
         {
-            using (var sw = new PostgreSqlWorker(ConnectionString))
-            {
+            using var sw = new PostgreSqlWorker(ConnectionString);
                 var insertsCount = sw.Exec(
                     command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
                     parameters: new SwParameters() {
@@ -298,7 +293,6 @@ $$;");
                     ))
                     .Single();
                 Assert.AreEqual((3, 9L, 1.7320508075688773, true, "three"), inserted);
-            }
         }
 
         [TestMethod]
