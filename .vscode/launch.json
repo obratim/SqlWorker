@@ -22,6 +22,79 @@
             "type": "coreclr",
             "request": "attach",
             "processId": "${command:pickProcess}"
+        },
+        {
+            // a name for UI (see screenshot above)
+            "name": "Run tests in Docker",
+            // should be "coreclr"
+            "type": "coreclr",
+            // launch or attach? we want to launch a program
+            "request": "launch",
+            // a task identifier to run before launch (see below)
+            "preLaunchTask": "publishTests",
+            // current dir inside Docker
+            "cwd": "/app",
+            // what we want to launch - dotnet CLI
+            "program": "dotnet",
+            // arg for program
+            "args":[
+             "vstest", "/app/Tests.dll"
+            ],
+            // mapping folders from Docker to host where to find sources
+            "sourceFileMap": {
+              "/src": "${workspaceFolder}"
+            },
+            // part for transport
+            "pipeTransport": {
+              // path to debugger inside Docker (we installed it there)
+              "debuggerPath": "/vsdbg/vsdbg",
+              // a program to run on host as transport - docker
+             "pipeProgram": "docker",
+              // cwd on host for running pipeProgramm
+              "pipeCwd": "${workspaceFolder}/publish/test",
+              // args for pipeProgram
+              "pipeArgs": [
+               "exec", "-i", "sqlworker-debug-composed"
+              ],
+              // args as array + quoteArgs:false is the only combination worked for me
+              "quoteArgs": false
+            },
+            // not important in this case but useful anyway 
+            "requireExactSource": false,
+            // where to pick symbols, not needed in this case
+            "symbolPath": [
+              "${workspaceRoot}/Tests/bin/Debug/net6.0"
+            ],
+            // if we want to debug not only our assemblies
+            "justMyCode": true,
+            // pause debugger at entrance
+            "stopAtEntry": true
+          },
+          {
+            "name": "Attach to Tests in Docker",
+            "type": "coreclr",
+            "request": "attach",
+            //"preLaunchTask": "preDockerDebug",
+            "processId": "${input:debuggerID}",
+            "sourceFileMap": {
+              "/src": "${workspaceFolder}"
+            },
+            "pipeTransport": {
+              "debuggerPath": "/vsdbg/vsdbg",
+              "pipeProgram": "docker",
+              "pipeCwd": "${workspaceFolder}/publish/test",
+              "pipeArgs": [
+               "exec", "-i", "sqlworker-debug-composed"
+              ],
+              "quoteArgs": false
+            }
+          }
+    ],
+    "inputs": [
+        {
+          "id": "debuggerID",
+          "type": "promptString",
+          "description": "Run Task \"Start debug session\", type Process Id here, continue debugging, than Start debugging again and type next Process Id here"
         }
     ]
 }
