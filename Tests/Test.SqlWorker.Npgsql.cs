@@ -214,85 +214,85 @@ $$;");
         public void CanExecWithParametersArray()
         {
             using var sw = new PostgreSqlWorker(ConnectionString);
-                var insertsCount = sw.Exec(
-                    command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
-                    parameters: new []
-                    {
-                        new NpgsqlParameter("number", 1),
-                        new NpgsqlParameter("square", 1L),
-                        new NpgsqlParameter("sqrt", 1.0),
-                        new NpgsqlParameter("is_prime", false),
-                        new NpgsqlParameter("as_text", "one"),
-                    });
-                Assert.AreEqual(1, insertsCount);
-                
-                var inserted = sw.Query(
-                    command: @"select * from numbers where number = 1",
-                    transformFunction: dr => (
-                        number: (int)dr[0],
-                        square: (long)dr[1],
-                        sqrt: (double)dr[2],
-                        is_prime: (bool)dr[3],
-                        as_text: dr.GetNullableString(4)
-                    ))
-                    .Single();
-                Assert.AreEqual((1, 1L, 1.0, false, "one"), inserted);
+            var insertsCount = sw.Exec(
+                command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
+                parameters: new []
+                {
+                    new NpgsqlParameter("number", 1),
+                    new NpgsqlParameter("square", 1L),
+                    new NpgsqlParameter("sqrt", 1.0),
+                    new NpgsqlParameter("is_prime", false),
+                    new NpgsqlParameter("as_text", "one"),
+                });
+            Assert.AreEqual(1, insertsCount);
+
+            var inserted = sw.Query(
+                command: @"select * from numbers where number = 1",
+                transformFunction: dr => (
+                    number: (int)dr[0],
+                    square: (long)dr[1],
+                    sqrt: (double)dr[2],
+                    is_prime: (bool)dr[3],
+                    as_text: dr.GetNullableString(4)
+                ))
+                .Single();
+            Assert.AreEqual((1, 1L, 1.0, false, "one"), inserted);
         }
 
         [TestMethod]
         public void CanExecWithParametersDictionary()
         {
             using var sw = new PostgreSqlWorker(ConnectionString);
-                var insertsCount = sw.Exec(
-                    command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
-                    parameters: new Dictionary<string, object> {
-                        { "number", 2 },
-                        { "square", 4L },
-                        { "sqrt", Math.Sqrt(2) },
-                        { "is_prime", true },
-                        { "as_text", "two" },
-                    });
-                Assert.AreEqual(1, insertsCount);
-                
-                var inserted = sw.Query(
-                    command: @"select * from numbers where number = 2",
-                    transformFunction: dr => (
-                        number: (int)dr[0],
-                        square: (long)dr[1],
-                        sqrt: (double)dr[2],
-                        is_prime: (bool)dr[3],
-                        as_text: dr.GetNullableString(4)
-                    ))
-                    .Single();
-                Assert.AreEqual((2, 4L, 1.4142135623730951, true, "two"), inserted);
+            var insertsCount = sw.Exec(
+                command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
+                parameters: new Dictionary<string, object> {
+                    { "number", 2 },
+                    { "square", 4L },
+                    { "sqrt", Math.Sqrt(2) },
+                    { "is_prime", true },
+                    { "as_text", "two" },
+                });
+            Assert.AreEqual(1, insertsCount);
+
+            var inserted = sw.Query(
+                command: @"select * from numbers where number = 2",
+                transformFunction: dr => (
+                    number: (int)dr[0],
+                    square: (long)dr[1],
+                    sqrt: (double)dr[2],
+                    is_prime: (bool)dr[3],
+                    as_text: dr.GetNullableString(4)
+                ))
+                .Single();
+            Assert.AreEqual((2, 4L, 1.4142135623730951, true, "two"), inserted);
         }
 
         [TestMethod]
         public void CanExecWithSwParameters()
         {
             using var sw = new PostgreSqlWorker(ConnectionString);
-                var insertsCount = sw.Exec(
-                    command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
-                    parameters: new SwParameters() {
-                        { "number", 3 },
-                        { "square", 9, System.Data.DbType.Int64 },
-                        { "sqrt", Math.Sqrt(3), System.Data.DbType.Double, System.Data.ParameterDirection.Input },
-                        { "is_prime", true },
-                        { "as_text", "three" },
-                    });
-                Assert.AreEqual(1, insertsCount);
-                
-                var inserted = sw.Query(
-                    command: @"select * from numbers where number = 3",
-                    transformFunction: dr => (
-                        number: (int)dr[0],
-                        square: (long)dr[1],
-                        sqrt: (double)dr[2],
-                        is_prime: (bool)dr[3],
-                        as_text: dr.GetNullableString(4)
-                    ))
-                    .Single();
-                Assert.AreEqual((3, 9L, 1.7320508075688773, true, "three"), inserted);
+            var insertsCount = sw.Exec(
+                command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
+                parameters: new SwParameters() {
+                    { "number", 3 },
+                    { "square", 9, System.Data.DbType.Int64 },
+                    { "sqrt", Math.Sqrt(3), System.Data.DbType.Double, System.Data.ParameterDirection.Input },
+                    { "is_prime", true },
+                    { "as_text", "three" },
+                });
+            Assert.AreEqual(1, insertsCount);
+
+            var inserted = sw.Query(
+                command: @"select * from numbers where number = 3",
+                transformFunction: dr => (
+                    number: (int)dr[0],
+                    square: (long)dr[1],
+                    sqrt: (double)dr[2],
+                    is_prime: (bool)dr[3],
+                    as_text: dr.GetNullableString(4)
+                ))
+                .Single();
+            Assert.AreEqual((3, 9L, 1.7320508075688773, true, "three"), inserted);
         }
 
         [TestMethod]
@@ -763,13 +763,13 @@ on commit drop", transaction: tran);
                     sw.BulkCopy(
                         Enumerable
                             .Range(1, 10)
-                            .Select(i => i switch {
+                            .Select(i => i switch
+                            {
                                 6 => throw new TestException(),
                                 _ => i,
                             })
                             .Select(i => new { number = 100500 + i, square = (long)i * i, sqrt = Math.Sqrt(i), is_prime = _primes.Contains(i), as_text = (string)null }),
                         "numbers");
-                }
             }
             catch (TestException)
             {}
