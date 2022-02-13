@@ -37,6 +37,75 @@
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "publishTests",
+            "command": "dotnet",
+            "args": [
+                "publish",
+                "-o=publish/test",
+                "${workspaceFolder}/Tests/Tests.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "group": "none",
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Start debug session",
+            "type": "shell",
+            "command": "docker exec -it -e VSTEST_HOST_DEBUG=1 sqlworker-debug-composed /usr/bin/dotnet vstest Tests.dll '/logger:console;verbosity=Normal'",
+            "dependsOn": "publishTests",
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker compose up",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "-f", "${workspaceFolder}/Tests/compose.yml",
+                "up",
+                "-d"
+            ],
+            "dependsOn": "publishTests",
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker compose build",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "-f", "${workspaceFolder}/Tests/compose.yml",
+                "build"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker compose down",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "-f", "${workspaceFolder}/Tests/compose.yml",
+                "down"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Write config for running inside docker",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "'{ \"connectionStringMaster\": \"Server=sw-mssql-db;Database=master;User ID=sa;Password=12345678Bb.;Integrated Security=false\", \"connectionString\": \"Server=sw-mssql-db;Database=sqlworker_test;User ID=sa;Password=12345678Bb.;Integrated Security=false\", \"connectionStringMasterPostgreSql\": \"User ID=compose_postgres;Password=compose_postgres;Host=sw-postgres-db;\", \"connectionStringPostgreSql\": \"User ID=compose_postgres;Password=compose_postgres;Host=sw-postgres-db;Database=numbers;\", \"recreateDb\": false }'",
+                ">",
+                "${workspaceFolder}/publish/test/config.json"
+            ],
+            "problemMatcher": []
         }
     ]
 }

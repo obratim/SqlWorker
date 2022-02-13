@@ -28,8 +28,8 @@ namespace SqlWorker
 #else
     : ASqlWorker<ParametersConstructorForPostgreSql>
 #endif
-        , IBulkCopy<PostreSqlBulkCopySettings>
-        , IBulkCopyWithReflection<PostreSqlBulkCopySettings>
+        , IBulkCopy<PostgreSqlBulkCopySettings>
+        , IBulkCopyWithReflection<PostgreSqlBulkCopySettings>
     {
         private string _connectionStr;
 
@@ -47,21 +47,21 @@ namespace SqlWorker
             }
         }
 
-        public void BulkCopy(DataTable source, string targetTableName, PostreSqlBulkCopySettings bulkCopySettings = null)
+        public void BulkCopy(DataTable source, string targetTableName, PostgreSqlBulkCopySettings bulkCopySettings = null)
         {
             using var dr = source.DataSet.CreateDataReader();
             if (Connection.State != ConnectionState.Open) Connection.Open();
             using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(source.Columns.BulkCopyCommand(targetTableName));
 
-            dr.PerformBulkCopy(writer, source.Columns);
+            dr.PerformBulkCopy(writer, source.Columns, bulkCopySettings);
         }
 
-        public void BulkCopy<TItem>(IEnumerable<TItem> source, string targetTableName, PostreSqlBulkCopySettings bulkCopySettings = null)
+        public void BulkCopy<TItem>(IEnumerable<TItem> source, string targetTableName, PostgreSqlBulkCopySettings bulkCopySettings = null)
         {
             if (Connection.State != ConnectionState.Open) Connection.Open();
-            using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(BulcCopyGeneric<TItem>.BulkCopyCommand(targetTableName));
+            using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(BulkCopyGeneric<TItem>.BulkCopyCommand(targetTableName));
 
-            BulcCopyGeneric<TItem>.BulkCopy(source, writer);
+            BulkCopyGeneric<TItem>.BulkCopy(source, writer, bulkCopySettings);
         }
     }
 }

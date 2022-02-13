@@ -1,19 +1,42 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace SqlWorker
 {
-    public class PostreSqlBulkCopySettings : SqlWorker.IBulkCopySettings
-    {}
-
-    static class BulkCopy
+    /// <summary>
+    /// Settings for bulk copying in PostgreSQL. Used to specify types for some of properties of type being insert
+    /// </summary>
+    public class PostgreSqlBulkCopySettings : SqlWorker.IBulkCopySettings, IEnumerable<KeyValuePair<string, NpgsqlDbType>>
     {
-        public static void PerformBulkCopy(this IDataReader dr, NpgsqlBinaryImporter writer, DataColumnCollection columns = null)
+        private Dictionary<string, NpgsqlDbType> _typeMapping = new Dictionary<string, NpgsqlDbType>();
+
+        public void Add(string key, NpgsqlDbType value) => _typeMapping.Add(key, value);
+
+        public NpgsqlDbType this[string column] => _typeMapping[column];
+        public IEnumerator<KeyValuePair<string, NpgsqlDbType>> GetEnumerator() =>
+            _typeMapping.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public bool TryGetValue(string column, out NpgsqlDbType type) => _typeMapping.TryGetValue(column, out type);
+    }
+
+    internal static class BulkCopy
+    {
+        public static void PerformBulkCopy(
+            this IDataReader dr,
+            NpgsqlBinaryImporter writer, 
+            DataColumnCollection columns = null, 
+            PostgreSqlBulkCopySettings settings = null)
         {
+            settings ??= new PostgreSqlBulkCopySettings();
             columns ??= dr.GetSchemaTable().Columns;
             
             while (dr.Read())
@@ -21,56 +44,73 @@ namespace SqlWorker
                 writer.StartRow();
 
                 foreach (DataColumn col in columns)
-                {
+                {                
+                    void Write<T>(T value)
+                    {
+                        if (settings.TryGetValue(col.Caption, out var type))
+                        {
+                            writer.Write(value, type);
+                            return;
+                        }
+                        
+                        writer.Write(value);
+                    }
+                    
                     switch (dr[col.Ordinal])
                     {
                         case bool x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case byte x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case sbyte x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case short x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case ushort x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case int x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case uint x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case long x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case ulong x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case double x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case float x:
-                            writer.Write(x);
+                            Write(x);
+                            break;
+                        case decimal x:
+                            Write(x);
                             break;
                         case Guid x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case DateTime x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case TimeSpan x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case char x:
-                            writer.Write(x);
+                            Write(x);
                             break;
                         case string x:
-                            writer.Write(x);
+                            Write(x);
+                            break;
+                        case Array _:
+                            Write(dr[col.Ordinal]);
                             break;
                         case null:
                             writer.WriteNull();
@@ -121,6 +161,15 @@ namespace SqlWorker
                         case ulong x:
                             await writer.WriteAsync(x);
                             break;
+                        case double x:
+                            await writer.WriteAsync(x);
+                            break;
+                        case float x:
+                            await writer.WriteAsync(x);
+                            break;
+                        case decimal x:
+                            await writer.WriteAsync(x);
+                            break;
                         case Guid x:
                             await writer.WriteAsync(x);
                             break;
@@ -133,8 +182,11 @@ namespace SqlWorker
                         case string x:
                             await writer.WriteAsync(x);
                             break;
+                        case Array _:
+                            await writer.WriteAsync(dr[col.Ordinal]);
+                            break;
                         case null:
-                            writer.WriteNull();
+                            await writer.WriteNullAsync();
                             break;
                     }
                 }

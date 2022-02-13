@@ -1,0 +1,28 @@
+version: '3.4'
+
+services:
+  sqlworker-debug-composed:
+    build: .
+    container_name: sqlworker-debug-composed
+    volumes:
+      - "../publish/test:/app"
+    depends_on:
+      - sw-postgres-db
+      - sw-mssql-db
+  sw-postgres-db:
+    image: postgres
+    container_name: sw-postgres-db
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=compose_postgres
+      - POSTGRES_PASSWORD=compose_postgres
+  sw-mssql-db:
+    image: mcr.microsoft.com/mssql/server
+    container_name: sw-mssql-db
+    ports:
+      - 1433:1433
+    environment:
+      - "SA_PASSWORD=12345678Bb."
+      - "ACCEPT_EULA=Y"
+      - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
