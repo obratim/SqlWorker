@@ -95,6 +95,17 @@
                 "down"
             ],
             "problemMatcher": []
+        },
+        {
+            "label": "Write config for running inside docker",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "'{ \"connectionStringMaster\": \"Server=sw-mssql-db;Database=master;User ID=sa;Password=12345678Bb.;Integrated Security=false\", \"connectionString\": \"Server=sw-mssql-db;Database=sqlworker_test;User ID=sa;Password=12345678Bb.;Integrated Security=false\", \"connectionStringMasterPostgreSql\": \"User ID=compose_postgres;Password=compose_postgres;Host=sw-postgres-db;\", \"connectionStringPostgreSql\": \"User ID=compose_postgres;Password=compose_postgres;Host=sw-postgres-db;Database=numbers;\", \"recreateDb\": false }'",
+                ">",
+                "${workspaceFolder}/publish/test/config.json"
+            ],
+            "problemMatcher": []
         }
     ]
 }

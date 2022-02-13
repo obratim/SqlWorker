@@ -74,7 +74,7 @@
             "name": "Attach to Tests in Docker",
             "type": "coreclr",
             "request": "attach",
-            //"preLaunchTask": "preDockerDebug",
+            "preLaunchTask": "Write config for running inside docker",
             "processId": "${input:debuggerID}",
             "sourceFileMap": {
               "/src": "${workspaceFolder}"
