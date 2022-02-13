@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace SqlWorker
 {
+	/// <summary>
+	/// Generator of SqlParameter objects
+	/// </summary>
 	public class ParametersConstructorForPostgreSql : ADbParameterCreator<NpgsqlParameter>
     {
 		/// <summary>
@@ -22,6 +25,9 @@ namespace SqlWorker
         }
     }
 
+    /// <summary>
+    /// Adapter for PostgreSQL
+    /// </summary>
     public class PostgreSqlWorker
 #if NETSTANDARD2_1
     : Async.ASqlWorkerAsync<ParametersConstructorForPostgreSql>
@@ -31,13 +37,36 @@ namespace SqlWorker
         , IBulkCopy<PostgreSqlBulkCopySettings>
         , IBulkCopyWithReflection<PostgreSqlBulkCopySettings>
     {
-        private string _connectionStr;
+        private readonly string _connectionStr;
 
-        public PostgreSqlWorker(string ConnectionString)
-            : base() { _connectionStr = ConnectionString; }
+        /// <summary>
+        /// Constructor from connection string
+        /// </summary>
+        /// <param name="connectionString">The connection string, for example "Host={0};Database={1};User ID={2};Password={3};"</param>
+        public PostgreSqlWorker(string connectionString)
+            : base()
+        {
+            _connectionStr = connectionString;
+        }
+
+        /// <summary>
+        /// Constructor for sql server authentication
+        /// </summary>
+        /// <param name="host">The target Sql Server</param>
+        /// <param name="database">The target database</param>
+        /// <param name="user">Username</param>
+        /// <param name="password">Password</param>
+        public PostgreSqlWorker(string host, string database, string user, string password)
+            : base()
+        {
+            _connectionStr = $"Host={host};Database={database};User ID={user};Password={password};";
+        }
 
         private NpgsqlConnection _conn;
 
+        /// <summary>
+        /// Database connection
+        /// </summary>
         protected override IDbConnection Connection
         {
             get
@@ -47,6 +76,12 @@ namespace SqlWorker
             }
         }
 
+        /// <summary>
+        /// Performs bulk copy from DataTable to specified table
+        /// </summary>
+        /// <param name="source">Source data</param>
+        /// <param name="targetTableName">Target table</param>
+        /// <param name="bulkCopySettings">Bulk copy options</param>
         public void BulkCopy(DataTable source, string targetTableName, PostgreSqlBulkCopySettings bulkCopySettings = null)
         {
             using var dr = source.DataSet.CreateDataReader();
@@ -56,12 +91,19 @@ namespace SqlWorker
             dr.PerformBulkCopy(writer, source.Columns, bulkCopySettings);
         }
 
-        public void BulkCopy<TItem>(IEnumerable<TItem> source, string targetTableName, PostgreSqlBulkCopySettings bulkCopySettings = null)
+        /// <summary>
+        /// Performs bulk copy from objects sequence to target table in database; columns are detected by reflection
+        /// </summary>
+        /// <typeparam name="T">The generic type of collection</typeparam>
+        /// <param name="source">The source collection</param>
+        /// <param name="targetTableName">Name of the table, where data will be copied</param>
+        /// <param name="bulkCopySettings">Bulk copy options</param>
+        public void BulkCopy<T>(IEnumerable<T> source, string targetTableName, PostgreSqlBulkCopySettings bulkCopySettings = null)
         {
             if (Connection.State != ConnectionState.Open) Connection.Open();
-            using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(BulkCopyGeneric<TItem>.BulkCopyCommand(targetTableName));
+            using var writer = ((Npgsql.NpgsqlConnection)Connection).BeginBinaryImport(BulkCopyGeneric<T>.BulkCopyCommand(targetTableName));
 
-            BulkCopyGeneric<TItem>.BulkCopy(source, writer, bulkCopySettings);
+            BulkCopyGeneric<T>.BulkCopy(source, writer, bulkCopySettings);
         }
     }
 }
