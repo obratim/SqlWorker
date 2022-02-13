@@ -247,20 +247,21 @@ namespace SqlWorker
 			return _enumerator;
 		}
 
-		private bool disposed = false;
+		private bool _disposed = false;
 
 		/// <summary>
 		/// Stop reading and dispose current IEnumerator
 		/// </summary>
 		protected override void Dispose(bool disposing)
 		{
-			if (disposed)
+			_isClosed = true;
+			if (_disposed)
 				return;
 			if (disposing)
 			{
 				_enumerator?.Dispose();
 			}
-			disposed = true;
+			_disposed = true;
 			base.Dispose(disposing);
 		}
 
