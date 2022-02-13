@@ -60,7 +60,7 @@
         {
             "label": "Start debug session",
             "type": "shell",
-            "command": "docker exec -it -e VSTEST_HOST_DEBUG=1 tsmn-debug-composed /usr/bin/dotnet vstest Sphaera.Tsmn.Tests.dll '/logger:console;verbosity=Normal'",
+            "command": "docker exec -it -e VSTEST_HOST_DEBUG=1 sqlworker-debug-composed /usr/bin/dotnet vstest Tests.dll '/logger:console;verbosity=Normal'",
             "dependsOn": "publishTests",
             "problemMatcher": []
         },
