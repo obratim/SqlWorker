@@ -759,8 +759,7 @@ on commit drop", transaction: tran);
         {
             try
             {
-                using (var sw = new PostgreSqlWorker(ConnectionString))
-                {
+                using var sw = new PostgreSqlWorker(ConnectionString);
                     sw.BulkCopy(
                         Enumerable
                             .Range(1, 10)
