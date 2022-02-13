@@ -94,7 +94,7 @@
         {
           "id": "debuggerID",
           "type": "promptString",
-          "description": "Run Task \"Start debug session\", type Process Id here, continue debugging, than Start debugging again and type next Process Id here"
+          "description": "Run Task \"Start debug session\", type Process Id here, continue debugging (first break stop is before program started)"
         }
     ]
 }
