@@ -236,6 +236,12 @@ namespace SqlWorker
 			return result;
 		}
 
+        /// <summary>
+        /// Converts IEnumerable to DbDataReader
+        /// </summary>
+        /// <param name="sequence">IEnumerable, that must be converted</param>
+        /// <typeparam name="T">Type of elements in IEnumerable</typeparam>
+        /// <returns>EnumerableDbDataReader, that is based on DbDataReader</returns>
         public static EnumerableDbDataReader<T> ToDbDataReader<T>(this IEnumerable<T> sequence) => new EnumerableDbDataReader<T>(sequence);
 	}
 }
