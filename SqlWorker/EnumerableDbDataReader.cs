@@ -103,7 +103,7 @@ namespace SqlWorker
 		public override long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
 		{
 			return 0;
-			throw new NotImplementedException();
+			throw new NotImplementedException("GetBytes mthod not implemented for EnumerableDbDataReader");
 		}
 
 		/// <summary>
