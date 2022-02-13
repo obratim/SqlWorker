@@ -4,7 +4,7 @@ using System.Data;
 namespace SqlWorker
 {
 	/// <summary>
-	/// Helpers specific to working with Postgres
+	/// Helpers specific to working with PostgreSQL
 	/// </summary>
     public static class DataReaderExtensions
     {
