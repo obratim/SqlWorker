@@ -5,7 +5,7 @@ services:
     build: .
     container_name: sqlworker-debug-composed
     volumes:
-      - "..\\publish\\test\\:/app"
+      - "../publish/test:/app"
     depends_on:
       - sw-postgres-db
       - sw-mssql-db
