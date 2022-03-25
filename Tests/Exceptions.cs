@@ -6,6 +6,6 @@ namespace Tests.SqlWorker
     {
         public TestException(string message = null, Exception innerException = null)
             : base(message, innerException)
-        {}
+        { }
     }
 }

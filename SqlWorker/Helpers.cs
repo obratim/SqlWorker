@@ -13,7 +13,7 @@ namespace SqlWorker
     /// Helpers for batching Enumerable and null workarounds
     /// </summary>
 	public static class Helpers
-	{
+    {
         private static IEnumerable<Tuple<string, Type, Func<T, object>>> GetFlatProperties<T>()
         {
             return GetFlatPropertyInfos<T>(typeof(T), "", x => x, x => { })
@@ -133,7 +133,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `bool?` type</returns>
-        public static bool?	GetNullableBool(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (bool?)dr[ordinal]	: null; }
+        public static bool? GetNullableBool(this IDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (bool?)dr[ordinal] : null; }
 
         /// <summary>
         /// Obtains byte? variable from NULL-able column
@@ -141,7 +141,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `byte?` type</returns>
-		public static byte?	GetNullableByte(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (byte?)dr[ordinal]	: null; }
+		public static byte? GetNullableByte(this IDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (byte?)dr[ordinal] : null; }
 
         /// <summary>
         /// Obtains short? variable from NULL-able column
@@ -149,7 +149,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `short?` type</returns>
-		public static short?	GetNullableInt16(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (short?)dr[ordinal]	: null; }
+		public static short? GetNullableInt16(this IDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (short?)dr[ordinal] : null; }
 
         /// <summary>
         /// Obtains int? variable from NULL-able column
@@ -157,7 +157,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `int?` type</returns>
-		public static int?	GetNullableInt32(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (int?)(dr[ordinal])	: null; }
+		public static int? GetNullableInt32(this IDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (int?)(dr[ordinal]) : null; }
 
         /// <summary>
         /// Obtains long? variable from NULL-able column
@@ -165,7 +165,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `long?` type</returns>
-		public static long?	GetNullableInt64(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (long?)dr[ordinal]	: null; }
+		public static long? GetNullableInt64(this IDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (long?)dr[ordinal] : null; }
 
         /// <summary>
         /// Obtains float? variable from NULL-able column
@@ -173,7 +173,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `float?` type</returns>
-		public static float?	GetNullableFloat(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (float?)dr[ordinal]	: null; }
+		public static float? GetNullableFloat(this IDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (float?)dr[ordinal] : null; }
 
         /// <summary>
         /// Obtains double? variable from NULL-able column
@@ -181,7 +181,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `double?` type</returns>
-		public static double?	GetNullableDouble(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (double?)dr[ordinal]	: null; }
+		public static double? GetNullableDouble(this IDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (double?)dr[ordinal] : null; }
 
         /// <summary>
         /// Obtains decimal? variable from NULL-able column
@@ -197,7 +197,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `Guid?` type</returns>
-		public static Guid?	GetNullableGuid(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (Guid?)dr[ordinal]	: null; }
+		public static Guid? GetNullableGuid(this IDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (Guid?)dr[ordinal] : null; }
 
         /// <summary>
         /// Obtains DateTime? variable from NULL-able column
@@ -205,7 +205,7 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `DateTime?` type</returns>
-		public static DateTime?	GetNullableDateTime(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? (DateTime?)dr[ordinal]	: null; }
+		public static DateTime? GetNullableDateTime(this IDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? (DateTime?)dr[ordinal] : null; }
 
         /// <summary>
         /// Obtains string variable from NULL-able column
@@ -213,35 +213,35 @@ namespace SqlWorker
         /// <param name="dr">The DataReader with results</param>
         /// <param name="ordinal">The index of the column</param>
         /// <returns>The result of `string` type</returns>
-		public static string	GetNullableString(this IDataReader dr,	int ordinal) { return dr[ordinal] != DBNull.Value ? dr[ordinal].ToString()	: null; }
-        
-		/// <summary>
-		/// Creates custom mapping, that can be used in bulk insert
-		/// </summary>
-		/// <param name="irregular">Mapping of property names to db column names; properties not from this mapping would not be bulk copied</param>
-		/// <param name="transform">Function to get column name, used if record in <c>irregular</c> mapping has null value</param>
-		/// <typeparam name="T"></typeparam>
-		/// <returns>Mapping, that can be used in bulk insert</returns>
+		public static string GetNullableString(this IDataReader dr, int ordinal) { return dr[ordinal] != DBNull.Value ? dr[ordinal].ToString() : null; }
+
+        /// <summary>
+        /// Creates custom mapping, that can be used in bulk insert
+        /// </summary>
+        /// <param name="irregular">Mapping of property names to db column names; properties not from this mapping would not be bulk copied</param>
+        /// <param name="transform">Function to get column name, used if record in <c>irregular</c> mapping has null value</param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns>Mapping, that can be used in bulk insert</returns>
         public static Dictionary<string, string> BuildMapping<T>(Dictionary<string, string> irregular, Func<string, string> transform = null)
-		{
-			transform ??= (str => str);
-			PropertyDescriptorCollection properties = TypeDescriptor.GetProperties(typeof(T));
+        {
+            transform ??= (str => str);
+            PropertyDescriptorCollection properties = TypeDescriptor.GetProperties(typeof(T));
 
-			var result = new Dictionary<string, string>(properties.Count);
-			foreach (var kv in irregular)
-				if (kv.Value != null)
-					result.Add(kv.Key, kv.Value);
+            var result = new Dictionary<string, string>(properties.Count);
+            foreach (var kv in irregular)
+                if (kv.Value != null)
+                    result.Add(kv.Key, kv.Value);
 
-			foreach (PropertyDescriptor prop in properties)
-			{
-				if (irregular.ContainsKey(prop.Name)) continue;
-				var value = transform(prop.Name);
-				if (value == null) continue;
-				result.Add(prop.Name, value);
-			}
+            foreach (PropertyDescriptor prop in properties)
+            {
+                if (irregular.ContainsKey(prop.Name)) continue;
+                var value = transform(prop.Name);
+                if (value == null) continue;
+                result.Add(prop.Name, value);
+            }
 
-			return result;
-		}
+            return result;
+        }
 
         /// <summary>
         /// Converts IEnumerable to DbDataReader
@@ -250,5 +250,5 @@ namespace SqlWorker
         /// <typeparam name="T">Type of elements in IEnumerable</typeparam>
         /// <returns>EnumerableDbDataReader, that is based on DbDataReader</returns>
         public static EnumerableDbDataReader<T> ToDbDataReader<T>(this IEnumerable<T> sequence) => new EnumerableDbDataReader<T>(sequence);
-	}
+    }
 }

@@ -9,16 +9,16 @@ using System.Linq;
 
 namespace SqlWorker
 {
-	/// <summary>
-	/// Generator of SqlParameter objects
-	/// </summary>
-	public class ParametersConstuctorsForMsSql : ADbParameterCreator<SqlParameter>
+    /// <summary>
+    /// Generator of SqlParameter objects
+    /// </summary>
+    public class ParametersConstuctorsForMsSql : ADbParameterCreator<SqlParameter>
     {
-		/// <summary>
-		/// Set parameter size (for types with variable size)
-		/// </summary>
-		/// <param name="parameter">The parameter</param>
-		/// <param name="size">Parameter size</param>
+        /// <summary>
+        /// Set parameter size (for types with variable size)
+        /// </summary>
+        /// <param name="parameter">The parameter</param>
+        /// <param name="size">Parameter size</param>
         protected override void SetSize(SqlParameter parameter, int size)
         {
             parameter.Size = size;
@@ -50,7 +50,7 @@ namespace SqlWorker
                 return _conn;
             }
         }
-        
+
         /// <summary>
         /// Constructor from connection string
         /// </summary>
@@ -101,7 +101,7 @@ namespace SqlWorker
             if (Connection.State != ConnectionState.Open) Connection.Open();
             return _conn.BeginTransaction(level);
         }
-        
+
         /// <summary>
         /// Creates table in database with columns relevant to specified DataTable
         /// </summary>
@@ -117,19 +117,19 @@ namespace SqlWorker
             var columns = new List<DataColumn>();
             columns.AddRange(source.Columns.Cast<DataColumn>());
 
-			Exec(string.Format(@"
+            Exec(string.Format(@"
 CREATE TABLE [{0}] (
     {1}
 )
 ",
-			source.TableName,
-			string.Join(",\n    ", columns.Select(c => string.Format("[{0}] {1}{4} {2} {3}",
-				 c.ColumnName,
-				 c.DataType.IsEnum ? "int" : c.DataType == typeof(string) && c.MaxLength < 0 ? "nvarchar(max)" : TypeMapTsql[c.DataType].ToString(),
-				 c.AllowDBNull ? "NULL" : "NOT NULL",
-				 c.AutoIncrement ? string.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : "",
-				 c.MaxLength >= 0 ? string.Format("({0})", c.MaxLength) : ""))
-			 )));
+            source.TableName,
+            string.Join(",\n    ", columns.Select(c => string.Format("[{0}] {1}{4} {2} {3}",
+                 c.ColumnName,
+                 c.DataType.IsEnum ? "int" : c.DataType == typeof(string) && c.MaxLength < 0 ? "nvarchar(max)" : TypeMapTsql[c.DataType].ToString(),
+                 c.AllowDBNull ? "NULL" : "NOT NULL",
+                 c.AutoIncrement ? string.Format("identity({0},{1})", c.AutoIncrementSeed, c.AutoIncrementStep) : "",
+                 c.MaxLength >= 0 ? string.Format("({0})", c.MaxLength) : ""))
+             )));
         }
 
         #region Bulk copy
@@ -197,10 +197,10 @@ CREATE TABLE [{0}] (
                 if (mappings == null)
                     foreach (var column in source.Columns)
                         sbc.ColumnMappings.Add(column.ToString(), column.ToString());
-				else
-					foreach (var m in mappings)
-						sbc.ColumnMappings.Add(m);
-				sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
+                else
+                    foreach (var m in mappings)
+                        sbc.ColumnMappings.Add(m);
+                sbc.BulkCopyTimeout = timeout ?? DefaultExecutionTimeout;
                 sbc.BatchSize = chunkSize ?? DefaultChunkSize;
                 sbc.EnableStreaming = enableStreaming;
                 sbc.WriteToServer(source);
@@ -263,7 +263,7 @@ CREATE TABLE [{0}] (
                 sbc.BatchSize = chunkSize ?? DefaultChunkSize;
                 sbc.EnableStreaming = enableStreaming;
                 sbc.WriteToServer(srcreader);
-			}
+            }
         }
 
         #endregion Bulk copy

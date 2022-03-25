@@ -4,14 +4,14 @@ using System.Data;
 
 namespace SqlWorker
 {
-	/// <summary>
-	/// Core class, where main logic is realised. Dispose to close connection
-	/// </summary>
-	/// <typeparam name="TPC">Implementation of IDbParameterCreator interface</typeparam>
-	public abstract partial class ASqlWorker<TPC>
-		: IDisposable
-		where TPC : IDbParameterCreator, new()
-	{
+    /// <summary>
+    /// Core class, where main logic is realised. Dispose to close connection
+    /// </summary>
+    /// <typeparam name="TPC">Implementation of IDbParameterCreator interface</typeparam>
+    public abstract partial class ASqlWorker<TPC>
+        : IDisposable
+        where TPC : IDbParameterCreator, new()
+    {
         /// <summary>
         /// Database connection
         /// </summary>
@@ -22,10 +22,10 @@ namespace SqlWorker
         /// </summary>
         public int DefaultExecutionTimeout { get; set; } = 30;
 
-		/// <summary>
-		/// Dispose DbConnection when SqlWorker is disposed
-		/// </summary>
-		/// <value></value>
+        /// <summary>
+        /// Dispose DbConnection when SqlWorker is disposed
+        /// </summary>
+        /// <value></value>
         public bool CloseConnectionOnDispose { get; set; } = true;
 
         #region Transactions
@@ -39,26 +39,26 @@ namespace SqlWorker
             return Connection.BeginTransaction(specificIsolationLevel);
         }
 
-		#endregion Transactions
+        #endregion Transactions
 
-		/// <summary>
-		/// Executes specified query
-		/// </summary>
-		/// <param name="command">Sql string or stored procedure name</param>
-		/// <param name="parameters">Query parameters</param>
-		/// <param name="timeout">Timeout in seconds</param>
-		/// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
-		/// <param name="transaction">If transaction was opened, it must be specified</param>
-		/// <returns>Result code of the query</returns>
-		virtual public int Exec(
-			string command,
-			DbParametersConstructor parameters = null,
-			int? timeout = null,
-			CommandType commandType = CommandType.Text,
-			IDbTransaction transaction = null)
-		{
-			int result;
-			parameters = parameters ?? DbParametersConstructor.EmptyParams;
+        /// <summary>
+        /// Executes specified query
+        /// </summary>
+        /// <param name="command">Sql string or stored procedure name</param>
+        /// <param name="parameters">Query parameters</param>
+        /// <param name="timeout">Timeout in seconds</param>
+        /// <param name="commandType">Command type: text / stored procedure / TableDirect</param>
+        /// <param name="transaction">If transaction was opened, it must be specified</param>
+        /// <returns>Result code of the query</returns>
+        virtual public int Exec(
+            string command,
+            DbParametersConstructor parameters = null,
+            int? timeout = null,
+            CommandType commandType = CommandType.Text,
+            IDbTransaction transaction = null)
+        {
+            int result;
+            parameters = parameters ?? DbParametersConstructor.EmptyParams;
             SqlParameterNullWorkaround(parameters);
             using (var cmd = Connection.CreateCommand())
             {
@@ -72,7 +72,7 @@ namespace SqlWorker
                 cmd.Parameters?.Clear();
             }
             return result;
-		}
+        }
 
         /// <summary>
         /// Performs ExecuteReader for specified command, performs specified delegate on result, than disposes datareader and command
@@ -92,7 +92,7 @@ namespace SqlWorker
             DbParametersConstructor parameters = null,
             int? timeout = null,
             CommandType commandType = CommandType.Text,
-			CommandBehavior commandBehavior = CommandBehavior.Default,
+            CommandBehavior commandBehavior = CommandBehavior.Default,
             IDbTransaction transaction = null)
         {
             parameters = parameters ?? DbParametersConstructor.EmptyParams;
@@ -187,11 +187,11 @@ namespace SqlWorker
         /// </summary>
         public virtual void Dispose()
         {
-			if (CloseConnectionOnDispose && Connection.State != ConnectionState.Closed && Connection.State != ConnectionState.Broken)
-				Connection.Close();
+            if (CloseConnectionOnDispose && Connection.State != ConnectionState.Closed && Connection.State != ConnectionState.Broken)
+                Connection.Close();
             Connection.Dispose();
         }
 
         #endregion IDisposable members
-	}
+    }
 }

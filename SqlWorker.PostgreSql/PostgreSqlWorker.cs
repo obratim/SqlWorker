@@ -9,16 +9,16 @@ using System.Threading.Tasks;
 
 namespace SqlWorker
 {
-	/// <summary>
-	/// Generator of SqlParameter objects
-	/// </summary>
-	public class ParametersConstructorForPostgreSql : ADbParameterCreator<NpgsqlParameter>
+    /// <summary>
+    /// Generator of SqlParameter objects
+    /// </summary>
+    public class ParametersConstructorForPostgreSql : ADbParameterCreator<NpgsqlParameter>
     {
-		/// <summary>
-		/// Set parameter size (for types with variable size)
-		/// </summary>
-		/// <param name="parameter">The parameter</param>
-		/// <param name="size">Parameter size</param>
+        /// <summary>
+        /// Set parameter size (for types with variable size)
+        /// </summary>
+        /// <param name="parameter">The parameter</param>
+        /// <param name="size">Parameter size</param>
         protected override void SetSize(NpgsqlParameter parameter, int size)
         {
             parameter.Size = size;

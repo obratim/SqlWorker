@@ -32,19 +32,19 @@ namespace SqlWorker
     {
         public static void PerformBulkCopy(
             this IDataReader dr,
-            NpgsqlBinaryImporter writer, 
-            DataColumnCollection columns = null, 
+            NpgsqlBinaryImporter writer,
+            DataColumnCollection columns = null,
             PostgreSqlBulkCopySettings settings = null)
         {
             settings ??= new PostgreSqlBulkCopySettings();
             columns ??= dr.GetSchemaTable().Columns;
-            
+
             while (dr.Read())
             {
                 writer.StartRow();
 
                 foreach (DataColumn col in columns)
-                {                
+                {
                     void Write<T>(T value)
                     {
                         if (settings.TryGetValue(col.Caption, out var type))
@@ -52,10 +52,10 @@ namespace SqlWorker
                             writer.Write(value, type);
                             return;
                         }
-                        
+
                         writer.Write(value);
                     }
-                    
+
                     switch (dr[col.Ordinal])
                     {
                         case bool x:
@@ -125,7 +125,7 @@ namespace SqlWorker
         public static async Task PerformBulkCopyAsync(this DbDataReader dr, NpgsqlBinaryImporter writer, DataColumnCollection columns = null)
         {
             columns ??= dr.GetSchemaTable().Columns;
-            
+
             while (await dr.ReadAsync())
             {
                 await writer.StartRowAsync();

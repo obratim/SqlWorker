@@ -17,7 +17,7 @@ namespace Tests.SqlWorker.MsSql
         private string ConnectionString => Config["connectionString"];
         private string ConnectionStringMaster => Config["connectionStringMaster"];
 
-		private static HashSet<int> _primes = new HashSet<int>(Enumerable.Range(1, 1000).Where(i => !Enumerable.Range(2, (int)Math.Sqrt(i)).Any(j => i % j == 0)));
+        private static HashSet<int> _primes = new HashSet<int>(Enumerable.Range(1, 1000).Where(i => !Enumerable.Range(2, (int)Math.Sqrt(i)).Any(j => i % j == 0)));
 
         public TestMsSqlWorker()
         {
@@ -54,7 +54,7 @@ namespace Tests.SqlWorker.MsSql
                         ALTER DATABASE sqlworker_test SET RECOVERY SIMPLE;"
                     );
                 }
-            
+
                 using (var sw = new MsSqlWorker(ConnectionString))
                 {
                     Assert.AreEqual("hello", sw.Query("select 'hello'", dr => dr[0]).Single());
@@ -134,7 +134,7 @@ END
             {
                 var insertsCount = sw.Exec(
                     command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
-                    parameters: new []
+                    parameters: new[]
                     {
                         new SqlParameter("number", 1),
                         new SqlParameter("square", 1L),
@@ -143,7 +143,7 @@ END
                         new SqlParameter("as_text", "one"),
                     });
                 Assert.AreEqual(1, insertsCount);
-                
+
                 var inserted = sw.Query(
                     command: @"select * from numbers where number = 1",
                     transformFunction: dr => (
@@ -173,7 +173,7 @@ END
                         { "as_text", "two" },
                     });
                 Assert.AreEqual(1, insertsCount);
-                
+
                 var inserted = sw.Query(
                     command: @"select * from numbers where number = 2",
                     transformFunction: dr => (
@@ -203,7 +203,7 @@ END
                         { "as_text", "three" },
                     });
                 Assert.AreEqual(1, insertsCount);
-                
+
                 var inserted = sw.Query(
                     command: @"select * from numbers where number = 3",
                     transformFunction: dr => (
@@ -238,7 +238,7 @@ END
                 Assert.AreEqual(1, insertsCount);
                 tran.Commit();
             }
-            using(var sw = new MsSqlWorker(ConnectionString))
+            using (var sw = new MsSqlWorker(ConnectionString))
             {
                 Assert.AreEqual(
                     expected: (4, 16L, 2.0, false, "four"),
@@ -356,7 +356,8 @@ END
             var n = 1;
             await foreach (var x in sw.QueryAsync(
                 @"select number, square, sqrt, is_prime from dbo.numbers n",
-                dr => new {
+                dr => new
+                {
                     number = (int)dr[0],
                     square = (long)dr[1],
                     sqrt = (double)dr[2],
@@ -374,10 +375,11 @@ END
         public async System.Threading.Tasks.Task MultipleEnumeration()
         {
             await using var sw = new MsSqlWorker(ConnectionString);
-            
+
             var enumeration = sw.Query(
                 @"select number, square, sqrt, is_prime from dbo.numbers n where n.number < @maxNumber",
-                dr => new {
+                dr => new
+                {
                     i = (int)dr[0],
                     square = (long)dr[1],
                 },
@@ -400,10 +402,11 @@ END
         public async System.Threading.Tasks.Task MultipleAsyncEnumeration()
         {
             await using var sw = new MsSqlWorker(ConnectionString);
-            
+
             var enumeration = sw.QueryAsync(
                 @"select number, square, sqrt, is_prime from dbo.numbers n where n.number < @maxNumber",
-                dr => new {
+                dr => new
+                {
                     i = (int)dr[0],
                     square = (long)dr[1],
                 },
@@ -444,7 +447,7 @@ END
             await sw.ExecAsync("GetPrimeNumber", args, commandType: System.Data.CommandType.StoredProcedure);
             Assert.AreEqual((int)args["number"].Value, 3);
             Assert.AreEqual((int)args["result"].Value, 1);
-            
+
             Func<int, int, int, Task> assert = async (position, number, result) =>
             {
                 args["primePosition"].Value = position;
@@ -452,7 +455,7 @@ END
                 Assert.AreEqual((int)args["number"].Value, number);
                 Assert.AreEqual((int)args["result"].Value, result);
             };
-            
+
             await assert(3, 5, 1);
             await assert(4, 7, 1);
             await assert(5, 11, 1);
@@ -462,7 +465,7 @@ END
             await assert(9, 23, 1);
             await assert(10, 29, 1);
             await assert(11, 31, 1);
-            
+
             args[0].Value = 100500;
             await sw.ExecAsync("GetPrimeNumber", args, commandType: System.Data.CommandType.StoredProcedure);
             Assert.AreEqual((int)args["result"].Value, 0);
@@ -479,7 +482,8 @@ END
                 { "name", default(string), DbType.String, ParameterDirection.Output, 100 },
             };
 
-            Func<int, string, Task> assert = async (number, name) => {
+            Func<int, string, Task> assert = async (number, name) =>
+            {
                 args[0].Value = number;
                 await sw.ExecAsync("NumberName", args, commandType: CommandType.StoredProcedure);
                 Assert.AreEqual(args["name"].Value, name);

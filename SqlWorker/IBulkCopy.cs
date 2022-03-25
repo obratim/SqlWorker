@@ -6,7 +6,7 @@ namespace SqlWorker
     /// <summary>
     /// Bulk copy settings may vary for different implementations
     /// </summary>
-    public interface IBulkCopySettings {}
+    public interface IBulkCopySettings { }
 
     /// <summary>
     /// Implementers can perform bulk copy with a DataTable

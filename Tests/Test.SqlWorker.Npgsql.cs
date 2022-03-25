@@ -16,10 +16,11 @@ namespace Tests.SqlWorker.Npgsql
     [TestClass]
     public class TestNpgsqlWorker
     {
-        enum Even { Odd = 1, Even = 2};
-        
+        enum Even { Odd = 1, Even = 2 };
+
         [Flags]
-        enum Dividers : short {
+        enum Dividers : short
+        {
             Two = 0x1,
             Three = 0x2,
             Five = 0x4,
@@ -100,7 +101,7 @@ namespace Tests.SqlWorker.Npgsql
         private string ConnectionString => Config["connectionStringPostgreSql"];
         private string ConnectionStringMaster => Config["connectionStringMasterPostgreSql"];
 
-		private static HashSet<int> _primes = new HashSet<int>(Enumerable.Range(1, 1000).Where(i => !Enumerable.Range(2, (int)Math.Sqrt(i)).Any(j => i % j == 0)));
+        private static HashSet<int> _primes = new HashSet<int>(Enumerable.Range(1, 1000).Where(i => !Enumerable.Range(2, (int)Math.Sqrt(i)).Any(j => i % j == 0)));
 
         public TestNpgsqlWorker()
         {
@@ -114,7 +115,7 @@ namespace Tests.SqlWorker.Npgsql
 
             Assert.IsNotNull(ConnectionStringMaster);
             Assert.IsNotNull(ConnectionString);
-            
+
             using (var sw = new PostgreSqlWorker(ConnectionStringMaster))
             {
                 Assert.AreEqual("hello", sw.Query("select 'hello'", dr => dr[0]).Single());
@@ -123,10 +124,10 @@ namespace Tests.SqlWorker.Npgsql
                     @"SELECT 1 FROM pg_database WHERE datname = 'numbers';",
                     dr => (int)dr[0])
                     .SingleOrDefault() switch
-                    {
-                        1 => true,
-                        _ => false,
-                    };
+                {
+                    1 => true,
+                    _ => false,
+                };
             }
 
             if (Config["recreateDb"]?.ToLower() == "true" || !dbExists)
@@ -137,7 +138,7 @@ namespace Tests.SqlWorker.Npgsql
                         sw.Exec(@"DROP DATABASE numbers;");
                     sw.Exec(@"CREATE DATABASE numbers WITH OWNER = compose_postgres;");
                 }
-            
+
                 using (var sw = new PostgreSqlWorker(ConnectionString))
                 {
                     Assert.AreEqual("hello", sw.Query("select 'hello'", dr => dr[0]).Single());
@@ -216,7 +217,7 @@ $$;");
             using var sw = new PostgreSqlWorker(ConnectionString);
             var insertsCount = sw.Exec(
                 command: @"insert into numbers values (@number, @square, @sqrt, @is_prime, @as_text)",
-                parameters: new []
+                parameters: new[]
                 {
                     new NpgsqlParameter("number", 1),
                     new NpgsqlParameter("square", 1L),
@@ -315,7 +316,7 @@ $$;");
                 Assert.AreEqual(1, insertsCount);
                 tran.Commit();
             }
-            using(var sw = new PostgreSqlWorker(ConnectionString))
+            using (var sw = new PostgreSqlWorker(ConnectionString))
             {
                 Assert.AreEqual(
                     expected: (4, 16L, 2.0, false, "four"),
@@ -384,7 +385,8 @@ $$;");
             var comparer = CreateComparerFromCollectionAndComparisionsStack(
                 Enumerable
                     .Range(1, 0)
-                    .Select(i => new {
+                    .Select(i => new
+                    {
                         number = i,
                         square = (long)i * i,
                         sqrt = Math.Sqrt(i),
@@ -403,7 +405,7 @@ $$;");
                         insert_timestamp = new DateTime(DateTime.UtcNow.Ticks / 10 * 10), // to workaround DateTimeKind comparision and precision loss
                         dividers_values = GetDividers(i) switch
                         {
-                            {} value => Enum.GetValues<Dividers>().Where(i => value.HasFlag(i)).Select(i => DividerValue(i)).ToArray(),
+                            { } value => Enum.GetValues<Dividers>().Where(i => value.HasFlag(i)).Select(i => DividerValue(i)).ToArray(),
                             null => null,
                         },
                     }),
@@ -417,10 +419,11 @@ $$;");
                     (x, y) => Comparer.Default.Compare(x.dividers, y.dividers),
                     (x, y) => Comparer.Default.Compare(x.id, y.id),
                     (x, y) => Comparer.Default.Compare(x.insert_timestamp, y.insert_timestamp),
-                    (x, y) => {
+                    (x, y) =>
+                    {
                         var a = x.dividers_values;
                         var b = y.dividers_values;
-                        
+
                         if (a == null && b == null)
                             return 0;
 
@@ -432,15 +435,15 @@ $$;");
 
                         if (a.Length != b.Length)
                             return a.Length - b.Length;
-                        
+
                         for (var i = 0; i < a.Length; ++i)
                             if (a[i] != b[i])
                                 return a[i] - b[i];
-                        
+
                         return 0;
                     }
                 );
-            
+
             using var sw = new PostgreSqlWorker(ConnectionString);
             var copyInTransaction = true;
             void bulkInsertAndCheck(int start, int length, int chunkSize)
@@ -449,7 +452,8 @@ $$;");
 
                 var rangeToInsert = Enumerable
                         .Range(start, length)
-                        .Select(i => new {
+                        .Select(i => new
+                        {
                             number = i,
                             square = (long)i * i,
                             sqrt = Math.Sqrt(i),
@@ -468,7 +472,7 @@ $$;");
                             insert_timestamp = new DateTime(DateTime.UtcNow.Ticks / 10 * 10), // to workaround DateTimeKind comparision and precision loss
                             dividers_values = GetDividers(i) switch
                             {
-                                {} value => Enum.GetValues<Dividers>().Where(i => value.HasFlag(i)).Select(i => DividerValue(i)).ToArray(),
+                                { } value => Enum.GetValues<Dividers>().Where(i => value.HasFlag(i)).Select(i => DividerValue(i)).ToArray(),
                                 null => null,
                             },
                         })
@@ -481,7 +485,8 @@ $$;");
 
                 var actual = sw.Query(
                         "select * from numbers where number >= @min_number",
-                        dr => new {
+                        dr => new
+                        {
                             number = (int)dr[0],
                             square = (long)dr[1],
                             sqrt = (double)dr[2],
@@ -496,7 +501,7 @@ $$;");
                         },
                         parameters: new SwParameters { { "min_number", start } })
                         .ToArray();
-                
+
                 CollectionAssert.AreEqual(expected: rangeToInsert, actual: actual, comparer);
             }
 
@@ -527,7 +532,8 @@ $$;");
             var n = 1;
             await foreach (var x in sw.QueryAsync(
                 @"select number, square, sqrt, is_prime from numbers n",
-                dr => new {
+                dr => new
+                {
                     number = (int)dr[0],
                     square = (long)dr[1],
                     sqrt = (double)dr[2],
@@ -545,10 +551,11 @@ $$;");
         public async System.Threading.Tasks.Task MultipleEnumeration()
         {
             await using var sw = new PostgreSqlWorker(ConnectionString);
-            
+
             var enumeration = sw.Query(
                 @"select number, square, sqrt, is_prime from numbers n where n.number < @maxNumber",
-                dr => new {
+                dr => new
+                {
                     i = (int)dr[0],
                     square = (long)dr[1],
                 },
@@ -571,10 +578,11 @@ $$;");
         public async System.Threading.Tasks.Task MultipleAsyncEnumeration()
         {
             await using var sw = new PostgreSqlWorker(ConnectionString);
-            
+
             var enumeration = sw.QueryAsync(
                 @"select number, square, sqrt, is_prime from numbers n where n.number < @maxNumber",
-                dr => new {
+                dr => new
+                {
                     i = (int)dr[0],
                     square = (long)dr[1],
                 },
@@ -615,7 +623,7 @@ $$;");
             await sw.ExecAsync("CALL get_prime_number(@primePosition, @number, @square, @sqrt, @rows);", args);
             Assert.AreEqual(3, args["number"].Value);
             Assert.AreEqual(1, args["rows"].Value);
-            
+
             Func<int, int, int, Task> assert = async (position, number, result) =>
             {
                 args["primePosition"].Value = position;
@@ -623,7 +631,7 @@ $$;");
                 Assert.AreEqual(number, args["number"].Value);
                 Assert.AreEqual(result, args["rows"].Value);
             };
-            
+
             await assert(3, 5, 1);
             await assert(4, 7, 1);
             await assert(5, 11, 1);
@@ -633,7 +641,7 @@ $$;");
             await assert(9, 23, 1);
             await assert(10, 29, 1);
             await assert(11, 31, 1);
-            
+
             args[0].Value = 100500;
             await sw.ExecAsync("CALL get_prime_number(@primePosition, @number, @square, @sqrt, @rows);", args);
             Assert.AreEqual((int)args["rows"].Value, 0);
@@ -650,7 +658,8 @@ $$;");
                 { "name", default(string), DbType.String, ParameterDirection.InputOutput, 100 },
             };
 
-            Func<int, string, Task> assert = async (number, name) => {
+            Func<int, string, Task> assert = async (number, name) =>
+            {
                 args[0].Value = number;
                 await sw.ExecAsync("CALL number_name(@number, @name);", args);
                 Assert.AreEqual(args["name"].Value, name);
@@ -701,21 +710,21 @@ on commit drop", transaction: tran);
             var source = Enumerable.Range(0, 10).Select(i => new
             {
                 text_array = Enumerable.Range(0, 10).Select(x => x.ToString()).ToArray(),
-                money_array = Enumerable.Range(0, 10).Select(x => (decimal) x).ToArray(),
+                money_array = Enumerable.Range(0, 10).Select(x => (decimal)x).ToArray(),
                 uuid_array = Enumerable.Range(0, 10).Select(x => Guid.NewGuid()).ToArray(),
-                decimal_array = Enumerable.Range(0, 10).Select(x => (decimal) x).ToArray(),
+                decimal_array = Enumerable.Range(0, 10).Select(x => (decimal)x).ToArray(),
                 varchar_array = Enumerable.Range(0, 10).Select(x => x.ToString()).ToArray(),
                 some_array = Enumerable.Range(0, 10).ToArray(),
-                some_money = (decimal) i
+                some_money = (decimal)i
             }).ToArray();
-            
+
             sw.BulkCopy(source, "tmp_table", new PostgreSqlBulkCopySettings
             {
                 { "money_array", NpgsqlDbType.Array | NpgsqlDbType.Money },
                 { "varchar_array", NpgsqlDbType.Array | NpgsqlDbType.Varchar },
                 { "some_money", NpgsqlDbType.Money }
             });
-            var res = sw.Query("select some_array, decimal_array from tmp_table", 
+            var res = sw.Query("select some_array, decimal_array from tmp_table",
                     dr => new { some_array = dr.GetArray<int>(0), decimal_array = dr.GetArray<decimal>(1) })
                 .ToArray();
             Assert.IsTrue(res.Length == 10);
@@ -733,46 +742,46 @@ on commit drop", transaction: tran);
                 {
                     if (!dt.Columns.Contains(prop.Name))
                         dt.Columns.Add(prop.Name, prop.PropertyType);
-                    
+
                     values.Add(prop.GetValue(x));
                 }
 
                 dt.Rows.Add(values.ToArray());
             }
-            
+
             sw.BulkCopy(dt, "tmp_table", new PostgreSqlBulkCopySettings
             {
                 { "money_array", NpgsqlDbType.Array | NpgsqlDbType.Money },
                 { "varchar_array", NpgsqlDbType.Array | NpgsqlDbType.Varchar },
                 { "some_money", NpgsqlDbType.Money }
             });
-            res = sw.Query("select some_array, decimal_array from tmp_table", 
+            res = sw.Query("select some_array, decimal_array from tmp_table",
                     dr => new { some_array = dr.GetArray<int>(0), decimal_array = dr.GetArray<decimal>(1) })
                 .ToArray();
             Assert.IsTrue(res.Length == 10);
-            
+
             tran.Rollback();
         }
-        
+
         [TestMethod]
         public void BulkCopyRollesBackOnException()
         {
             try
             {
                 using var sw = new PostgreSqlWorker(ConnectionString);
-                    sw.BulkCopy(
-                        Enumerable
-                            .Range(1, 10)
-                            .Select(i => i switch
-                            {
-                                6 => throw new TestException(),
-                                _ => i,
-                            })
-                            .Select(i => new { number = 100500 + i, square = (long)i * i, sqrt = Math.Sqrt(i), is_prime = _primes.Contains(i), as_text = (string)null }),
-                        "numbers");
+                sw.BulkCopy(
+                    Enumerable
+                        .Range(1, 10)
+                        .Select(i => i switch
+                        {
+                            6 => throw new TestException(),
+                            _ => i,
+                        })
+                        .Select(i => new { number = 100500 + i, square = (long)i * i, sqrt = Math.Sqrt(i), is_prime = _primes.Contains(i), as_text = (string)null }),
+                    "numbers");
             }
             catch (TestException)
-            {}
+            { }
 
             using (var sw = new PostgreSqlWorker(ConnectionString))
             {
@@ -788,7 +797,8 @@ on commit drop", transaction: tran);
 
         private static IComparer CreateComparerFromCollectionAndComparisionsStack<T>(IEnumerable<T> objectsToCompare, params Func<T, T, int>[] comparisions)
         {
-            return new GenericComparer<T>((x, y) => {
+            return new GenericComparer<T>((x, y) =>
+            {
                 foreach (var comparision in comparisions)
                 {
                     var result = comparision(x, y);
@@ -812,13 +822,13 @@ on commit drop", transaction: tran);
             {
                 if (x == null && y == null)
                     return 0;
-                
+
                 if (x == null)
                     return int.MinValue;
-                
+
                 if (y == null)
                     return int.MaxValue;
-                
+
                 return _comparer((T)x, (T)y);
             }
         }
